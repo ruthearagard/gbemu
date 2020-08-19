@@ -436,6 +436,17 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // LDH A, ($imm8)
+        case 0xF0:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            reg.a = m_bus.read(0xFF00 + imm);
+            reg.pc += 2;
+
+            return;
+        }
+
         // POP AF
         case 0xF1:
             reg.f = m_bus.read(reg.sp++);
