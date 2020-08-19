@@ -42,6 +42,13 @@ namespace GameBoy
         // This function incurs 1 m-cycle (or 4 T-cycles).
         auto read(const uint16_t address) const noexcept -> uint8_t;
 
+        // Stores a byte `data` into memory referenced by memory address
+        // `address`.
+        //
+        // This function incurs 1 m-cycle (or 4 T-cycles).
+        auto write(const uint16_t address,
+                   const uint8_t data) noexcept -> void;
+
     private:
         std::shared_ptr<Cartridge> m_cart;
     };

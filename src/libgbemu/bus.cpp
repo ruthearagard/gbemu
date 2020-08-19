@@ -45,3 +45,12 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
             return 0xFF;
     }
 }
+
+// Stores a byte `data` into memory referenced by memory address `address`.
+//
+// This function incurs 1 m-cycle (or 4 T-cycles).
+auto SystemBus::write(const uint16_t address,
+                      const uint8_t data) noexcept -> void
+{
+    __debugbreak();
+}
