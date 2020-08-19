@@ -76,6 +76,33 @@ auto CPU::inc(uint8_t r) noexcept -> uint8_t
     return r;
 }
 
+// Handles the `DEC r` instruction.
+auto CPU::dec(uint8_t r) noexcept -> uint8_t
+{
+    reg.f |= Flag::Subtract;
+
+    if ((r & 0x0F) == 0)
+    {
+        reg.f |= Flag::HalfCarry;
+    }
+    else
+    {
+        reg.f &= ~Flag::HalfCarry;
+    }
+
+    r--;
+
+    if (r == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+    return r;
+}
+
 // Handles the `JR cond, $branch` instruction.
 auto CPU::jr(const bool condition_met) -> void
 {
@@ -135,6 +162,13 @@ auto CPU::step() noexcept -> void
         // NOP
         case 0x00:
             reg.pc++;
+            return;
+
+        // DEC C
+        case 0x0D:
+            reg.c = dec(reg.c);
+            reg.pc++;
+
             return;
 
         // LD C, $imm8
