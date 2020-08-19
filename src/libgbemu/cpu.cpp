@@ -221,6 +221,11 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // JR $branch
+        case 0x18:
+            jr(true);
+            return;
+
         // INC E
         case 0x1C:
             reg.e = inc(reg.e);
