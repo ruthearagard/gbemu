@@ -349,6 +349,14 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // PUSH HL
+        case 0xE5:
+            m_bus.write(--reg.sp, reg.h);
+            m_bus.write(--reg.sp, reg.l);
+
+            reg.pc++;
+            return;
+
         // LD ($imm16), A
         case 0xEA:
         {
