@@ -49,6 +49,18 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
         case 0xD:
             return wram1[address - 0xD000];
 
+        case 0xF:
+            switch (address & 0x0FFF)
+            {
+                // $FF44 - LY - LCDC Y-Coordinate (R)
+                case 0xF44:
+                    return 0x90;
+
+                default:
+                    __debugbreak();
+                    return 0xFF;
+            }
+
         default:
             __debugbreak();
             return 0xFF;
@@ -113,9 +125,11 @@ auto SystemBus::write(const uint16_t address,
 
                 default:
                     __debugbreak();
+                    return;
             }
 
         default:
             __debugbreak();
+            return;
     }
 }
