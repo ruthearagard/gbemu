@@ -349,6 +349,14 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // POP HL
+        case 0xE1:
+            reg.l = m_bus.read(reg.sp++);
+            reg.h = m_bus.read(reg.sp++);
+
+            reg.pc++;
+            return;
+
         // PUSH HL
         case 0xE5:
             m_bus.write(--reg.sp, reg.h);
