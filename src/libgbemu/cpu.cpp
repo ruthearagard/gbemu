@@ -393,6 +393,14 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // POP AF
+        case 0xF1:
+            reg.f = m_bus.read(reg.sp++);
+            reg.a = m_bus.read(reg.sp++);
+
+            reg.pc++;
+            return;
+
         // DI
         case 0xF3:
             reg.pc++;
