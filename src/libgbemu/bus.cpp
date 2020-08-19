@@ -100,6 +100,11 @@ auto SystemBus::write(const uint16_t address,
                     apu.NR52 = data;
                     return;
 
+                // [$FF80 - $FFFE] - High RAM (HRAM)
+                case 0xF80 ... 0xFFE:
+                    hram[address - 0xFF80] = data;
+                    return;
+
                 // $FFFF - IE - Interrupt Enable (R/W)
                 case 0xFFF:
                     interrupt_enable = data;

@@ -67,6 +67,9 @@ namespace GameBoy
         // $FF0F - IF - Interrupt Flag (R/W)
         uint8_t interrupt_flag;
 
+        // [$FF80 - $FFFE] - High RAM (HRAM)
+        std::array<uint8_t, 127> hram;
+
         // $FFFF - IE - Interrupt Enable (R/W)
         uint8_t interrupt_enable;
 
