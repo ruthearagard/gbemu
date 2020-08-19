@@ -45,6 +45,10 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
         case 0xC:
             return wram[address - 0xC000];
 
+        // [$D000 - $DFFF] - 4KB Work RAM Bank 1 (WRAM)
+        case 0xD:
+            return wram1[address - 0xD000];
+
         default:
             return 0xFF;
     }
