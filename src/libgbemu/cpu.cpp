@@ -342,6 +342,14 @@ auto CPU::step() noexcept -> void
             jp(true);
             return;
 
+        // PUSH BC
+        case 0xC5:
+            m_bus.write(--reg.sp, reg.b);
+            m_bus.write(--reg.sp, reg.c);
+
+            reg.pc++;
+            return;
+
         // RET
         case 0xC9:
             ret(true);
