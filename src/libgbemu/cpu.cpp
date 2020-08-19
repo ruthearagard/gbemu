@@ -96,6 +96,14 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // LD HL, $imm16
+        case 0x21:
+            reg.l = m_bus.read(reg.pc + 1);
+            reg.h = m_bus.read(reg.pc + 2);
+
+            reg.pc += 3;
+            return;
+
         // JP $imm16
         case 0xC3:
             jp(true);
