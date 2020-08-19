@@ -265,6 +265,20 @@ auto CPU::step() noexcept -> void
             jp(true);
             return;
 
+        // LD ($imm16), A
+        case 0xEA:
+        {
+            const uint8_t lo{ m_bus.read(reg.pc + 1) };
+            const uint8_t hi{ m_bus.read(reg.pc + 2) };
+
+            const uint16_t address = (hi << 8) | lo;
+
+            m_bus.write(address, reg.a);
+            reg.pc += 3;
+
+            return;
+        }
+
         // DI
         case 0xF3:
             reg.pc++;
