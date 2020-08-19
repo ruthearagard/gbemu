@@ -65,6 +65,15 @@ namespace GameBoy
             uint16_t sp;
         } reg;
 
+        // Flag register bits
+        enum Flag : unsigned int
+        {
+            Zero      = 1 << 7,
+            Subtract  = 1 << 6,
+            HalfCarry = 1 << 5,
+            Carry     = 1 << 4
+        };
+
         // Returns the value of the `BC` register pair.
         auto bc() const noexcept -> uint16_t;
 
@@ -78,6 +87,9 @@ namespace GameBoy
         auto af() const noexcept -> uint16_t;
 
     private:
+        // Handles the `INC r` instruction.
+        auto inc(uint8_t r) noexcept -> uint8_t;
+
         // Handles the `JP cond, $imm16` instruction.
         auto jp(const bool condition_met) noexcept -> void;
 

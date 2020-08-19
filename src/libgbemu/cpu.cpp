@@ -49,6 +49,33 @@ CPU::CPU(SystemBus& bus) : m_bus(bus)
     reset();
 }
 
+// Handles the `INC r` instruction.
+auto CPU::inc(uint8_t r) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+
+    r++;
+
+    if ((r & 0x0F) == 0x0F)
+    {
+        reg.f |= Flag::HalfCarry;
+    }
+    else
+    {
+        reg.f &= ~Flag::HalfCarry;
+    }
+
+    if (r == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+    return r;
+}
+
 // Handles the `JP cond, $imm16` instruction.
 auto CPU::jp(const bool condition_met) noexcept -> void
 {
@@ -114,6 +141,13 @@ auto CPU::step() noexcept -> void
         // LD (DE), A
         case 0x12:
             m_bus.write(de(), reg.a);
+            reg.pc++;
+
+            return;
+
+        // INC E
+        case 0x1C:
+            reg.e = inc(reg.e);
             reg.pc++;
 
             return;
