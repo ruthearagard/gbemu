@@ -128,20 +128,15 @@ auto CPU::sub(const uint8_t subtrahend,
     reg.f |= Flag::Subtract;
 
     bool discard_result{ false };
-    uint8_t diff;
+    uint8_t diff = reg.a - subtrahend;
 
     if (flag == ALUFlag::WithCarry)
     {
         const bool carry{ (reg.f & Flag::Carry) != 0 };
-        diff = reg.a - subtrahend - carry;
+        diff -= carry;
     }
-    else if (flag == ALUFlag::WithoutCarry)
+    else if (flag == ALUFlag::DiscardResult)
     {
-        diff = reg.a - subtrahend;
-    }
-    else
-    {
-        diff = reg.a - subtrahend;
         discard_result = true;
     }
 

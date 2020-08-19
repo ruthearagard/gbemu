@@ -118,7 +118,7 @@ namespace GameBoy
         // SBC A, `subtrahend`:        `ALUFlag::WithCarry`
         // CP `subtrahend`:            `ALUFlag::DiscardResult`
         auto sub(const uint8_t subtrahend,
-                 const ALUFlag flag) noexcept -> void;
+                 const ALUFlag flag = ALUFlag::WithoutCarry) noexcept -> void;
 
         // Handles the `RET cond` instruction.
         auto ret(const bool condition_met) -> void;
