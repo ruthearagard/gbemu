@@ -246,6 +246,13 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // LD A, $imm8
+        case 0x3E:
+            reg.a = m_bus.read(reg.pc + 1);
+            reg.pc += 2;
+
+            return;
+
         // LD B, A
         case 0x47:
             reg.b = reg.a;
