@@ -253,6 +253,11 @@ auto CPU::step() noexcept -> void
             jp(true);
             return;
 
+        // DI
+        case 0xF3:
+            reg.pc++;
+            return;
+
         default:
             __debugbreak();
     }
