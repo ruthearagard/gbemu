@@ -298,6 +298,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // JR Z, $branch
+        case 0x28:
+            jr(reg.f & Flag::Zero);
+            return;
+
         // LD A, (HL+)
         case 0x2A:
         {
