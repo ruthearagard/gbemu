@@ -133,6 +133,27 @@ auto CPU::jp(const bool condition_met) noexcept -> void
     }
 }
 
+// Handles the `CALL cond, $imm16` instruction.
+auto CPU::call(const bool condition_met) noexcept -> void
+{
+    if (condition_met)
+    {
+        const uint8_t lo{ m_bus.read(reg.pc + 1) };
+        const uint8_t hi{ m_bus.read(reg.pc + 2) };
+
+        reg.pc += 3;
+
+        m_bus.write(--reg.sp, reg.pc >> 8);
+        m_bus.write(--reg.sp, reg.pc & 0x00FF);
+
+        reg.pc = (hi << 8) | lo;
+    }
+    else
+    {
+        reg.pc += 3;
+    }
+}
+
 // Resets the CPU to the startup state.
 auto CPU::reset() noexcept -> void
 {
@@ -270,6 +291,11 @@ auto CPU::step() noexcept -> void
         // JP $imm16
         case 0xC3:
             jp(true);
+            return;
+
+        // CALL $imm16
+        case 0xCD:
+            call(true);
             return;
 
         // LDH ($imm8), A
