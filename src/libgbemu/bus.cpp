@@ -41,6 +41,10 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
         case 0x4 ... 0x7:
             return m_cart->read(address);
 
+        // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
+        case 0xC:
+            return wram[address - 0xC000];
+
         default:
             return 0xFF;
     }
