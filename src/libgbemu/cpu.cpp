@@ -234,6 +234,18 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // LD SP, $imm16
+        case 0x31:
+        {
+            const uint8_t lo{ m_bus.read(reg.pc + 1) };
+            const uint8_t hi{ m_bus.read(reg.pc + 2) };
+
+            reg.sp = (hi << 8) | lo;
+            reg.pc += 3;
+
+            return;
+        }
+
         // LD B, A
         case 0x47:
             reg.b = reg.a;
