@@ -384,6 +384,14 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // PUSH AF
+        case 0xF5:
+            m_bus.write(--reg.sp, reg.a);
+            m_bus.write(--reg.sp, reg.f);
+
+            reg.pc++;
+            return;
+
         default:
             __debugbreak();
     }
