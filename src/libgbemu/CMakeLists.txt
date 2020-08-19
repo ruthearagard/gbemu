@@ -25,8 +25,14 @@
 # reliably, there is still a cost to perform the check on every rebuild."
 #
 # Source (heh): https://cmake.org/cmake/help/v3.13/command/file.html#filesystem
-set(SRCS bus.cpp cart.cpp cpu.cpp gb.cpp)
-set(HDRS include/bus.h include/cart.h include/cpu.h include/gb.h)
+set(SRCS apu.cpp bus.cpp cart.cpp cpu.cpp gb.cpp timer.cpp)
+
+set(HDRS include/apu.h
+         include/bus.h
+         include/cart.h
+         include/cpu.h
+         include/gb.h
+         include/timer.h)
 
 add_library(gbemu STATIC ${SRCS} ${HDRS})
 

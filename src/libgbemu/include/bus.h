@@ -30,6 +30,12 @@
 // Required for `std::unique_ptr<>`.
 #include <memory>
 
+// Required for the `GameBoy::APU` class.
+#include "apu.h"
+
+// Required for the `GameBoy::Timer` class.
+#include "timer.h"
+
 namespace GameBoy
 {
     // Forward declaration
@@ -57,6 +63,18 @@ namespace GameBoy
 
         // [$D000 - $DFFF] - 4KB Work RAM Bank 1 (WRAM)
         std::array<uint8_t, 4096> wram1;
+
+        // $FF0F - IF - Interrupt Flag (R/W)
+        uint8_t interrupt_flag;
+
+        // $FFFF - IE - Interrupt Enable (R/W)
+        uint8_t interrupt_enable;
+
+        // APU (audio processing unit) hardware instance
+        APU apu;
+
+        // Timer hardware instance
+        Timer timer;
 
     private:
         std::shared_ptr<Cartridge> m_cart;

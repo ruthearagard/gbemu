@@ -68,6 +68,43 @@ auto SystemBus::write(const uint16_t address,
             wram1[address - 0xD000] = data;
             return;
 
+        case 0xF:
+            switch (address & 0x0FFF)
+            {
+                // $FF07 - TAC - Timer Control (R/W)
+                case 0xF07:
+                    timer.TAC = data;
+                    return;
+
+                // $FF0F - IF - Interrupt Flag (R/W)
+                case 0xF0F:
+                    interrupt_flag = data;
+                    return;
+
+                // $FF24 - NR50 - Channel control / ON-OFF / Volume (R/W)
+                case 0xF24:
+                    apu.NR50 = data;
+                    return;
+
+                // $FF25 - NR51 - Selection of Sound output terminal (R/W)
+                case 0xF25:
+                    apu.NR51 = data;
+                    return;
+
+                // $FF26 - NR52 - Sound on/off
+                case 0xF26:
+                    apu.NR52 = data;
+                    return;
+
+                // $FFFF - IE - Interrupt Enable (R/W)
+                case 0xFFF:
+                    interrupt_enable = data;
+                    return;
+
+                default:
+                    __debugbreak();
+            }
+
         default:
             __debugbreak();
     }
