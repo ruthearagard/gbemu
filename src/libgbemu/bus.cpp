@@ -63,6 +63,11 @@ auto SystemBus::write(const uint16_t address,
             wram[address - 0xC000] = data;
             return;
 
+        // [$D000 - $DFFF] - 4KB Work RAM Bank 1 (WRAM)
+        case 0xD:
+            wram1[address - 0xD000] = data;
+            return;
+
         default:
             __debugbreak();
     }

@@ -55,6 +55,9 @@ namespace GameBoy
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
         std::array<uint8_t, 4096> wram;
 
+        // [$D000 - $DFFF] - 4KB Work RAM Bank 1 (WRAM)
+        std::array<uint8_t, 4096> wram1;
+
     private:
         std::shared_ptr<Cartridge> m_cart;
     };
