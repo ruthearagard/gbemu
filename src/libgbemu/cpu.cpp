@@ -428,6 +428,14 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // POP BC
+        case 0xC1:
+            reg.c = m_bus.read(reg.sp++);
+            reg.b = m_bus.read(reg.sp++);
+
+            reg.pc++;
+            return;
+
         // JP $imm16
         case 0xC3:
             jp(true);
