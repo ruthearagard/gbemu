@@ -117,6 +117,22 @@ auto CPU::jr(const bool condition_met) -> void
     }
 }
 
+// Handles the `RET cond` instruction.
+auto CPU::ret(const bool condition_met) -> void
+{
+    if (condition_met)
+    {
+        const uint8_t lo{ m_bus.read(reg.sp++) };
+        const uint8_t hi{ m_bus.read(reg.sp++) };
+
+        reg.pc = (hi << 8) | lo;
+    }
+    else
+    {
+        reg.pc++;
+    }
+}
+
 // Handles the `JP cond, $imm16` instruction.
 auto CPU::jp(const bool condition_met) noexcept -> void
 {
@@ -310,6 +326,11 @@ auto CPU::step() noexcept -> void
         // JP $imm16
         case 0xC3:
             jp(true);
+            return;
+
+        // RET
+        case 0xC9:
+            ret(true);
             return;
 
         // CALL $imm16

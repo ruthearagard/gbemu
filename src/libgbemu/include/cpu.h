@@ -96,6 +96,9 @@ namespace GameBoy
         // Handles the `JR cond, $branch` instruction.
         auto jr(const bool condition_met) -> void;
 
+        // Handles the `RET cond` instruction.
+        auto ret(const bool condition_met) -> void;
+
         // Handles the `JP cond, $imm16` instruction.
         auto jp(const bool condition_met) noexcept -> void;
 
