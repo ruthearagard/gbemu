@@ -52,6 +52,7 @@ namespace GameBoy
             uint8_t h;
             uint8_t l;
 
+            // Accumulator
             uint8_t a;
 
             // Flag register. Only the 4 upper bits are used; the lower 4 bits
@@ -72,6 +73,21 @@ namespace GameBoy
             Subtract  = 1 << 6,
             HalfCarry = 1 << 5,
             Carry     = 1 << 4
+        };
+
+        // ALU function specifiers
+        enum class ALUFlag
+        {
+            // The operation does not take the carry flag into account.
+            // This is the default behavior for all ALU operations.
+            WithoutCarry,
+
+            // The operation takes the carry flag into account.
+            WithCarry,
+
+            // The flag register is updated, but the result is not stored into
+            // the Accumulator (register A).
+            DiscardResult
         };
 
         // Returns the value of the `BC` register pair.
@@ -95,6 +111,14 @@ namespace GameBoy
 
         // Handles the `JR cond, $branch` instruction.
         auto jr(const bool condition_met) -> void;
+
+        // Handles a subtraction instruction, based on `flag`:
+        //
+        // SUB `subtrahend` (default): `ALUFlag::WithoutCarry`
+        // SBC A, `subtrahend`:        `ALUFlag::WithCarry`
+        // CP `subtrahend`:            `ALUFlag::DiscardResult`
+        auto sub(const uint8_t subtrahend,
+                 const ALUFlag flag) noexcept -> void;
 
         // Handles the `RET cond` instruction.
         auto ret(const bool condition_met) -> void;

@@ -117,6 +117,67 @@ auto CPU::jr(const bool condition_met) -> void
     }
 }
 
+// Handles a subtraction instruction, based on `flag`:
+//
+// SUB `subtrahend` (default): `ALUFlag::WithoutCarry`
+// SBC A, `subtrahend`:        `ALUFlag::WithCarry`
+// CP `subtrahend`:            `ALUFlag::DiscardResult`
+auto CPU::sub(const uint8_t subtrahend,
+              const ALUFlag flag) noexcept -> void
+{
+    reg.f |= Flag::Subtract;
+
+    bool discard_result{ false };
+    uint8_t diff;
+
+    if (flag == ALUFlag::WithCarry)
+    {
+        const bool carry{ (reg.f & Flag::Carry) != 0 };
+        diff = reg.a - subtrahend - carry;
+    }
+    else if (flag == ALUFlag::WithoutCarry)
+    {
+        diff = reg.a - subtrahend;
+    }
+    else
+    {
+        diff = reg.a - subtrahend;
+        discard_result = true;
+    }
+
+    if (diff == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+
+    if ((reg.a ^ subtrahend ^ diff) & 0x10)
+    {
+        reg.f |= Flag::HalfCarry;
+    }
+    else
+    {
+        reg.f &= ~Flag::HalfCarry;
+    }
+
+    if (reg.a < subtrahend)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    if (!discard_result)
+    {
+        reg.a = diff;
+    }
+}
+
 // Handles the `RET cond` instruction.
 auto CPU::ret(const bool condition_met) -> void
 {
@@ -467,6 +528,17 @@ auto CPU::step() noexcept -> void
 
             reg.pc++;
             return;
+
+        // CP $imm8
+        case 0xFE:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            sub(imm, ALUFlag::DiscardResult);
+            reg.pc += 2;
+
+            return;
+        }
 
         default:
             __debugbreak();
