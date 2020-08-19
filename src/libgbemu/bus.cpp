@@ -50,6 +50,7 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
             return wram1[address - 0xD000];
 
         default:
+            __debugbreak();
             return 0xFF;
     }
 }
