@@ -288,6 +288,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD A, L
+        case 0x7D:
+            reg.a = reg.l;
+            reg.pc++;
+
+            return;
+
         // JP $imm16
         case 0xC3:
             jp(true);
