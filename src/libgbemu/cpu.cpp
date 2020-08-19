@@ -359,6 +359,14 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // OR C
+        case 0xB1:
+            reg.a |= reg.c;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
         // JP $imm16
         case 0xC3:
             jp(true);
