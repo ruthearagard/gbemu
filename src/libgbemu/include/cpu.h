@@ -90,6 +90,9 @@ namespace GameBoy
         // Handles the `INC r` instruction.
         auto inc(uint8_t r) noexcept -> uint8_t;
 
+        // Handles the `JR cond, $branch` instruction.
+        auto jr(const bool condition_met) -> void;
+
         // Handles the `JP cond, $imm16` instruction.
         auto jp(const bool condition_met) noexcept -> void;
 

@@ -76,6 +76,20 @@ auto CPU::inc(uint8_t r) noexcept -> uint8_t
     return r;
 }
 
+// Handles the `JR cond, $branch` instruction.
+auto CPU::jr(const bool condition_met) -> void
+{
+    if (condition_met)
+    {
+        const int8_t offset{ static_cast<int8_t>(m_bus.read(reg.pc + 1)) };
+        reg.pc += offset + 2;
+    }
+    else
+    {
+        reg.pc += 2;
+    }
+}
+
 // Handles the `JP cond, $imm16` instruction.
 auto CPU::jp(const bool condition_met) noexcept -> void
 {
@@ -150,6 +164,11 @@ auto CPU::step() noexcept -> void
             reg.e = inc(reg.e);
             reg.pc++;
 
+            return;
+
+        // JR NZ, $branch
+        case 0x20:
+            jr(!(reg.f & Flag::Zero));
             return;
 
         // LD HL, $imm16
