@@ -49,6 +49,22 @@ CPU::CPU(SystemBus& bus) : m_bus(bus)
     reset();
 }
 
+// Handles the `JP cond, $imm16` instruction.
+auto CPU::jp(const bool condition_met) noexcept -> void
+{
+    if (condition_met)
+    {
+        const uint8_t lo{ m_bus.read(reg.pc + 1) };
+        const uint8_t hi{ m_bus.read(reg.pc + 2) };
+
+        reg.pc = (hi << 8) | lo;
+    }
+    else
+    {
+        reg.pc += 3;
+    }
+}
+
 // Resets the CPU to the startup state.
 auto CPU::reset() noexcept -> void
 {
@@ -78,6 +94,11 @@ auto CPU::step() noexcept -> void
         // NOP
         case 0x00:
             reg.pc++;
+            return;
+
+        // JP $imm16
+        case 0xC3:
+            jp(true);
             return;
 
         default:

@@ -78,6 +78,9 @@ namespace GameBoy
         auto af() const noexcept -> uint16_t;
 
     private:
+        // Handles the `JP cond, $imm16` instruction.
+        auto jp(const bool condition_met) noexcept -> void;
+
         // System bus instance
         SystemBus& m_bus;
     };
