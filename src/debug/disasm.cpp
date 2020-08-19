@@ -36,7 +36,11 @@ auto Disassembler::before() noexcept -> void
 
     auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc)] };
 
-    if (instruction == "CB")
+    if (instruction.empty())
+    {
+        instruction = "illegal";
+    }
+    else if (instruction == "CB")
     {
         instruction = cb_opcodes[m_bus.read(m_cpu.reg.pc + 1)];
     }
