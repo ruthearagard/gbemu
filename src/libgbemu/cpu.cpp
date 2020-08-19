@@ -96,6 +96,14 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // LD DE, $imm16
+        case 0x11:
+            reg.e = m_bus.read(reg.pc + 1);
+            reg.d = m_bus.read(reg.pc + 2);
+
+            reg.pc += 3;
+            return;
+
         // LD HL, $imm16
         case 0x21:
             reg.l = m_bus.read(reg.pc + 1);
