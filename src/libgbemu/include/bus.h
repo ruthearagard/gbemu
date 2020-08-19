@@ -21,6 +21,9 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
+// Required for `std::array<>`.
+#include <array>
+
 // Required for fixed-width integer types (e.g. `uint8_t`).
 #include <cstdint>
 
@@ -48,6 +51,9 @@ namespace GameBoy
         // This function incurs 1 m-cycle (or 4 T-cycles).
         auto write(const uint16_t address,
                    const uint8_t data) noexcept -> void;
+
+        // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
+        std::array<uint8_t, 4096> wram;
 
     private:
         std::shared_ptr<Cartridge> m_cart;

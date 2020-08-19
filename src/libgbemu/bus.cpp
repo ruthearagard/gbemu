@@ -52,5 +52,14 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
 auto SystemBus::write(const uint16_t address,
                       const uint8_t data) noexcept -> void
 {
-    __debugbreak();
+    switch (address >> 12)
+    {
+        // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
+        case 0xC:
+            wram[address - 0xC000] = data;
+            return;
+
+        default:
+            __debugbreak();
+    }
 }
