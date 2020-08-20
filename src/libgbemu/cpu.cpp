@@ -1343,6 +1343,18 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // OR $imm8
+        case 0xF6:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            reg.a |= imm;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc += 2;
+            return;
+        }
+
         // LD HL, SP+r8
         case 0xF8:
         {
