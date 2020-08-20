@@ -440,6 +440,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // INC C
+        case 0x0C:
+            reg.c = inc(reg.c);
+            reg.pc++;
+
+            return;
+
         // DEC C
         case 0x0D:
             reg.c = dec(reg.c);
