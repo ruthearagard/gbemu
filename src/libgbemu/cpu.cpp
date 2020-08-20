@@ -1221,6 +1221,40 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // ADD SP, $simm8
+        case 0xE8:
+        {
+            reg.f &= ~Flag::Zero;
+            reg.f &= ~Flag::Subtract;
+
+            const int8_t imm{ static_cast<int8_t>(m_bus.read(reg.pc + 1)) };
+
+            const unsigned int sum = reg.sp + imm;
+
+            if ((reg.sp ^ imm ^ sum) & 0x10)
+            {
+                reg.f |= Flag::HalfCarry;
+            }
+            else
+            {
+                reg.f &= ~Flag::HalfCarry;
+            }
+
+            if (sum > 0xFFFF)
+            {
+                reg.f |= Flag::Carry;
+            }
+            else
+            {
+                reg.f &= ~Flag::Carry;
+            }
+
+            reg.sp = static_cast<uint16_t>(sum);
+            reg.pc += 2;
+
+            return;
+        }
+
         // JP (HL)
         case 0xE9:
             reg.pc = hl();
