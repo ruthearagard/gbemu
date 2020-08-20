@@ -103,6 +103,39 @@ auto CPU::dec(uint8_t r) noexcept -> uint8_t
     return r;
 }
 
+// Handles the `ADD HL, xx` instruction.
+auto CPU::add_hl(const uint16_t pair) noexcept -> void
+{
+    reg.f &= ~Flag::Subtract;
+
+    const uint16_t m_hl{ hl() };
+
+    unsigned int result = m_hl + pair;
+
+    if ((m_hl ^ pair ^ result) & 0x1000)
+    {
+        reg.f |= Flag::HalfCarry;
+    }
+    else
+    {
+        reg.f &= ~Flag::HalfCarry;
+    }
+
+    if (result > 0xFFFF)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    const uint16_t sum{ static_cast<uint16_t>(result) };
+
+    reg.h = sum >> 8;
+    reg.l = sum & 0x00FF;
+}
+
 // Handles the `JR cond, $branch` instruction.
 auto CPU::jr(const bool condition_met) -> void
 {
@@ -542,6 +575,13 @@ auto CPU::step() noexcept -> void
         // JR Z, $branch
         case 0x28:
             jr(reg.f & Flag::Zero);
+            return;
+
+        // ADD HL, HL
+        case 0x29:
+            add_hl(hl());
+            reg.pc++;
+
             return;
 
         // LD A, (HL+)
