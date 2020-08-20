@@ -620,6 +620,14 @@ auto CPU::step() noexcept -> void
             call(true);
             return;
 
+        // PUSH DE
+        case 0xD5:
+            m_bus.write(--reg.sp, reg.d);
+            m_bus.write(--reg.sp, reg.e);
+
+            reg.pc++;
+            return;
+
         // SUB $imm8
         case 0xD6:
         {
