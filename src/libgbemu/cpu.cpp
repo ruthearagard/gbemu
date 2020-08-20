@@ -380,6 +380,13 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // INC L
+        case 0x2C:
+            reg.l = inc(reg.l);
+            reg.pc++;
+
+            return;
+
         // LD SP, $imm16
         case 0x31:
         {
