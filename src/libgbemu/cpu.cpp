@@ -652,6 +652,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD A, C
+        case 0x79:
+            reg.a = reg.c;
+            reg.pc++;
+
+            return;
+
         // LD A, H
         case 0x7C:
             reg.a = reg.h;
