@@ -845,6 +845,17 @@ auto CPU::step() noexcept -> void
             call(true);
             return;
 
+        // ADC A, $imm8
+        case 0xCE:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            add(imm, ALUFlag::WithCarry);
+            reg.pc += 2;
+
+            return;
+        }
+
         // POP DE
         case 0xD1:
             reg.e = m_bus.read(reg.sp++);
