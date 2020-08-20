@@ -21,6 +21,9 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
+// Required for `std::array<>`.
+#include <array>
+
 // Required for fixed-width integer types (e.g. `uint8_t`).
 #include <cstdint>
 
@@ -48,5 +51,8 @@ namespace GameBoy
         // 0 through 153. The values between 144 and 153 indicate the V-Blank
         // period. Writing will reset the counter.
         uint8_t LY = 0x90;
+
+        // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
+        std::array<uint8_t, 8192> vram;
     };
 }

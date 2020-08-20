@@ -75,6 +75,11 @@ auto SystemBus::write(const uint16_t address,
 {
     switch (address >> 12)
     {
+        // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
+        case 0x8 ... 0x9:
+            ppu.vram[address - 0x8000] = data;
+            return;
+
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
         case 0xC:
             wram[address - 0xC000] = data;
