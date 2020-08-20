@@ -482,6 +482,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // DEC L
+        case 0x2D:
+            reg.l = dec(reg.l);
+            reg.pc++;
+
+            return;
+
         // LD SP, $imm16
         case 0x31:
         {
