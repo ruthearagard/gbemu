@@ -801,6 +801,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RET Z
+        case 0xC8:
+            ret(reg.f & Flag::Zero);
+            return;
+
         // RET
         case 0xC9:
             ret(true);
