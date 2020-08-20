@@ -1318,6 +1318,43 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // LD HL, SP+r8
+        case 0xF8:
+        {
+            reg.f &= ~Flag::Zero;
+            reg.f &= ~Flag::Subtract;
+
+            const int8_t imm{ static_cast<int8_t>(m_bus.read(reg.pc + 1)) };
+
+            const unsigned int sum = reg.sp + imm;
+
+            if ((reg.sp ^ imm ^ sum) & 0x10)
+            {
+                reg.f |= Flag::HalfCarry;
+            }
+            else
+            {
+                reg.f &= ~Flag::HalfCarry;
+            }
+
+            if (sum > 0xFFFF)
+            {
+                reg.f |= Flag::Carry;
+            }
+            else
+            {
+                reg.f &= ~Flag::Carry;
+            }
+
+            const uint16_t final{ static_cast<uint16_t>(sum) };
+
+            reg.h = final >> 8;
+            reg.l = final & 0x00FF;
+
+            reg.pc += 2;
+            return;
+        }
+
         // LD SP, HL
         case 0xF9:
             reg.sp = hl();
