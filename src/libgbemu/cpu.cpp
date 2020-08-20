@@ -1026,6 +1026,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // JP (HL)
+        case 0xE9:
+            reg.pc = hl();
+            return;
+
         // LD ($imm16), A
         case 0xEA:
         {
