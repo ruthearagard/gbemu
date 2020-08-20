@@ -97,6 +97,15 @@ auto SystemBus::write(const uint16_t address,
         case 0xF:
             switch (address & 0x0FFF)
             {
+                // $FF01 - SB - Serial transfer data (R/W)
+                case 0xF01:
+                    printf("%c", data);
+                    return;
+
+                // $FF02 - SC - Serial Transfer Control (R/W)
+                case 0xF02:
+                    return;
+
                 // $FF07 - TAC - Timer Control (R/W)
                 case 0xF07:
                     timer.TAC = data;
