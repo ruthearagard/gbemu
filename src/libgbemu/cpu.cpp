@@ -452,6 +452,13 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // ADD HL, BC
+        case 0x09:
+            add_hl(bc());
+            reg.pc++;
+
+            return;
+
         // DEC BC
         case 0x0B:
         {
@@ -533,6 +540,13 @@ auto CPU::step() noexcept -> void
         // JR $branch
         case 0x18:
             jr(true);
+            return;
+
+        // ADD HL, DE
+        case 0x19:
+            add_hl(de());
+            reg.pc++;
+
             return;
 
         // LD A, (DE)
