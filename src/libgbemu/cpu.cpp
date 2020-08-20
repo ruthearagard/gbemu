@@ -565,6 +565,11 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // JR NC, $branch
+        case 0x30:
+            jr(!(reg.f & Flag::Carry));
+            return;
+
         // LD SP, $imm16
         case 0x31:
         {
