@@ -494,6 +494,20 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // LD (HL-), A
+        case 0x32:
+        {
+            uint16_t m_hl{ hl() };
+
+            m_bus.write(m_hl--, reg.a);
+
+            reg.h = m_hl >> 8;
+            reg.l = m_hl & 0x00FF;
+
+            reg.pc++;
+            return;
+        }
+
         // LD A, $imm8
         case 0x3E:
             reg.a = m_bus.read(reg.pc + 1);
