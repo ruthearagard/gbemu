@@ -334,6 +334,13 @@ auto CPU::step() noexcept -> void
             jr(true);
             return;
 
+        // LD A, (DE)
+        case 0x1A:
+            reg.a = m_bus.read(de());
+            reg.pc++;
+
+            return;
+
         // INC E
         case 0x1C:
             reg.e = inc(reg.e);
