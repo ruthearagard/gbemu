@@ -873,6 +873,11 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // JP NZ, $imm16
+        case 0xC2:
+            jp(!(reg.f & Flag::Zero));
+            return;
+
         // JP $imm16
         case 0xC3:
             jp(true);
