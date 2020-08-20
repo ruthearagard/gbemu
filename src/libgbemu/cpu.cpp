@@ -865,6 +865,13 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // CP E
+        case 0xBB:
+            sub(reg.e, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
         // POP BC
         case 0xC1:
             reg.c = m_bus.read(reg.sp++);
