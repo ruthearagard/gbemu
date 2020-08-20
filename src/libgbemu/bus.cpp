@@ -56,6 +56,10 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
                 case 0xF44:
                     return ppu.LY;
 
+                // [$FF80 - $FFFE] - High RAM (HRAM)
+                case 0xF80 ... 0xFFE:
+                    return hram[address - 0xFF80];
+
                 default:
                     __debugbreak();
                     return 0xFF;
