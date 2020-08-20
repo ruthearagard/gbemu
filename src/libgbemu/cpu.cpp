@@ -361,6 +361,13 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // INC H
+        case 0x24:
+            reg.h = inc(reg.h);
+            reg.pc++;
+
+            return;
+
         // JR Z, $branch
         case 0x28:
             jr(reg.f & Flag::Zero);
