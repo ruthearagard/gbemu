@@ -1127,7 +1127,7 @@ auto CPU::step() noexcept -> void
 
         // POP AF
         case 0xF1:
-            reg.f = m_bus.read(reg.sp++);
+            reg.f = m_bus.read(reg.sp++) & ~0x0F;
             reg.a = m_bus.read(reg.sp++);
 
             reg.pc++;
