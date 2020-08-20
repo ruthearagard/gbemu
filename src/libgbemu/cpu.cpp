@@ -993,6 +993,13 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SWAP A
+                case 0x37:
+                    reg.a = ((reg.a & 0x0F) << 4) | (reg.a >> 4);
+                    reg.pc += 2;
+
+                    return;
+
                 // SRL B
                 case 0x38:
                     reg.b = srl(reg.b);
