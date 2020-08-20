@@ -854,6 +854,18 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // XOR $imm8
+        case 0xEE:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            reg.a ^= imm;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc += 2;
+            return;
+        }
+
         // LDH A, ($imm8)
         case 0xF0:
         {
