@@ -678,6 +678,20 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // DEC HL
+        case 0x2B:
+        {
+            uint16_t m_hl{ hl() };
+
+            m_hl--;
+
+            reg.h = m_hl >> 8;
+            reg.l = m_hl & 0x00FF;
+
+            reg.pc++;
+            return;
+        }
+
         // INC L
         case 0x2C:
             reg.l = inc(reg.l);
