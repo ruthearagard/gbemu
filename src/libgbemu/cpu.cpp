@@ -1034,6 +1034,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RET C
+        case 0xD8:
+            ret(reg.f & Flag::Carry);
+            return;
+
         // LDH ($imm8), A
         case 0xE0:
         {
