@@ -54,7 +54,7 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
             {
                 // $FF44 - LY - LCDC Y-Coordinate (R)
                 case 0xF44:
-                    return 0x90;
+                    return ppu.LY;
 
                 default:
                     __debugbreak();

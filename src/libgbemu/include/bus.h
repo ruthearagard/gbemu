@@ -33,6 +33,9 @@
 // Required for the `GameBoy::APU` class.
 #include "apu.h"
 
+// Required for the `GameBoy::PPU` class.
+#include "ppu.h"
+
 // Required for the `GameBoy::Timer` class.
 #include "timer.h"
 
@@ -75,6 +78,9 @@ namespace GameBoy
 
         // APU (audio processing unit) hardware instance
         APU apu;
+
+        // PPU (picture processing unit) hardware instance
+        PPU ppu;
 
         // Timer hardware instance
         Timer timer;
