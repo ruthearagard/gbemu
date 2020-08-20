@@ -206,20 +206,17 @@ auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
 {
     reg.f |= Flag::Subtract;
 
-    bool discard_result{ false };
-    uint8_t diff = reg.a - subtrahend;
+    int diff{ reg.a - subtrahend };
 
     if (flag == ALUFlag::WithCarry)
     {
         const bool carry{ (reg.f & Flag::Carry) != 0 };
         diff -= carry;
     }
-    else if (flag == ALUFlag::DiscardResult)
-    {
-        discard_result = true;
-    }
 
-    if (diff == 0)
+    const uint8_t d_diff{ static_cast<uint8_t>(diff) };
+
+    if (d_diff == 0)
     {
         reg.f |= Flag::Zero;
     }
@@ -237,7 +234,7 @@ auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
         reg.f &= ~Flag::HalfCarry;
     }
 
-    if (reg.a < subtrahend)
+    if (diff < 0)
     {
         reg.f |= Flag::Carry;
     }
@@ -246,9 +243,9 @@ auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
         reg.f &= ~Flag::Carry;
     }
 
-    if (!discard_result)
+    if (flag != ALUFlag::DiscardResult)
     {
-        reg.a = diff;
+        reg.a = d_diff;
     }
 }
 
