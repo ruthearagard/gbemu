@@ -957,6 +957,14 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // XOR L
+        case 0xAD:
+            reg.a ^= reg.l;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
         // XOR A
         case 0xAF:
             reg.a ^= reg.a;
