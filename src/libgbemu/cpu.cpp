@@ -44,7 +44,7 @@ auto CPU::af() const noexcept -> uint16_t
     return (reg.a << 8) | reg.f;
 }
 
-CPU::CPU(SystemBus& bus) : m_bus(bus)
+CPU::CPU(SystemBus& bus) noexcept : m_bus(bus)
 {
     reset();
 }

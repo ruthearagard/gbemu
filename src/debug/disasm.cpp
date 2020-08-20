@@ -25,8 +25,8 @@
 #include "../libgbemu/include/cpu.h"
 
 Disassembler::Disassembler(const GameBoy::SystemBus& bus,
-                           const GameBoy::CPU& cpu) noexcept : m_cpu(cpu),
-                                                               m_bus(bus)
+                           const GameBoy::CPU& cpu) noexcept : m_bus(bus),
+                                                               m_cpu(cpu)
 { }
 
 // Disassembles the current instruction before execution.

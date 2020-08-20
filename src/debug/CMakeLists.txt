@@ -41,4 +41,9 @@ set_target_properties(gbemu_debugger PROPERTIES
                       CXX_EXTENSIONS ON)
 
 target_link_libraries(gbemu_debugger PRIVATE gbemu fmt::fmt fmt::fmt-header-only)
-target_compile_options(gbemu_debugger PRIVATE -Wall -Wextra)
+
+target_compile_options(gbemu_debugger PRIVATE -Wno-c++98-compat
+                                              -Wno-c++98-compat-pedantic
+                                              -Wno-gnu
+                                              -Wall
+                                              -Wextra)

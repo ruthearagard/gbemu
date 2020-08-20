@@ -20,7 +20,7 @@
 
 using namespace GameBoy;
 
-Cartridge::Cartridge(const std::vector<uint8_t>& data) noexcept : m_data(data)
+Cartridge::Cartridge(const std::vector<uint8_t>& data) : m_data(data)
 {
     // First, we check to see if the header checksum is valid. We use the
     // `at()` method to access the cartridge data since we're not sure if the

@@ -43,4 +43,8 @@ set_target_properties(gbemu PROPERTIES
                       CXX_EXTENSIONS ON)
 
 target_include_directories(gbemu PRIVATE include)
-target_compile_options(gbemu PRIVATE -Wall -Wextra)
+target_compile_options(gbemu PRIVATE -Wno-c++98-compat
+                                     -Wno-c++98-compat-pedantic
+                                     -Wno-gnu
+                                     -Wall
+                                     -Wextra)

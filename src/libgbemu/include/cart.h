@@ -30,7 +30,7 @@ namespace GameBoy
     {
     public:
         // This will throw `std::runtime_error` if the cartridge data is invalid.
-        explicit Cartridge(const std::vector<uint8_t>& data) noexcept;
+        explicit Cartridge(const std::vector<uint8_t>& data);
 
         // Returns a byte from the cartridge data referenced by memory address
         // `address`.
