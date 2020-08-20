@@ -440,6 +440,21 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD ($imm16), SP
+        case 0x08:
+        {
+            const uint8_t lo{ m_bus.read(reg.pc + 1) };
+            const uint8_t hi{ m_bus.read(reg.pc + 2) };
+
+            const uint16_t address = (hi << 8) | lo;
+
+            m_bus.write(address,     reg.sp & 0x00FF);
+            m_bus.write(address + 1, reg.sp >> 8);
+
+            reg.pc += 3;
+            return;
+        }
+
         // INC C
         case 0x0C:
             reg.c = inc(reg.c);
