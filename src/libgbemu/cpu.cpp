@@ -1233,6 +1233,13 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // LD SP, HL
+        case 0xF9:
+            reg.sp = hl();
+            reg.pc++;
+
+            return;
+
         // LD A, ($imm16)
         case 0xFA:
         {
