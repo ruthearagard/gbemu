@@ -1015,6 +1015,13 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RR E
+                case 0x1B:
+                    reg.e = rr(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
                 // SWAP A
                 case 0x37:
                     reg.a = ((reg.a & 0x0F) << 4) | (reg.a >> 4);
