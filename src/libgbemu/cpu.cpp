@@ -542,6 +542,20 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // DEC DE
+        case 0x1B:
+        {
+            uint16_t m_de{ de() };
+
+            m_de--;
+
+            reg.d = m_de >> 8;
+            reg.e = m_de & 0x00FF;
+
+            reg.pc++;
+            return;
+        }
+
         // INC E
         case 0x1C:
             reg.e = inc(reg.e);
