@@ -1229,7 +1229,7 @@ auto CPU::step() noexcept -> void
 
             const int8_t imm{ static_cast<int8_t>(m_bus.read(reg.pc + 1)) };
 
-            const unsigned int sum = reg.sp + imm;
+            const int sum = reg.sp + imm;
 
             if ((reg.sp ^ imm ^ sum) & 0x10)
             {
@@ -1240,7 +1240,7 @@ auto CPU::step() noexcept -> void
                 reg.f &= ~Flag::HalfCarry;
             }
 
-            if (sum > 0xFFFF)
+            if ((reg.sp ^ imm ^ sum) & 0x100)
             {
                 reg.f |= Flag::Carry;
             }
@@ -1326,7 +1326,7 @@ auto CPU::step() noexcept -> void
 
             const int8_t imm{ static_cast<int8_t>(m_bus.read(reg.pc + 1)) };
 
-            const unsigned int sum = reg.sp + imm;
+            const int sum = reg.sp + imm;
 
             if ((reg.sp ^ imm ^ sum) & 0x10)
             {
@@ -1337,7 +1337,7 @@ auto CPU::step() noexcept -> void
                 reg.f &= ~Flag::HalfCarry;
             }
 
-            if (sum > 0xFFFF)
+            if ((reg.sp ^ imm ^ sum) & 0x100)
             {
                 reg.f |= Flag::Carry;
             }
