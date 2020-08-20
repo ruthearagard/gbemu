@@ -117,13 +117,59 @@ auto CPU::jr(const bool condition_met) -> void
     }
 }
 
+// Handles an addition instruction, based on `flag`:
+//
+// ADD A, `addend` (default): `ALUFlag::WithoutCarry`
+// ADC A, `addend`:           `ALUFlag::WithCarry`
+auto CPU::add(const uint8_t addend, const ALUFlag flag) noexcept -> void
+{
+    reg.f &= ~Flag::Subtract;
+
+    unsigned int result = reg.a + addend;
+
+    if (flag == ALUFlag::WithCarry)
+    {
+        const bool carry{ (reg.f & Flag::Carry) != 0 };
+        result += carry;
+    }
+
+    const uint8_t sum = static_cast<uint8_t>(result);
+
+    if (sum == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+
+    if ((reg.a ^ addend ^ result) & 0x10)
+    {
+        reg.f |= Flag::HalfCarry;
+    }
+    else
+    {
+        reg.f &= ~Flag::HalfCarry;
+    }
+
+    if (result > 0xFF)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+    reg.a = sum;
+}
+
 // Handles a subtraction instruction, based on `flag`:
 //
 // SUB `subtrahend` (default): `ALUFlag::WithoutCarry`
 // SBC A, `subtrahend`:        `ALUFlag::WithCarry`
 // CP `subtrahend`:            `ALUFlag::DiscardResult`
-auto CPU::sub(const uint8_t subtrahend,
-              const ALUFlag flag) noexcept -> void
+auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
 {
     reg.f |= Flag::Subtract;
 
@@ -531,6 +577,17 @@ auto CPU::step() noexcept -> void
 
             reg.pc++;
             return;
+
+        // ADD A, $imm8
+        case 0xC6:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            add(imm);
+
+            reg.pc += 2;
+            return;
+        }
 
         // RET
         case 0xC9:

@@ -37,7 +37,7 @@ namespace GameBoy
         // Bit 7:   Output Vin to SO2 terminal (1=Enable)
         // Bit 6-4: SO2 output level (volume)  (0-7)
         // Bit 3:   Output Vin to SO1 terminal (1=Enable)
-        // Bit 2-0: SO1 output level (volume)  (0 - 7)
+        // Bit 2-0: SO1 output level (volume)  (0-7)
         //
         // The Vin signal is received from the game cartridge bus, allowing
         // external hardware in the cartridge to supply a fifth sound channel,

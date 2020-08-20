@@ -36,7 +36,7 @@ auto main(int argc, char* argv[]) -> int
         return EXIT_FAILURE;
     }
 
-    std::ifstream cart_file
+    std::basic_ifstream<unsigned char> cart_file
     {
         argv[1],         // File path
         std::ios::binary // Open mode
@@ -49,11 +49,11 @@ auto main(int argc, char* argv[]) -> int
         return EXIT_FAILURE;
     }
 
-    std::vector<uint8_t> cart_data;
-
-    std::copy(std::istreambuf_iterator<char>{cart_file},
-              std::istreambuf_iterator<char>{},
-              std::back_inserter(cart_data));
+    std::vector<uint8_t> cart_data
+    {
+        std::istreambuf_iterator<unsigned char>{cart_file}, // File contents
+        {}
+    };
 
     cart_file.close();
 

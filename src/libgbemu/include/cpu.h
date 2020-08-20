@@ -112,6 +112,13 @@ namespace GameBoy
         // Handles the `JR cond, $branch` instruction.
         auto jr(const bool condition_met) -> void;
 
+        // Handles an addition instruction, based on `flag`:
+        //
+        // ADD A, `addend` (default): `ALUFlag::WithoutCarry`
+        // ADC A, `addend`:           `ALUFlag::WithCarry`
+        auto add(const uint8_t addend,
+                 const ALUFlag flag = ALUFlag::WithoutCarry) noexcept -> void;
+
         // Handles a subtraction instruction, based on `flag`:
         //
         // SUB `subtrahend` (default): `ALUFlag::WithoutCarry`
