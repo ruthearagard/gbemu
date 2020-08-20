@@ -727,6 +727,13 @@ auto CPU::step() noexcept -> void
             jr(reg.f & Flag::Carry);
             return;
 
+        // ADD HL, SP
+        case 0x39:
+            add_hl(reg.sp);
+            reg.pc++;
+
+            return;
+
         // DEC SP
         case 0x3B:
             reg.sp--;
