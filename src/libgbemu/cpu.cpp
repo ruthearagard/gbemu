@@ -613,6 +613,17 @@ auto CPU::step() noexcept -> void
             call(true);
             return;
 
+        // SUB $imm8
+        case 0xD6:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            sub(imm);
+            reg.pc += 2;
+
+            return;
+        }
+
         // LDH ($imm8), A
         case 0xE0:
         {
