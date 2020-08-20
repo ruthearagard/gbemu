@@ -279,6 +279,13 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // LB B, $imm8
+        case 0x06:
+            reg.b = m_bus.read(reg.pc + 1);
+            reg.pc += 2;
+
+            return;
+
         // DEC C
         case 0x0D:
             reg.c = dec(reg.c);
