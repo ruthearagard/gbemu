@@ -727,6 +727,13 @@ auto CPU::step() noexcept -> void
             jr(reg.f & Flag::Carry);
             return;
 
+        // DEC SP
+        case 0x3B:
+            reg.sp--;
+            reg.pc++;
+
+            return;
+
         // INC A
         case 0x3C:
             reg.a = inc(reg.a);
