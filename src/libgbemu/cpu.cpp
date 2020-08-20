@@ -722,6 +722,17 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // LD (HL), $imm8
+        case 0x36:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            m_bus.write(hl(), imm);
+            reg.pc += 2;
+
+            return;
+        }
+
         // JR C, $branch
         case 0x38:
             jr(reg.f & Flag::Carry);
