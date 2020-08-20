@@ -824,6 +824,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD (HL), E
+        case 0x73:
+            m_bus.write(hl(), reg.e);
+            reg.pc++;
+
+            return;
+
         // LD (HL), A
         case 0x77:
             m_bus.write(hl(), reg.a);
