@@ -44,6 +44,17 @@ namespace GameBoy
         // Bit 0 - BG Display (0=Off, 1=On)
         uint8_t LCDC;
 
+        // $FF43 - SCX - Scroll X (R/W)
+        //
+        // Specifies the position in the 256x256 pixels BG map (32x32 tiles)
+        // which is to be displayed at the upper/left LCD display position.
+        //
+        // Values in range from 0-255 may be used for X/Y each, the video
+        // controller automatically wraps back to the upper(left) position in
+        // BG map when drawing exceeds the lower(right) border of the BG map
+        // area.
+        uint8_t SCX;
+
         // $FF44 - LY - LCDC Y-Coordinate (R)
         //
         // The LY indicates the vertical line to which the present data is
@@ -51,6 +62,24 @@ namespace GameBoy
         // 0 through 153. The values between 144 and 153 indicate the V-Blank
         // period. Writing will reset the counter.
         uint8_t LY = 0x90;
+
+        // $FF47 - BGP - BG Palette Data (R/W)
+        //
+        // This register assigns gray shades to the color numbers of the BG and
+        // Window tiles.
+        //
+        // Bit 7-6: Shade for Color Number 3
+        // Bit 5-4: Shade for Color Number 2
+        // Bit 3-2: Shade for Color Number 1
+        // Bit 1-0: Shade for Color Number 0
+        //
+        // The four possible gray shades are:
+        //
+        // 0 - White
+        // 1 - Light gray
+        // 2 - Dark gray
+        // 3 - Black
+        uint8_t BGP;
 
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
         std::array<uint8_t, 8192> vram;

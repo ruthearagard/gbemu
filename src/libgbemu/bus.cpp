@@ -123,6 +123,16 @@ auto SystemBus::write(const uint16_t address,
                     ppu.LCDC = data;
                     return;
 
+                // $FF43 - SCX - Scroll X (R/W)
+                case 0xF43:
+                    ppu.SCX = data;
+                    return;
+
+                // $FF47 - BGP - BG Palette Data (R/W)
+                case 0xF47:
+                    ppu.BGP = data;
+                    return;
+
                 // [$FF80 - $FFFE] - High RAM (HRAM)
                 case 0xF80 ... 0xFFE:
                     hram[address - 0xFF80] = data;
