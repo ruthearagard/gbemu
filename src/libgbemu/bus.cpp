@@ -113,6 +113,11 @@ auto SystemBus::write(const uint16_t address,
                     apu.NR52 = data;
                     return;
 
+                // $FF40 - LCDC - LCD Control (R/W)
+                case 0xF40:
+                    ppu.LCDC = data;
+                    return;
+
                 // [$FF80 - $FFFE] - High RAM (HRAM)
                 case 0xF80 ... 0xFFE:
                     hram[address - 0xFF80] = data;
