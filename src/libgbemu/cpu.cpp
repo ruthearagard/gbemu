@@ -1207,6 +1207,16 @@ auto CPU::step() noexcept -> void
             ret(reg.f & Flag::Carry);
             return;
 
+        // SBC A, $imm8
+        case 0xDE:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+            sub(imm, ALUFlag::WithCarry);
+
+            reg.pc += 2;
+            return;
+        }
+
         // LDH ($imm8), A
         case 0xE0:
         {
