@@ -845,6 +845,14 @@ auto CPU::step() noexcept -> void
             call(true);
             return;
 
+        // POP DE
+        case 0xD1:
+            reg.e = m_bus.read(reg.sp++);
+            reg.d = m_bus.read(reg.sp++);
+
+            reg.pc++;
+            return;
+
         // PUSH DE
         case 0xD5:
             m_bus.write(--reg.sp, reg.d);
