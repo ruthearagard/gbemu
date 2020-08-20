@@ -456,6 +456,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD H, $imm8
+        case 0x26:
+            reg.h = m_bus.read(reg.pc + 1);
+            reg.pc += 2;
+
+            return;
+
         // JR Z, $branch
         case 0x28:
             jr(reg.f & Flag::Zero);
