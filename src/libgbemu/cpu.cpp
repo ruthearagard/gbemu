@@ -502,6 +502,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // DEC E
+        case 0x1D:
+            reg.e = dec(reg.e);
+            reg.pc++;
+
+            return;
+
         // RRA
         case 0x1F:
             reg.a = rr(reg.a);
