@@ -375,6 +375,20 @@ auto CPU::step() noexcept -> void
             reg.pc += 3;
             return;
 
+        // LD (HL+), A
+        case 0x22:
+        {
+            uint16_t m_hl{ hl() };
+
+            m_bus.write(m_hl++, reg.a);
+
+            reg.h = m_hl >> 8;
+            reg.l = m_hl & 0x00FF;
+
+            reg.pc++;
+            return;
+        }
+
         // INC HL
         case 0x23:
         {
