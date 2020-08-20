@@ -515,6 +515,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD B, (HL)
+        case 0x46:
+            reg.b = m_bus.read(hl());
+            reg.pc++;
+
+            return;
+
         // LD B, A
         case 0x47:
             reg.b = reg.a;
