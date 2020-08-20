@@ -586,6 +586,18 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // XOR (HL)
+        case 0xAE:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            reg.a ^= data;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+        }
+
         // OR C
         case 0xB1:
             reg.a |= reg.c;
