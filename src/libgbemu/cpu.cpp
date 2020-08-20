@@ -566,6 +566,13 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // OR A
+        case 0xB7:
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
         // POP BC
         case 0xC1:
             reg.c = m_bus.read(reg.sp++);
