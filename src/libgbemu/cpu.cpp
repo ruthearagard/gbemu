@@ -593,6 +593,11 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // DAA
+        case 0x27:
+            reg.pc++;
+            return;
+
         // JR Z, $branch
         case 0x28:
             jr(reg.f & Flag::Zero);
