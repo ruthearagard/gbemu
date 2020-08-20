@@ -701,6 +701,13 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // INC SP
+        case 0x33:
+            reg.sp++;
+            reg.pc++;
+
+            return;
+
         // DEC (HL)
         case 0x35:
         {
