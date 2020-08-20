@@ -856,6 +856,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RET NC
+        case 0xD0:
+            ret(!(reg.f & Flag::Carry));
+            return;
+
         // POP DE
         case 0xD1:
             reg.e = m_bus.read(reg.sp++);
