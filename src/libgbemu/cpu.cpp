@@ -441,6 +441,11 @@ auto CPU::step() noexcept -> void
             jp(true);
             return;
 
+        // CALL NZ, $imm16
+        case 0xC4:
+            call(!(reg.f & Flag::Zero));
+            return;
+
         // PUSH BC
         case 0xC5:
             m_bus.write(--reg.sp, reg.b);
