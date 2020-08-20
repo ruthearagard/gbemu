@@ -486,6 +486,18 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // AND $imm8
+        case 0xE6:
+        {
+            const uint8_t imm{ m_bus.read(reg.pc + 1) };
+
+            reg.a &= imm;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc += 2;
+            return;
+        }
+
         // LD ($imm16), A
         case 0xEA:
         {
