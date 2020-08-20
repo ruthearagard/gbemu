@@ -44,6 +44,17 @@ namespace GameBoy
         // Bit 0 - BG Display (0=Off, 1=On)
         uint8_t LCDC;
 
+        // $FF42 - SCY - Scroll Y (R/W)
+        //
+        // Specifies the position in the 256x256 pixels BG map (32x32 tiles)
+        // which is to be displayed at the upper/left LCD display position.
+        //
+        // Values in range from 0-255 may be used for X/Y each, the video
+        // controller automatically wraps back to the upper(left) position in
+        // BG map when drawing exceeds the lower(right) border of the BG map
+        // area.
+        uint8_t SCY;
+
         // $FF43 - SCX - Scroll X (R/W)
         //
         // Specifies the position in the 256x256 pixels BG map (32x32 tiles)

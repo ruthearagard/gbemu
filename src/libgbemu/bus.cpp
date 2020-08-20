@@ -123,6 +123,11 @@ auto SystemBus::write(const uint16_t address,
                     ppu.LCDC = data;
                     return;
 
+                // $FF42 - SCY - Scroll Y (R/W)
+                case 0xF42:
+                    ppu.SCY = data;
+                    return;
+
                 // $FF43 - SCX - Scroll X (R/W)
                 case 0xF43:
                     ppu.SCX = data;
