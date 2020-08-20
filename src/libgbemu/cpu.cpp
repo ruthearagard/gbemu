@@ -603,6 +603,20 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // DEC (HL)
+        case 0x35:
+        {
+            const uint16_t m_hl{ hl() };
+
+            uint8_t data{ m_bus.read(m_hl) };
+
+            data = dec(data);
+            m_bus.write(m_hl, data);
+
+            reg.pc++;
+            return;
+        }
+
         // DEC A
         case 0x3D:
             reg.a = dec(reg.a);
