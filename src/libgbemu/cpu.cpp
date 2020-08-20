@@ -469,6 +469,14 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // RRA
+        case 0x1F:
+            reg.a = rr(reg.a);
+            reg.f &= ~Flag::Zero;
+
+            reg.pc++;
+            return;
+
         // JR NZ, $branch
         case 0x20:
             jr(!(reg.f & Flag::Zero));
