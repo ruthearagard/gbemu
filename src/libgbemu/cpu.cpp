@@ -678,6 +678,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // JR C, $branch
+        case 0x38:
+            jr(reg.f & Flag::Carry);
+            return;
+
         // INC A
         case 0x3C:
             reg.a = inc(reg.a);
