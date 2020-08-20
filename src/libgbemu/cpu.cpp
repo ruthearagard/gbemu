@@ -638,6 +638,16 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // CPL
+        case 0x2F:
+            reg.a = ~reg.a;
+
+            reg.f |= Flag::Subtract;
+            reg.f |= Flag::HalfCarry;
+
+            reg.pc++;
+            return;
+
         // JR NC, $branch
         case 0x30:
             jr(!(reg.f & Flag::Carry));
