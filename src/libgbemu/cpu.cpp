@@ -525,6 +525,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // DEC H
+        case 0x25:
+            reg.h = dec(reg.h);
+            reg.pc++;
+
+            return;
+
         // LD H, $imm8
         case 0x26:
             reg.h = m_bus.read(reg.pc + 1);
