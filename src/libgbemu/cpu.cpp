@@ -272,6 +272,67 @@ auto CPU::call(const bool condition_met) noexcept -> void
     }
 }
 
+// Handles the `RR n` instruction.
+auto CPU::rr(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    const bool old_carry{ (n & 1) != 0 };
+    const bool carry{ (reg.f & Flag::Carry) != 0 };
+
+    n = (n >> 1) | (carry << 7);
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+
+    if (old_carry)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+    return n;
+}
+
+// Handles the `SRL n` instruction.
+auto CPU::srl(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    const bool carry{ (n & 1) != 0 };
+
+    n >>= 1;
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+
+    if (carry)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+    return n;
+}
+
 // Resets the CPU to the startup state.
 auto CPU::reset() noexcept -> void
 {
@@ -661,6 +722,40 @@ auto CPU::step() noexcept -> void
         case 0xC9:
             ret(true);
             return;
+
+        // CB-prefixed instruction
+        case 0xCB:
+        {
+            const uint8_t instruction{ m_bus.read(reg.pc + 1) };
+
+            switch (instruction)
+            {
+                // RR C
+                case 0x19:
+                    reg.c = rr(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // RR D
+                case 0x1A:
+                    reg.d = rr(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL B
+                case 0x38:
+                    reg.b = srl(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                default:
+                    __debugbreak();
+                    return;
+            }
+        }
 
         // CALL $imm16
         case 0xCD:
