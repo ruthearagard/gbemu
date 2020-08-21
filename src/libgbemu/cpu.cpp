@@ -876,9 +876,76 @@ auto CPU::step() noexcept -> void
             return;
 
         // DAA
+        //
+        // XXX: NOT MY CODE. Taken from https://bit.ly/3j24lzB under the terms
+        // of the MIT license.
         case 0x27:
+        {
+            uint8_t adjust{ 0 };
+
+            // See if we had a carry/borrow for the low nibble in the last
+            // operation.
+            if (reg.f & Flag::HalfCarry)
+            {
+                // Yes, we have to adjust it.
+                adjust |= 0x06;
+            }
+
+            // See if we had a carry/borrow for the high nibble in the last
+            // operation
+            if (reg.f & Flag::Carry)
+            {
+                // Yes, we have to adjust it.
+                adjust |= 0x60;
+            }
+
+            if (reg.f & Flag::Subtract)
+            {
+                // If the operation was a substraction we're done since we
+                // can never end up in the A-F range by substracting
+                // without generating a (half)carry.
+                reg.a -= adjust;
+            }
+            else
+            {
+                // Additions are a bit more tricky because we might have
+                // to adjust even if we haven't overflowed (and no carry
+                // is present). For instance: 0x8 + 0x4 -> 0xc.
+                if ((reg.a & 0x0F) > 0x09)
+                {
+                    adjust |= 0x06;
+                }
+
+                if (reg.a > 0x99)
+                {
+                    adjust |= 0x60;
+                }
+                reg.a += adjust;
+            }
+
+            if (reg.a == 0)
+            {
+                reg.f |= Flag::Zero;
+            }
+            else
+            {
+                reg.f &= ~Flag::Zero;
+            }
+
+            if (adjust & 0x60)
+            {
+                reg.f |= Flag::Carry;
+            }
+            else
+            {
+                reg.f &= ~Flag::Carry;
+            }
+
+            reg.f &= ~Flag::HalfCarry;
+
             reg.pc++;
             return;
+        }
 
         // JR Z, $branch
         case 0x28:
