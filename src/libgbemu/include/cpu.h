@@ -163,6 +163,9 @@ namespace GameBoy
         // Handles the `SRL n` instruction.
         auto srl(uint8_t n) noexcept -> uint8_t;
 
+        // Handles the `BIT b, n` instruction.
+        auto bit(const unsigned int b, const uint8_t n) -> void;
+
         // System bus instance
         SystemBus& m_bus;
     };

@@ -516,6 +516,22 @@ auto CPU::srl(uint8_t n) noexcept -> uint8_t
     return n;
 }
 
+// Handles the `BIT b, n` instruction.
+auto CPU::bit(const unsigned int b, const uint8_t n) -> void
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f |= Flag::HalfCarry;
+
+    if (!(n & (1 << b)))
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+}
+
 // Resets the CPU to the startup state.
 auto CPU::reset() noexcept -> void
 {
@@ -2380,6 +2396,1182 @@ auto CPU::step() noexcept -> void
                 // SRL A
                 case 0x3F:
                     reg.a = srl(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, B
+                case 0x40:
+                    bit(0, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, C
+                case 0x41:
+                    bit(0, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, D
+                case 0x42:
+                    bit(0, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, E
+                case 0x43:
+                    bit(0, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, H
+                case 0x44:
+                    bit(0, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, L
+                case 0x45:
+                    bit(0, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 0, A
+                case 0x47:
+                    bit(0, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, B
+                case 0x48:
+                    bit(1, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, C
+                case 0x49:
+                    bit(1, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, D
+                case 0x4A:
+                    bit(1, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, E
+                case 0x4B:
+                    bit(1, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, H
+                case 0x4C:
+                    bit(1, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, L
+                case 0x4D:
+                    bit(1, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 1, A
+                case 0x4F:
+                    bit(1, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, B
+                case 0x50:
+                    bit(2, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, C
+                case 0x51:
+                    bit(2, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, D
+                case 0x52:
+                    bit(2, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, E
+                case 0x53:
+                    bit(2, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, H
+                case 0x54:
+                    bit(2, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, L
+                case 0x55:
+                    bit(2, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 2, A
+                case 0x57:
+                    bit(2, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, B
+                case 0x58:
+                    bit(3, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, C
+                case 0x59:
+                    bit(3, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, D
+                case 0x5A:
+                    bit(3, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, E
+                case 0x5B:
+                    bit(3, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, H
+                case 0x5C:
+                    bit(3, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, L
+                case 0x5D:
+                    bit(3, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 3, A
+                case 0x5F:
+                    bit(3, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, B
+                case 0x60:
+                    bit(4, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, C
+                case 0x61:
+                    bit(4, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, D
+                case 0x62:
+                    bit(4, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, E
+                case 0x63:
+                    bit(4, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, H
+                case 0x64:
+                    bit(4, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, L
+                case 0x65:
+                    bit(4, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 4, A
+                case 0x67:
+                    bit(4, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, B
+                case 0x68:
+                    bit(5, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, C
+                case 0x69:
+                    bit(5, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, D
+                case 0x6A:
+                    bit(5, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, E
+                case 0x6B:
+                    bit(5, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, H
+                case 0x6C:
+                    bit(5, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, L
+                case 0x6D:
+                    bit(5, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 5, A
+                case 0x6F:
+                    bit(5, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, B
+                case 0x70:
+                    bit(6, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, C
+                case 0x71:
+                    bit(6, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, D
+                case 0x72:
+                    bit(6, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, E
+                case 0x73:
+                    bit(6, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, H
+                case 0x74:
+                    bit(6, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, L
+                case 0x75:
+                    bit(6, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 6, A
+                case 0x77:
+                    bit(6, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, B
+                case 0x78:
+                    bit(7, reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, C
+                case 0x79:
+                    bit(7, reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, D
+                case 0x7A:
+                    bit(7, reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, E
+                case 0x7B:
+                    bit(7, reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, H
+                case 0x7C:
+                    bit(7, reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, L
+                case 0x7D:
+                    bit(7, reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // BIT 7, A
+                case 0x7F:
+                    bit(7, reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, B
+                case 0x80:
+                    reg.b &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, C
+                case 0x81:
+                    reg.c &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, D
+                case 0x82:
+                    reg.d &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, E
+                case 0x83:
+                    reg.e &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, H
+                case 0x84:
+                    reg.h &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, L
+                case 0x85:
+                    reg.l &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 0, A
+                case 0x87:
+                    reg.a &= ~(1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, B
+                case 0x88:
+                    reg.b &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, C
+                case 0x89:
+                    reg.c &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, D
+                case 0x8A:
+                    reg.d &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, E
+                case 0x8B:
+                    reg.e &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, H
+                case 0x8C:
+                    reg.h &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, L
+                case 0x8D:
+                    reg.l &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 1, A
+                case 0x8F:
+                    reg.a &= ~(1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, B
+                case 0x90:
+                    reg.b &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, C
+                case 0x91:
+                    reg.c &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, D
+                case 0x92:
+                    reg.d &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, E
+                case 0x93:
+                    reg.e &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, H
+                case 0x94:
+                    reg.h &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, L
+                case 0x95:
+                    reg.l &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 2, A
+                case 0x97:
+                    reg.a &= ~(1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, B
+                case 0x98:
+                    reg.b &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, C
+                case 0x99:
+                    reg.c &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, D
+                case 0x9A:
+                    reg.d &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, E
+                case 0x9B:
+                    reg.e &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, H
+                case 0x9C:
+                    reg.h &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, L
+                case 0x9D:
+                    reg.l &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 3, A
+                case 0x9F:
+                    reg.a &= ~(1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, B
+                case 0xA0:
+                    reg.b &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, C
+                case 0xA1:
+                    reg.c &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, D
+                case 0xA2:
+                    reg.d &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, E
+                case 0xA3:
+                    reg.e &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, H
+                case 0xA4:
+                    reg.h &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, L
+                case 0xA5:
+                    reg.l &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 4, A
+                case 0xA7:
+                    reg.a &= ~(1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, B
+                case 0xA8:
+                    reg.b &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, C
+                case 0xA9:
+                    reg.c &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, D
+                case 0xAA:
+                    reg.d &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, E
+                case 0xAB:
+                    reg.e &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, H
+                case 0xAC:
+                    reg.h &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, L
+                case 0xAD:
+                    reg.l &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 5, A
+                case 0xAF:
+                    reg.a &= ~(1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, B
+                case 0xB0:
+                    reg.b &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, C
+                case 0xB1:
+                    reg.c &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, D
+                case 0xB2:
+                    reg.d &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, E
+                case 0xB3:
+                    reg.e &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, H
+                case 0xB4:
+                    reg.h &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, L
+                case 0xB5:
+                    reg.l &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 6, A
+                case 0xB7:
+                    reg.a &= ~(1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, B
+                case 0xB8:
+                    reg.b &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, C
+                case 0xB9:
+                    reg.c &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, D
+                case 0xBA:
+                    reg.d &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, E
+                case 0xBB:
+                    reg.e &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, H
+                case 0xBC:
+                    reg.h &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, L
+                case 0xBD:
+                    reg.l &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // RES 7, A
+                case 0xBF:
+                    reg.a &= ~(1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, B
+                case 0xC0:
+                    reg.b |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, C
+                case 0xC1:
+                    reg.c |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, D
+                case 0xC2:
+                    reg.d |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, E
+                case 0xC3:
+                    reg.e |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, H
+                case 0xC4:
+                    reg.h |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, L
+                case 0xC5:
+                    reg.l |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 0, A
+                case 0xC7:
+                    reg.a |= (1 << 0);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, B
+                case 0xC8:
+                    reg.b |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, C
+                case 0xC9:
+                    reg.c |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, D
+                case 0xCA:
+                    reg.d |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, E
+                case 0xCB:
+                    reg.e |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, H
+                case 0xCC:
+                    reg.h |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, L
+                case 0xCD:
+                    reg.l |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 1, A
+                case 0xCF:
+                    reg.a |= (1 << 1);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, B
+                case 0xD0:
+                    reg.b |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, C
+                case 0xD1:
+                    reg.c |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, D
+                case 0xD2:
+                    reg.d |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, E
+                case 0xD3:
+                    reg.e |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, H
+                case 0xD4:
+                    reg.h |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, L
+                case 0xD5:
+                    reg.l |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 2, A
+                case 0xD7:
+                    reg.a |= (1 << 2);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, B
+                case 0xD8:
+                    reg.b |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, C
+                case 0xD9:
+                    reg.c |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, D
+                case 0xDA:
+                    reg.d |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, E
+                case 0xDB:
+                    reg.e |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, H
+                case 0xDC:
+                    reg.h |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, L
+                case 0xDD:
+                    reg.l |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 3, A
+                case 0xDF:
+                    reg.a |= (1 << 3);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, B
+                case 0xE0:
+                    reg.b |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, C
+                case 0xE1:
+                    reg.c |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, D
+                case 0xE2:
+                    reg.d |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, E
+                case 0xE3:
+                    reg.e |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, H
+                case 0xE4:
+                    reg.h |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, L
+                case 0xE5:
+                    reg.l |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 4, A
+                case 0xE7:
+                    reg.a |= (1 << 4);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, B
+                case 0xE8:
+                    reg.b |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, C
+                case 0xE9:
+                    reg.c |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, D
+                case 0xEA:
+                    reg.d |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, E
+                case 0xEB:
+                    reg.e |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, H
+                case 0xEC:
+                    reg.h |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, L
+                case 0xED:
+                    reg.l |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 5, A
+                case 0xEF:
+                    reg.a |= (1 << 5);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, B
+                case 0xF0:
+                    reg.b |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, C
+                case 0xF1:
+                    reg.c |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, D
+                case 0xF2:
+                    reg.d |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, E
+                case 0xF3:
+                    reg.e |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, H
+                case 0xF4:
+                    reg.h |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, L
+                case 0xF5:
+                    reg.l |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 6, A
+                case 0xF7:
+                    reg.a |= (1 << 6);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, B
+                case 0xF8:
+                    reg.b |= (1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, C
+                case 0xF9:
+                    reg.c |= (1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, D
+                case 0xFA:
+                    reg.d |= (1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, E
+                case 0xFB:
+                    reg.e |= (1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, H
+                case 0xFC:
+                    reg.h |= (1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, L
+                case 0xFD:
+                    reg.l |= (1 << 7);
+                    reg.pc += 2;
+
+                    return;
+
+                // SET 7, A
+                case 0xFF:
+                    reg.a |= (1 << 7);
                     reg.pc += 2;
 
                     return;
