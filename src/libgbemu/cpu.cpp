@@ -894,6 +894,46 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD C, B
+        case 0x48:
+            reg.c = reg.b;
+            reg.pc++;
+
+            return;
+
+        // LD C, C
+        case 0x49:
+            reg.pc++;
+            return;
+
+        // LD C, D
+        case 0x4A:
+            reg.c = reg.d;
+            reg.pc++;
+
+            return;
+
+        // LD C, E
+        case 0x4B:
+            reg.c = reg.e;
+            reg.pc++;
+
+            return;
+
+        // LD C, H
+        case 0x4C:
+            reg.c = reg.h;
+            reg.pc++;
+
+            return;
+
+        // LD C, L
+        case 0x4D:
+            reg.c = reg.l;
+            reg.pc++;
+
+            return;
+
         // LD C, (HL)
         case 0x4E:
             reg.c = m_bus.read(hl());
@@ -908,6 +948,46 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD D, B
+        case 0x50:
+            reg.d = reg.b;
+            reg.pc++;
+
+            return;
+
+        // LD D, C
+        case 0x51:
+            reg.d = reg.c;
+            reg.pc++;
+
+            return;
+
+        // LD D, D
+        case 0x52:
+            reg.pc++;
+            return;
+
+        // LD D, E
+        case 0x53:
+            reg.d = reg.e;
+            reg.pc++;
+
+            return;
+
+        // LD D, H
+        case 0x54:
+            reg.d = reg.h;
+            reg.pc++;
+
+            return;
+
+        // LD D, L
+        case 0x55:
+            reg.d = reg.l;
+            reg.pc++;
+
+            return;
+
         // LD D, (HL)
         case 0x56:
             reg.d = m_bus.read(hl());
@@ -918,6 +998,39 @@ auto CPU::step() noexcept -> void
         // LD D, A
         case 0x57:
             reg.d = reg.a;
+            reg.pc++;
+
+            return;
+
+        // LD E, B
+        case 0x58:
+            reg.e = reg.b;
+            reg.pc++;
+
+            return;
+
+        // LD E, C
+        case 0x59:
+            reg.e = reg.c;
+            reg.pc++;
+
+            return;
+
+        // LD E, D
+        case 0x5A:
+            reg.e = reg.d;
+            reg.pc++;
+
+            return;
+
+        // LD E, E
+        case 0x5B:
+            reg.pc++;
+            return;
+
+        // LD E, H
+        case 0x5C:
+            reg.e = reg.h;
             reg.pc++;
 
             return;
@@ -943,9 +1056,42 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD H, B
+        case 0x60:
+            reg.h = reg.b;
+            reg.pc++;
+
+            return;
+
+        // LD H, C
+        case 0x61:
+            reg.h = reg.c;
+            reg.pc++;
+
+            return;
+
         // LD H, D
         case 0x62:
             reg.h = reg.d;
+            reg.pc++;
+
+            return;
+
+        // LD H, E
+        case 0x63:
+            reg.h = reg.e;
+            reg.pc++;
+
+            return;
+
+        // LD H, H
+        case 0x64:
+            reg.pc++;
+            return;
+
+        // LD H, L
+        case 0x65:
+            reg.h = reg.l;
             reg.pc++;
 
             return;
@@ -964,11 +1110,44 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // LD L, B
+        case 0x68:
+            reg.l = reg.b;
+            reg.pc++;
+
+            return;
+
+        // LD L, C
+        case 0x69:
+            reg.l = reg.c;
+            reg.pc++;
+
+            return;
+
+        // LD L, D
+        case 0x6A:
+            reg.l = reg.d;
+            reg.pc++;
+
+            return;
+
         // LD L, E
         case 0x6B:
             reg.l = reg.e;
             reg.pc++;
 
+            return;
+
+        // LD L, H
+        case 0x6C:
+            reg.l = reg.h;
+            reg.pc++;
+
+            return;
+
+        // LD L, L
+        case 0x6D:
+            reg.pc++;
             return;
 
         // LD L, (HL)
@@ -1009,6 +1188,20 @@ auto CPU::step() noexcept -> void
         // LD (HL), E
         case 0x73:
             m_bus.write(hl(), reg.e);
+            reg.pc++;
+
+            return;
+
+        // LD (HL), H
+        case 0x74:
+            m_bus.write(hl(), reg.h);
+            reg.pc++;
+
+            return;
+
+        // LD (HL), L
+        case 0x75:
+            m_bus.write(hl(), reg.l);
             reg.pc++;
 
             return;
@@ -1067,6 +1260,11 @@ auto CPU::step() noexcept -> void
             reg.a = m_bus.read(hl());
             reg.pc++;
 
+            return;
+
+        // LD A, A
+        case 0x7F:
+            reg.pc++;
             return;
 
         // XOR C
