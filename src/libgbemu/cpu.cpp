@@ -571,6 +571,13 @@ auto CPU::step() noexcept -> void
             reg.pc += 3;
             return;
 
+        // LD (BC), A
+        case 0x02:
+            m_bus.write(bc(), reg.a);
+            reg.pc++;
+
+            return;
+
         // INC BC
         case 0x03:
         {
@@ -649,6 +656,13 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
         }
+
+        // LD A, (BC)
+        case 0x0A:
+            reg.a = m_bus.read(bc());
+            reg.pc++;
+
+            return;
 
         // INC C
         case 0x0C:
@@ -975,6 +989,20 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // INC (HL)
+        case 0x34:
+        {
+            const uint16_t m_hl{ hl() };
+
+            uint8_t data{ m_bus.read(m_hl) };
+
+            data = inc(data);
+            m_bus.write(m_hl, data);
+
+            reg.pc++;
+            return;
+        }
+
         // DEC (HL)
         case 0x35:
         {
@@ -1020,6 +1048,20 @@ auto CPU::step() noexcept -> void
             reg.pc++;
 
             return;
+
+        // LD A, (HL-)
+        case 0x3A:
+        {
+            uint16_t m_hl{ hl() };
+
+            reg.a = m_bus.read(m_hl--);
+
+            reg.h = m_hl >> 8;
+            reg.l = m_hl & 0x00FF;
+
+            reg.pc++;
+            return;
+        }
 
         // DEC SP
         case 0x3B:
@@ -1534,6 +1576,17 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // ADD A, (HL)
+        case 0x86:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            add(data);
+            reg.pc++;
+
+            return;
+        }
+
         // ADD A, A
         case 0x87:
             add(reg.a);
@@ -1582,6 +1635,17 @@ auto CPU::step() noexcept -> void
             reg.pc++;
 
             return;
+
+        // ADC A, (HL)
+        case 0x8E:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            add(data, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+        }
 
         // ADC A, A
         case 0x8F:
@@ -1632,6 +1696,17 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // SUB (HL)
+        case 0x96:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            sub(data, ALUFlag::WithoutCarry);
+            reg.pc++;
+
+            return;
+        }
+
         // SUB A
         case 0x97:
             sub(reg.a);
@@ -1680,6 +1755,17 @@ auto CPU::step() noexcept -> void
             reg.pc++;
 
             return;
+
+        // SBC A, (HL)
+        case 0x9E:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            sub(data, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+        }
 
         // SBC A, A
         case 0x9F:
@@ -1735,6 +1821,18 @@ auto CPU::step() noexcept -> void
 
             reg.pc++;
             return;
+
+        // AND (HL)
+        case 0xA6:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            reg.a &= data;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+        }
 
         // AND A
         case 0xA7:
@@ -1920,6 +2018,17 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // CP (HL)
+        case 0xBE:
+        {
+            const uint8_t data{ m_bus.read(hl()) };
+
+            sub(data, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+        }
+
         // CP A
         case 0xBF:
             sub(reg.a, ALUFlag::DiscardResult);
@@ -2043,6 +2152,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RLC (HL)
+                case 0x06:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = rlc(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // RLC A
                 case 0x07:
                     reg.a = rlc(reg.a);
@@ -2091,6 +2214,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // RRC (HL)
+                case 0x0E:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = rrc(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // RRC A
                 case 0x0F:
@@ -2141,6 +2278,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RL (HL)
+                case 0x16:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = rl(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // RL A
                 case 0x17:
                     reg.a = rl(reg.a);
@@ -2189,6 +2340,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // RR (HL)
+                case 0x1E:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = rr(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // RR A
                 case 0x1F:
@@ -2239,6 +2404,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SLA (HL)
+                case 0x26:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = sla(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SLA A
                 case 0x27:
                     reg.a = sla(reg.a);
@@ -2287,6 +2466,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // SRA (HL)
+                case 0x2E:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = sra(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // SRA A
                 case 0x2F:
@@ -2343,6 +2536,22 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
                     return;
 
+                // SWAP (HL)
+                case 0x36:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = ((data & 0x0F) << 4) | (data >> 4);
+                    reg.f = (data == 0) ? 0x80 : 0x00;
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SWAP A
                 case 0x37:
                     reg.a = ((reg.a & 0x0F) << 4) | (reg.a >> 4);
@@ -2393,6 +2602,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SRL (HL)
+                case 0x3E:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+
+                    data = srl(data);
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SRL A
                 case 0x3F:
                     reg.a = srl(reg.a);
@@ -2441,6 +2664,17 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // BIT 0, (HL)
+                case 0x46:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(0, data);
+                    reg.pc += 2;
+
+                    return;
+                }
 
                 // BIT 0, A
                 case 0x47:
@@ -2491,6 +2725,17 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // BIT 1, (HL)
+                case 0x4E:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(1, data);
+                    reg.pc += 2;
+
+                    return;
+                }
+
                 // BIT 1, A
                 case 0x4F:
                     bit(1, reg.a);
@@ -2539,6 +2784,17 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // BIT 2, (HL)
+                case 0x56:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(2, data);
+                    reg.pc += 2;
+
+                    return;
+                }
 
                 // BIT 2, A
                 case 0x57:
@@ -2589,6 +2845,17 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // BIT 3, (HL)
+                case 0x5E:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(3, data);
+                    reg.pc += 2;
+
+                    return;
+                }
+
                 // BIT 3, A
                 case 0x5F:
                     bit(3, reg.a);
@@ -2637,6 +2904,17 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // BIT 4, (HL)
+                case 0x66:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(4, data);
+                    reg.pc += 2;
+
+                    return;
+                }
 
                 // BIT 4, A
                 case 0x67:
@@ -2687,6 +2965,17 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // BIT 5, (HL)
+                case 0x6E:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(5, data);
+                    reg.pc += 2;
+
+                    return;
+                }
+
                 // BIT 5, A
                 case 0x6F:
                     bit(5, reg.a);
@@ -2735,6 +3024,17 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // BIT 6, (HL)
+                case 0x76:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(6, data);
+                    reg.pc += 2;
+
+                    return;
+                }
 
                 // BIT 6, A
                 case 0x77:
@@ -2785,6 +3085,17 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // BIT 7, (HL)
+                case 0x7E:
+                {
+                    const uint8_t data{ m_bus.read(hl()) };
+
+                    bit(7, data);
+                    reg.pc += 2;
+
+                    return;
+                }
+
                 // BIT 7, A
                 case 0x7F:
                     bit(7, reg.a);
@@ -2833,6 +3144,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // RES 0, (HL)
+                case 0x86:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 0);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // RES 0, A
                 case 0x87:
@@ -2883,6 +3208,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RES 1, (HL)
+                case 0x8E:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 1);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // RES 1, A
                 case 0x8F:
                     reg.a &= ~(1 << 1);
@@ -2931,6 +3270,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // RES 2, (HL)
+                case 0x96:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 2);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // RES 2, A
                 case 0x97:
@@ -2981,6 +3334,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RES 3, (HL)
+                case 0x9E:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 3);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // RES 3, A
                 case 0x9F:
                     reg.a &= ~(1 << 3);
@@ -3029,6 +3396,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // RES 4, (HL)
+                case 0xA6:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 4);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // RES 4, A
                 case 0xA7:
@@ -3079,6 +3460,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RES 5, (HL)
+                case 0xAE:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 5);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // RES 5, A
                 case 0xAF:
                     reg.a &= ~(1 << 5);
@@ -3127,6 +3522,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // RES 6, (HL)
+                case 0xB6:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 6);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // RES 6, A
                 case 0xB7:
@@ -3177,6 +3586,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RES 7, (HL)
+                case 0xBE:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data &= ~(1 << 7);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // RES 7, A
                 case 0xBF:
                     reg.a &= ~(1 << 7);
@@ -3225,6 +3648,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // SET 0, (HL)
+                case 0xC6:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 0);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // SET 0, A
                 case 0xC7:
@@ -3275,6 +3712,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SET 1, (HL)
+                case 0xCE:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 1);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SET 1, A
                 case 0xCF:
                     reg.a |= (1 << 1);
@@ -3323,6 +3774,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // SET 2, (HL)
+                case 0xD6:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 2);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // SET 2, A
                 case 0xD7:
@@ -3373,6 +3838,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SET 3, (HL)
+                case 0xDE:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 3);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SET 3, A
                 case 0xDF:
                     reg.a |= (1 << 3);
@@ -3421,6 +3900,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // SET 4, (HL)
+                case 0xE6:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 4);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // SET 4, A
                 case 0xE7:
@@ -3471,6 +3964,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SET 5, (HL)
+                case 0xEE:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 5);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SET 5, A
                 case 0xEF:
                     reg.a |= (1 << 5);
@@ -3520,6 +4027,20 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // SET 6, (HL)
+                case 0xF6:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 6);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
+
                 // SET 6, A
                 case 0xF7:
                     reg.a |= (1 << 6);
@@ -3568,6 +4089,20 @@ auto CPU::step() noexcept -> void
                     reg.pc += 2;
 
                     return;
+
+                // SET 7, (HL)
+                case 0xFE:
+                {
+                    const uint16_t m_hl{ hl() };
+
+                    uint8_t data{ m_bus.read(m_hl) };
+                    data |= (1 << 7);
+
+                    m_bus.write(m_hl, data);
+
+                    reg.pc += 2;
+                    return;
+                }
 
                 // SET 7, A
                 case 0xFF:
