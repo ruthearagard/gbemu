@@ -302,6 +302,17 @@ auto CPU::call(const bool condition_met) noexcept -> void
     }
 }
 
+// Handles the `RST $vector` instruction.
+auto CPU::rst(const uint16_t vector) noexcept -> void
+{
+    reg.pc++;
+
+    m_bus.write(--reg.sp, reg.pc >> 8);
+    m_bus.write(--reg.sp, reg.pc & 0x00FF);
+
+    reg.pc = vector;
+}
+
 // Handles the `RR n` instruction.
 auto CPU::rr(uint8_t n) noexcept -> uint8_t
 {
@@ -1345,6 +1356,11 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // RET NZ
+        case 0xC0:
+            ret(!(reg.f & Flag::Zero));
+            return;
+
         // POP BC
         case 0xC1:
             reg.c = m_bus.read(reg.sp++);
@@ -1387,6 +1403,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RST $00
+        case 0xC7:
+            rst(0x0000);
+            return;
+
         // RET Z
         case 0xC8:
             ret(reg.f & Flag::Zero);
@@ -1395,6 +1416,11 @@ auto CPU::step() noexcept -> void
         // RET
         case 0xC9:
             ret(true);
+            return;
+
+        // JP Z, $imm16
+        case 0xCA:
+            jp(reg.f & Flag::Zero);
             return;
 
         // CB-prefixed instruction
@@ -1445,6 +1471,11 @@ auto CPU::step() noexcept -> void
             }
         }
 
+        // CALL Z, $imm16
+        case 0xCC:
+            call(reg.f & Flag::Zero);
+            return;
+
         // CALL $imm16
         case 0xCD:
             call(true);
@@ -1461,6 +1492,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RST $08
+        case 0xCF:
+            rst(0x0008);
+            return;
+
         // RET NC
         case 0xD0:
             ret(!(reg.f & Flag::Carry));
@@ -1472,6 +1508,16 @@ auto CPU::step() noexcept -> void
             reg.d = m_bus.read(reg.sp++);
 
             reg.pc++;
+            return;
+
+        // JP NC, $imm16
+        case 0xD2:
+            jp(!(reg.f & Flag::Carry));
+            return;
+
+        // CALL NC, $imm16
+        case 0xD4:
+            call(!(reg.f & Flag::Carry));
             return;
 
         // PUSH DE
@@ -1493,9 +1539,29 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RST $10
+        case 0xD7:
+            rst(0x0010);
+            return;
+
         // RET C
         case 0xD8:
             ret(reg.f & Flag::Carry);
+            return;
+
+        // RETI
+        case 0xD9:
+            ret(true);
+            return;
+
+        // JP C, $imm16
+        case 0xDA:
+            jp(reg.f & Flag::Carry);
+            return;
+
+        // CALL C, $imm16
+        case 0xDC:
+            call(reg.f & Flag::Carry);
             return;
 
         // SBC A, $imm8
@@ -1507,6 +1573,11 @@ auto CPU::step() noexcept -> void
             reg.pc += 2;
             return;
         }
+
+        // RST $18
+        case 0xDF:
+            rst(0x0018);
+            return;
 
         // LDH ($imm8), A
         case 0xE0:
@@ -1546,6 +1617,11 @@ auto CPU::step() noexcept -> void
             reg.pc += 2;
             return;
         }
+
+        // RST $20
+        case 0xE7:
+            rst(0x0020);
+            return;
 
         // ADD SP, $simm8
         case 0xE8:
@@ -1612,6 +1688,11 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // RST $28
+        case 0xEF:
+            rst(0x0028);
+            return;
+
         // LDH A, ($imm8)
         case 0xF0:
         {
@@ -1655,6 +1736,11 @@ auto CPU::step() noexcept -> void
             reg.pc += 2;
             return;
         }
+
+        // RST $30
+        case 0xF7:
+            rst(0x0030);
+            return;
 
         // LD HL, SP+r8
         case 0xF8:
@@ -1724,6 +1810,11 @@ auto CPU::step() noexcept -> void
 
             return;
         }
+
+        // RST $38
+        case 0xFF:
+            rst(0x0038);
+            return;
 
         default:
             __debugbreak();

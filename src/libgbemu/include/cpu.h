@@ -139,6 +139,9 @@ namespace GameBoy
         // Handles the `CALL cond, $imm16` instruction.
         auto call(const bool condition_met) noexcept -> void;
 
+        // Handles the `RST $vector` instruction.
+        auto rst(const uint16_t vector) noexcept -> void;
+
         // Handles the `RR n` instruction.
         auto rr(uint8_t n) noexcept -> uint8_t;
 
