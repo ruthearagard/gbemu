@@ -1598,6 +1598,13 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // LD (C), A
+        case 0xE2:
+            m_bus.write(0xFF00 + reg.c, reg.a);
+            reg.pc++;
+
+            return;
+
         // PUSH HL
         case 0xE5:
             m_bus.write(--reg.sp, reg.h);
@@ -1710,6 +1717,13 @@ auto CPU::step() noexcept -> void
             reg.a = m_bus.read(reg.sp++);
 
             reg.pc++;
+            return;
+
+        // LD A, (C)
+        case 0xF2:
+            reg.a = m_bus.read(0xFF00 + reg.c);
+            reg.pc++;
+
             return;
 
         // DI
