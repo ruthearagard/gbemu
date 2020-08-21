@@ -104,7 +104,7 @@ auto Disassembler::before() noexcept -> void
 // Disassembles the current instruction after execution.
 auto Disassembler::after() noexcept -> std::string
 {
-    while (disasm.size() < 75)
+    while (disasm.size() < 30)
     {
         disasm += " ";
     }

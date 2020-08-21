@@ -142,8 +142,23 @@ namespace GameBoy
         // Handles the `RST $vector` instruction.
         auto rst(const uint16_t vector) noexcept -> void;
 
+        // Handles the `RLC n` instruction.
+        auto rlc(uint8_t n) noexcept -> uint8_t;
+
+        // Handles the `RRC n` instruction.
+        auto rrc(uint8_t n) noexcept -> uint8_t;
+
         // Handles the `RR n` instruction.
         auto rr(uint8_t n) noexcept -> uint8_t;
+
+        // Handles the `RL n` instruction.
+        auto rl(uint8_t n) noexcept -> uint8_t;
+
+        // Handles the `SLA n` instruction.
+        auto sla(uint8_t n) noexcept -> uint8_t;
+
+        // Handles the `SRA n` instruction.
+        auto sra(uint8_t n) noexcept -> uint8_t;
 
         // Handles the `SRL n` instruction.
         auto srl(uint8_t n) noexcept -> uint8_t;

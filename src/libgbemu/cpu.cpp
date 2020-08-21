@@ -54,8 +54,6 @@ auto CPU::inc(uint8_t r) noexcept -> uint8_t
 {
     reg.f &= ~Flag::Subtract;
 
-    r++;
-
     if ((r & 0x0F) == 0x0F)
     {
         reg.f |= Flag::HalfCarry;
@@ -64,6 +62,8 @@ auto CPU::inc(uint8_t r) noexcept -> uint8_t
     {
         reg.f &= ~Flag::HalfCarry;
     }
+
+    r++;
 
     if (r == 0)
     {
@@ -313,6 +313,92 @@ auto CPU::rst(const uint16_t vector) noexcept -> void
     reg.pc = vector;
 }
 
+// Handles the `RLC n` instruction.
+auto CPU::rlc(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    if (n & 0x80)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    n = (n << 1) | (n >> 7);
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+    return n;
+}
+
+// Handles the `RRC n` instruction.
+auto CPU::rrc(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    if (n & 1)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    n = (n >> 1) | (n << 7);
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+    return n;
+}
+
+// Handles the `RL n` instruction.
+auto CPU::rl(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    const bool carry{ (reg.f & Flag::Carry) != 0 };
+
+    if (n & 0x80)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    n = (n << 1) | carry;
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+    return n;
+}
+
 // Handles the `RR n` instruction.
 auto CPU::rr(uint8_t n) noexcept -> uint8_t
 {
@@ -340,6 +426,62 @@ auto CPU::rr(uint8_t n) noexcept -> uint8_t
     else
     {
         reg.f &= ~Flag::Carry;
+    }
+    return n;
+}
+
+// Handles the `SLA n` instruction.
+auto CPU::sla(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    if (n & 0x80)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    n <<= 1;
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
+    }
+    return n;
+}
+
+// Handles the `SRA n` instruction.
+auto CPU::sra(uint8_t n) noexcept -> uint8_t
+{
+    reg.f &= ~Flag::Subtract;
+    reg.f &= ~Flag::HalfCarry;
+
+    if (n & 1)
+    {
+        reg.f |= Flag::Carry;
+    }
+    else
+    {
+        reg.f &= ~Flag::Carry;
+    }
+
+    n = (n >> 1) | (n & 0x80);
+
+    if (n == 0)
+    {
+        reg.f |= Flag::Zero;
+    }
+    else
+    {
+        reg.f &= ~Flag::Zero;
     }
     return n;
 }
@@ -448,6 +590,14 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // RLCA
+        case 0x07:
+            reg.a = rlc(reg.a);
+            reg.f &= ~Flag::Zero;
+
+            reg.pc++;
+            return;
+
         // LD ($imm16), SP
         case 0x08:
         {
@@ -505,6 +655,14 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // RRCA
+        case 0x0F:
+            reg.a = rrc(reg.a);
+            reg.f &= ~Flag::Zero;
+
+            reg.pc++;
+            return;
+
         // LD DE, $imm16
         case 0x11:
             reg.e = m_bus.read(reg.pc + 1);
@@ -541,11 +699,26 @@ auto CPU::step() noexcept -> void
 
             return;
 
+        // DEC D
+        case 0x15:
+            reg.d = dec(reg.d);
+            reg.pc++;
+
+            return;
+
         // LD D, $imm8
         case 0x16:
             reg.d = m_bus.read(reg.pc + 1);
             reg.pc += 2;
 
+            return;
+
+        // RLA
+        case 0x17:
+            reg.a = rl(reg.a);
+            reg.f &= ~Flag::Zero;
+
+            reg.pc++;
             return;
 
         // JR $branch
@@ -811,6 +984,15 @@ auto CPU::step() noexcept -> void
             return;
         }
 
+        // SCF
+        case 0x37:
+            reg.f |= Flag::Carry;
+            reg.f &= ~Flag::Subtract;
+            reg.f &= ~Flag::HalfCarry;
+
+            reg.pc++;
+            return;
+
         // JR C, $branch
         case 0x38:
             jr(reg.f & Flag::Carry);
@@ -849,6 +1031,22 @@ auto CPU::step() noexcept -> void
             reg.a = m_bus.read(reg.pc + 1);
             reg.pc += 2;
 
+            return;
+
+        // CCF
+        case 0x3F:
+            reg.f &= ~Flag::Subtract;
+            reg.f &= ~Flag::HalfCarry;
+
+            if (reg.f & Flag::Carry)
+            {
+                reg.f &= ~Flag::Carry;
+            }
+            else
+            {
+                reg.f |= Flag::Carry;
+            }
+            reg.pc++;
             return;
 
         // LD B, B
@@ -1278,9 +1476,300 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // ADD A, B
+        case 0x80:
+            add(reg.b);
+            reg.pc++;
+
+            return;
+
+        // ADD A, C
+        case 0x81:
+            add(reg.c);
+            reg.pc++;
+
+            return;
+
+        // ADD A, D
+        case 0x82:
+            add(reg.d);
+            reg.pc++;
+
+            return;
+
+        // ADD A, E
+        case 0x83:
+            add(reg.e);
+            reg.pc++;
+
+            return;
+
+        // ADD A, H
+        case 0x84:
+            add(reg.h);
+            reg.pc++;
+
+            return;
+
+        // ADD A, L
+        case 0x85:
+            add(reg.l);
+            reg.pc++;
+
+            return;
+
+        // ADD A, A
+        case 0x87:
+            add(reg.a);
+            reg.pc++;
+
+            return;
+
+        // ADC A, B
+        case 0x88:
+            add(reg.b, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // ADC A, C
+        case 0x89:
+            add(reg.c, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // ADC A, D
+        case 0x8A:
+            add(reg.d, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // ADC A, E
+        case 0x8B:
+            add(reg.e, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // ADC A, H
+        case 0x8C:
+            add(reg.h, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // ADC A, L
+        case 0x8D:
+            add(reg.l, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // ADC A, A
+        case 0x8F:
+            add(reg.a, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SUB B
+        case 0x90:
+            sub(reg.b);
+            reg.pc++;
+
+            return;
+
+        // SUB C
+        case 0x91:
+            sub(reg.c);
+            reg.pc++;
+
+            return;
+
+        // SUB D
+        case 0x92:
+            sub(reg.d);
+            reg.pc++;
+
+            return;
+
+        // SUB E
+        case 0x93:
+            sub(reg.e);
+            reg.pc++;
+
+            return;
+
+        // SUB H
+        case 0x94:
+            sub(reg.h);
+            reg.pc++;
+
+            return;
+
+        // SUB L
+        case 0x95:
+            sub(reg.l);
+            reg.pc++;
+
+            return;
+
+        // SUB A
+        case 0x97:
+            sub(reg.a);
+            reg.pc++;
+
+            return;
+
+        // SBC A, B
+        case 0x98:
+            sub(reg.b, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SBC A, C
+        case 0x99:
+            sub(reg.c, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SBC A, D
+        case 0x9A:
+            sub(reg.d, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SBC A, E
+        case 0x9B:
+            sub(reg.e, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SBC A, H
+        case 0x9C:
+            sub(reg.h, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SBC A, L
+        case 0x9D:
+            sub(reg.l, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // SBC A, A
+        case 0x9F:
+            sub(reg.a, ALUFlag::WithCarry);
+            reg.pc++;
+
+            return;
+
+        // AND B
+        case 0xA0:
+            reg.a &= reg.b;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+
+        // AND C
+        case 0xA1:
+            reg.a &= reg.c;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+
+        // AND D
+        case 0xA2:
+            reg.a &= reg.d;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+
+        // AND E
+        case 0xA3:
+            reg.a &= reg.e;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+
+        // AND H
+        case 0xA4:
+            reg.a &= reg.h;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+
+        // AND L
+        case 0xA5:
+            reg.a &= reg.l;
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+
+            reg.pc++;
+            return;
+
+        // AND A
+        case 0xA7:
+            reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+            reg.pc++;
+
+            return;
+
+        // XOR B
+        case 0xA8:
+            reg.a ^= reg.b;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
         // XOR C
         case 0xA9:
             reg.a ^= reg.c;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // XOR D
+        case 0xAA:
+            reg.a ^= reg.d;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // XOR E
+        case 0xAB:
+            reg.a ^= reg.e;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // XOR H
+        case 0xAC:
+            reg.a ^= reg.h;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // XOR L
+        case 0xAD:
+            reg.a ^= reg.l;
             reg.f = (reg.a == 0) ? 0x80 : 0x00;
 
             reg.pc++;
@@ -1297,14 +1786,6 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
         }
-
-        // XOR L
-        case 0xAD:
-            reg.a ^= reg.l;
-            reg.f = (reg.a == 0) ? 0x80 : 0x00;
-
-            reg.pc++;
-            return;
 
         // XOR A
         case 0xAF:
@@ -1330,6 +1811,38 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // OR D
+        case 0xB2:
+            reg.a |= reg.d;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // OR E
+        case 0xB3:
+            reg.a |= reg.e;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // OR H
+        case 0xB4:
+            reg.a |= reg.h;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
+        // OR L
+        case 0xB5:
+            reg.a |= reg.l;
+            reg.f = (reg.a == 0) ? 0x80 : 0x00;
+
+            reg.pc++;
+            return;
+
         // OR (HL)
         case 0xB6:
         {
@@ -1349,9 +1862,51 @@ auto CPU::step() noexcept -> void
             reg.pc++;
             return;
 
+        // CP B
+        case 0xB8:
+            sub(reg.b, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
+        // CP C
+        case 0xB9:
+            sub(reg.c, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
+        // CP D
+        case 0xBA:
+            sub(reg.d, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
         // CP E
         case 0xBB:
             sub(reg.e, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
+        // CP H
+        case 0xBC:
+            sub(reg.h, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
+        // CP L
+        case 0xBD:
+            sub(reg.l, ALUFlag::DiscardResult);
+            reg.pc++;
+
+            return;
+
+        // CP A
+        case 0xBF:
+            sub(reg.a, ALUFlag::DiscardResult);
             reg.pc++;
 
             return;
@@ -1430,6 +1985,160 @@ auto CPU::step() noexcept -> void
 
             switch (instruction)
             {
+                // RLC B
+                case 0x00:
+                    reg.b = rlc(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // RLC C
+                case 0x01:
+                    reg.c = rlc(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // RLC D
+                case 0x02:
+                    reg.d = rlc(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // RLC E
+                case 0x03:
+                    reg.e = rlc(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // RLC H
+                case 0x04:
+                    reg.h = rlc(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // RLC L
+                case 0x05:
+                    reg.l = rlc(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // RLC A
+                case 0x07:
+                    reg.a = rlc(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC B
+                case 0x08:
+                    reg.b = rrc(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC C
+                case 0x09:
+                    reg.c = rrc(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC D
+                case 0x0A:
+                    reg.d = rrc(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC E
+                case 0x0B:
+                    reg.e = rrc(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC H
+                case 0x0C:
+                    reg.h = rrc(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC L
+                case 0x0D:
+                    reg.l = rrc(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // RRC A
+                case 0x0F:
+                    reg.a = rrc(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL B
+                case 0x10:
+                    reg.b = rl(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL C
+                case 0x11:
+                    reg.c = rl(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL D
+                case 0x12:
+                    reg.d = rl(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL E
+                case 0x13:
+                    reg.e = rl(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL H
+                case 0x14:
+                    reg.h = rl(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL L
+                case 0x15:
+                    reg.l = rl(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // RL A
+                case 0x17:
+                    reg.a = rl(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // RR B
+                case 0x18:
+                    reg.b = rr(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
                 // RR C
                 case 0x19:
                     reg.c = rr(reg.c);
@@ -1451,16 +2160,226 @@ auto CPU::step() noexcept -> void
 
                     return;
 
+                // RR H
+                case 0x1C:
+                    reg.h = rr(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // RR L
+                case 0x1D:
+                    reg.l = rr(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // RR A
+                case 0x1F:
+                    reg.a = rr(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA B
+                case 0x20:
+                    reg.b = sla(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA C
+                case 0x21:
+                    reg.c = sla(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA D
+                case 0x22:
+                    reg.d = sla(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA E
+                case 0x23:
+                    reg.e = sla(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA H
+                case 0x24:
+                    reg.h = sla(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA L
+                case 0x25:
+                    reg.l = sla(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // SLA A
+                case 0x27:
+                    reg.a = sla(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA B
+                case 0x28:
+                    reg.b = sra(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA C
+                case 0x29:
+                    reg.c = sra(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA D
+                case 0x2A:
+                    reg.d = sra(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA E
+                case 0x2B:
+                    reg.e = sra(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA H
+                case 0x2C:
+                    reg.h = sra(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA L
+                case 0x2D:
+                    reg.l = sra(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRA A
+                case 0x2F:
+                    reg.a = sra(reg.a);
+                    reg.pc += 2;
+
+                    return;
+
+                // SWAP B
+                case 0x30:
+                    reg.b = ((reg.b & 0x0F) << 4) | (reg.b >> 4);
+                    reg.f = (reg.b == 0) ? 0x80 : 0x00;
+
+                    reg.pc += 2;
+                    return;
+
+                // SWAP C
+                case 0x31:
+                    reg.c = ((reg.c & 0x0F) << 4) | (reg.c >> 4);
+                    reg.f = (reg.c == 0) ? 0x80 : 0x00;
+
+                    reg.pc += 2;
+                    return;
+
+                // SWAP D
+                case 0x32:
+                    reg.d = ((reg.d & 0x0F) << 4) | (reg.d >> 4);
+                    reg.f = (reg.d == 0) ? 0x80 : 0x00;
+
+                    reg.pc += 2;
+                    return;
+
+                // SWAP E
+                case 0x33:
+                    reg.e = ((reg.e & 0x0F) << 4) | (reg.e >> 4);
+                    reg.f = (reg.e == 0) ? 0x80 : 0x00;
+
+                    reg.pc += 2;
+                    return;
+
+                // SWAP H
+                case 0x34:
+                    reg.h = ((reg.h & 0x0F) << 4) | (reg.h >> 4);
+                    reg.f = (reg.h == 0) ? 0x80 : 0x00;
+
+                    reg.pc += 2;
+                    return;
+
+                // SWAP L
+                case 0x35:
+                    reg.l = ((reg.l & 0x0F) << 4) | (reg.l >> 4);
+                    reg.f = (reg.l == 0) ? 0x80 : 0x00;
+
+                    reg.pc += 2;
+                    return;
+
                 // SWAP A
                 case 0x37:
                     reg.a = ((reg.a & 0x0F) << 4) | (reg.a >> 4);
-                    reg.pc += 2;
+                    reg.f = (reg.a == 0) ? 0x80 : 0x00;
 
+                    reg.pc += 2;
                     return;
 
                 // SRL B
                 case 0x38:
                     reg.b = srl(reg.b);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL C
+                case 0x39:
+                    reg.c = srl(reg.c);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL D
+                case 0x3A:
+                    reg.d = srl(reg.d);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL E
+                case 0x3B:
+                    reg.e = srl(reg.e);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL H
+                case 0x3C:
+                    reg.h = srl(reg.h);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL L
+                case 0x3D:
+                    reg.l = srl(reg.l);
+                    reg.pc += 2;
+
+                    return;
+
+                // SRL A
+                case 0x3F:
+                    reg.a = srl(reg.a);
                     reg.pc += 2;
 
                     return;
