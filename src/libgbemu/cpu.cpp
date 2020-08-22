@@ -88,6 +88,24 @@ auto CPU::set_carry_flag(const bool condition) noexcept -> void
     update_flag(Flag::Carry, condition);
 }
 
+auto CPU::bitwise_and(const uint8_t n) noexcept -> void
+{
+    reg.a &= n;
+    reg.f = (reg.a == 0) ? 0xA0 : 0x20;
+}
+
+auto CPU::bitwise_xor(const uint8_t n) noexcept -> void
+{
+    reg.a ^= n;
+    reg.f = (reg.a == 0) ? 0x80 : 0x00;
+}
+
+auto CPU::bitwise_or(const uint8_t n) noexcept -> void
+{
+    reg.a |= n;
+    reg.f = (reg.a == 0) ? 0x80 : 0x00;
+}
+
 // Handles the `INC r` instruction.
 auto CPU::inc(uint8_t r) noexcept -> uint8_t
 {
@@ -345,6 +363,21 @@ auto CPU::bit(const unsigned int b, const uint8_t n) -> void
     set_zero_flag(!(n & (1 << b)));
 }
 
+auto CPU::add_sp() -> uint16_t
+{
+    set_zero_flag(false);
+    set_subtract_flag(false);
+
+    const int8_t imm{ static_cast<int8_t>(read_next_byte()) };
+
+    const int sum = reg.sp + imm;
+
+    set_half_carry_flag((reg.sp ^ imm ^ sum) & 0x10);
+    set_carry_flag((reg.sp ^ imm ^ sum) & 0x100);
+
+    return static_cast<uint16_t>(sum);
+}
+
 // Resets the CPU to the startup state.
 auto CPU::reset() noexcept -> void
 {
@@ -366,7 +399,7 @@ auto CPU::step() noexcept -> void
     {
         case 0x00:                                             return; // NOP
         case 0x01: reg.bc = read_next_word();                  return; // LD BC, $imm16
-        case 0x02: m_bus.write(reg.bc.value(), reg.a);         return; // LD (BC), A
+        case 0x02: m_bus.write(reg.bc, reg.a);                 return; // LD (BC), A
         case 0x03: reg.bc++;                                   return; // INC BC
         case 0x04: reg.b = inc(reg.b);                         return; // INC B
         case 0x05: reg.b = dec(reg.b);                         return; // DEC B
@@ -393,7 +426,7 @@ auto CPU::step() noexcept -> void
         case 0x0E: reg.c = read_next_byte();                   return; // LD C, $imm8
         case 0x0F: reg.a = rrc(reg.a, ALUFlag::ClearZeroFlag); return; // RRCA
         case 0x11: reg.de = read_next_word();                  return; // LD DE, $imm16
-        case 0x12: m_bus.write(reg.de.value(), reg.a);         return; // LD (DE), A
+        case 0x12: m_bus.write(reg.de, reg.a);                 return; // LD (DE), A
         case 0x13: reg.de++;                                   return; // INC DE
         case 0x14: reg.d = inc(reg.d);                         return; // INC D
         case 0x15: reg.d = dec(reg.d);                         return; // DEC D
@@ -531,7 +564,7 @@ auto CPU::step() noexcept -> void
             return;
 
         case 0x38: jr(reg.f & Flag::Carry); return;
-        case 0x39: add_hl(reg.sp); return;
+        case 0x39: add_hl(reg.sp);          return;
 
         // LD A, (HL-)
         case 0x3A:
@@ -547,9 +580,9 @@ auto CPU::step() noexcept -> void
             return;
         }
 
-        case 0x3B: reg.sp--; return;
-        case 0x3C: reg.a = inc(reg.a); return;
-        case 0x3D: reg.a = dec(reg.a); return;
+        case 0x3B: reg.sp--;                 return;
+        case 0x3C: reg.a = inc(reg.a);       return;
+        case 0x3D: reg.a = dec(reg.a);       return;
         case 0x3E: reg.a = read_next_byte(); return;
 
         // CCF
@@ -560,144 +593,144 @@ auto CPU::step() noexcept -> void
 
             return;
 
-        case 0x40:                                                      return; // LD B, B
-        case 0x41: reg.b = reg.c;                                       return; // LD B, C
-        case 0x42: reg.b = reg.d;                                       return; // LD B, D
-        case 0x43: reg.b = reg.e;                                       return; // LD B, E
-        case 0x44: reg.b = reg.h;                                       return; // LD B, H
-        case 0x45: reg.b = reg.l;                                       return; // LD B, L
-        case 0x46: reg.b = m_bus.read(reg.hl);                          return; // LD B, (HL)
-        case 0x47: reg.b = reg.a;                                       return; // LD B, A
-        case 0x48: reg.c = reg.b;                                       return; // LD C, B
-        case 0x49:                                                      return; // LD C, C
-        case 0x4A: reg.c = reg.d;                                       return; // LD C, D
-        case 0x4B: reg.c = reg.e;                                       return; // LD C, E
-        case 0x4C: reg.c = reg.h;                                       return; // LD C, H
-        case 0x4D: reg.c = reg.l;                                       return; // LD C, L
-        case 0x4E: reg.c = m_bus.read(reg.hl);                          return; // LD C, (HL)
-        case 0x4F: reg.c = reg.a;                                       return; // LD C, A
-        case 0x50: reg.d = reg.b;                                       return; // LD D, B
-        case 0x51: reg.d = reg.c;                                       return; // LD D, C
-        case 0x52:                                                      return; // LD D, D
-        case 0x53: reg.d = reg.e;                                       return; // LD D, E
-        case 0x54: reg.d = reg.h;                                       return; // LD D, H
-        case 0x55: reg.d = reg.l;                                       return; // LD D, L
-        case 0x56: reg.d = m_bus.read(reg.hl);                          return; // LD D, (HL)
-        case 0x57: reg.d = reg.a;                                       return; // LD D, A
-        case 0x58: reg.e = reg.b;                                       return; // LD E, B
-        case 0x59: reg.e = reg.c;                                       return; // LD E, C
-        case 0x5A: reg.e = reg.d;                                       return; // LD E, D
-        case 0x5B:                                                      return; // LD E, E
-        case 0x5C: reg.e = reg.h;                                       return; // LD E, H
-        case 0x5D: reg.e = reg.l;                                       return; // LD E, L
-        case 0x5E: reg.e = m_bus.read(reg.hl);                          return; // LD E, (HL)
-        case 0x5F: reg.e = reg.a;                                       return; // LD E, A
-        case 0x60: reg.h = reg.b;                                       return; // LD H, B
-        case 0x61: reg.h = reg.c;                                       return; // LD H, C
-        case 0x62: reg.h = reg.d;                                       return; // LD H, D
-        case 0x63: reg.h = reg.e;                                       return; // LD H, E
-        case 0x64:                                                      return; // LD H, H
-        case 0x65: reg.h = reg.l;                                       return; // LD H, L
-        case 0x66: reg.h = m_bus.read(reg.hl);                          return; // LD H, (HL)
-        case 0x67: reg.h = reg.a;                                       return; // LD H, A
-        case 0x68: reg.l = reg.b;                                       return; // LD L, B
-        case 0x69: reg.l = reg.c;                                       return; // LD L, C
-        case 0x6A: reg.l = reg.d;                                       return; // LD L, D
-        case 0x6B: reg.l = reg.e;                                       return; // LD L, E
-        case 0x6C: reg.l = reg.h;                                       return; // LD L, H
-        case 0x6D:                                                      return; // LD L, L
-        case 0x6E: reg.l = m_bus.read(reg.hl);                          return; // LD L, (HL)
-        case 0x6F: reg.l = reg.a;                                       return; // LD L, A
-        case 0x70: m_bus.write(reg.hl, reg.b);                          return; // LD (HL), B
-        case 0x71: m_bus.write(reg.hl, reg.c);                          return; // LD (HL), C
-        case 0x72: m_bus.write(reg.hl, reg.d);                          return; // LD (HL), D
-        case 0x73: m_bus.write(reg.hl, reg.e);                          return; // LD (HL), E
-        case 0x74: m_bus.write(reg.hl, reg.h);                          return; // LD (HL), H
-        case 0x75: m_bus.write(reg.hl, reg.l);                          return; // LD (HL), L
-        case 0x77: m_bus.write(reg.hl, reg.a);                          return; // LD (HL), A
-        case 0x78: reg.a = reg.b;                                       return; // LD A, B
-        case 0x79: reg.a = reg.c;                                       return; // LD A, C
-        case 0x7A: reg.a = reg.d;                                       return; // LD A, D
-        case 0x7B: reg.a = reg.e;                                       return; // LD A, E
-        case 0x7C: reg.a = reg.h;                                       return; // LD A, H
-        case 0x7D: reg.a = reg.l;                                       return; // LD A, L
-        case 0x7E: reg.a = m_bus.read(reg.hl);                          return; // LD A, (HL)
-        case 0x7F:                                                      return; // LD A, A
-        case 0x80: add(reg.b);                                          return; // ADD A, B
-        case 0x81: add(reg.c);                                          return; // ADD A, C
-        case 0x82: add(reg.d);                                          return; // ADD A, D
-        case 0x83: add(reg.e);                                          return; // ADD A, E
-        case 0x84: add(reg.h);                                          return; // ADD A, H
-        case 0x85: add(reg.l);                                          return; // ADD A, L
-        case 0x86: add(m_bus.read(reg.hl));                             return; // ADD A, (HL)
-        case 0x87: add(reg.a);                                          return; // ADD A, A
-        case 0x88: add(reg.b, ALUFlag::WithCarry);                      return; // ADC A, B
-        case 0x89: add(reg.c, ALUFlag::WithCarry);                      return; // ADC A, C
-        case 0x8A: add(reg.d, ALUFlag::WithCarry);                      return; // ADC A, D
-        case 0x8B: add(reg.e, ALUFlag::WithCarry);                      return; // ADC A, E
-        case 0x8C: add(reg.h, ALUFlag::WithCarry);                      return; // ADC A, H
-        case 0x8D: add(reg.l, ALUFlag::WithCarry);                      return; // ADC A, L
-        case 0x8E: add(m_bus.read(reg.hl), ALUFlag::WithCarry);         return; // ADC A, (HL)
-        case 0x8F: add(reg.a, ALUFlag::WithCarry);                      return; // ADC A, A
-        case 0x90: sub(reg.b);                                          return; // SUB B
-        case 0x91: sub(reg.c);                                          return; // SUB C
-        case 0x92: sub(reg.d);                                          return; // SUB D
-        case 0x93: sub(reg.e);                                          return; // SUB E
-        case 0x94: sub(reg.h);                                          return; // SUB H
-        case 0x95: sub(reg.l);                                          return; // SUB L
-        case 0x96: sub(m_bus.read(reg.hl));                             return; // SUB (HL)
-        case 0x97: sub(reg.a);                                          return; // SUB A
-        case 0x98: sub(reg.b, ALUFlag::WithCarry);                      return; // SBC A, B
-        case 0x99: sub(reg.c, ALUFlag::WithCarry);                      return; // SBC A, C
-        case 0x9A: sub(reg.d, ALUFlag::WithCarry);                      return; // SBC A, D
-        case 0x9B: sub(reg.e, ALUFlag::WithCarry);                      return; // SBC A, E
-        case 0x9C: sub(reg.h, ALUFlag::WithCarry);                      return; // SBC A, H
-        case 0x9D: sub(reg.l, ALUFlag::WithCarry);                      return; // SBC A, L
-        case 0x9E: sub(m_bus.read(reg.hl.value()), ALUFlag::WithCarry); return; // SBC A, (HL)
-        case 0x9F: sub(reg.a, ALUFlag::WithCarry);                      return; // SBC A, A
-        case 0xA0: bitwise_and(reg.b);                                  return; // AND B
-        case 0xA1: bitwise_and(reg.c);                                  return; // AND C
-        case 0xA2: bitwise_and(reg.d);                                  return; // AND D
-        case 0xA3: bitwise_and(reg.e);                                  return; // AND E
-        case 0xA4: bitwise_and(reg.h);                                  return; // AND H
-        case 0xA5: bitwise_and(reg.l);                                  return; // AND L
-        case 0xA6: bitwise_and(m_bus.read(reg.hl));                     return; // AND (HL)
-        case 0xA7: bitwise_and(reg.a);                                  return; // AND A
-        case 0xA8: bitwise_xor(reg.b);                                  return; // XOR B
-        case 0xA9: bitwise_xor(reg.c);                                  return; // XOR C
-        case 0xAA: bitwise_xor(reg.d);                                  return; // XOR D
-        case 0xAB: bitwise_xor(reg.e);                                  return; // XOR E
-        case 0xAC: bitwise_xor(reg.h);                                  return; // XOR H
-        case 0xAD: bitwise_xor(reg.l);                                  return; // XOR L
-        case 0xAE: bitwise_xor(m_bus.read(reg.hl));                     return; // XOR (HL)
-        case 0xAF: bitwise_xor(reg.a);                                  return; // XOR A
-        case 0xB0: bitwise_or(reg.b);                                   return; // OR B
-        case 0xB1: bitwise_or(reg.c);                                   return; // OR C
-        case 0xB2: bitwise_or(reg.d);                                   return; // OR D
-        case 0xB3: bitwise_or(reg.e);                                   return; // OR E
-        case 0xB4: bitwise_or(reg.h);                                   return; // OR H
-        case 0xB5: bitwise_or(reg.l);                                   return; // OR L
-        case 0xB6: bitwise_or(m_bus.read(reg.hl));                      return; // OR (HL)
-        case 0xB7: bitwise_or(reg.a);                                   return; // OR A
-        case 0xB8: sub(reg.b, ALUFlag::DiscardResult);                  return; // CP B
-        case 0xB9: sub(reg.c, ALUFlag::DiscardResult);                  return; // CP C
-        case 0xBA: sub(reg.d, ALUFlag::DiscardResult);                  return; // CP D
-        case 0xBB: sub(reg.e, ALUFlag::DiscardResult);                  return; // CP E
-        case 0xBC: sub(reg.h, ALUFlag::DiscardResult);                  return; // CP H
-        case 0xBD: sub(reg.l, ALUFlag::DiscardResult);                  return; // CP L
-        case 0xBE: sub(m_bus.read(reg.hl), ALUFlag::DiscardResult);     return; // CP (HL)
-        case 0xBF: sub(reg.a, ALUFlag::DiscardResult);                  return; // CP A
-        case 0xC0: ret(!(reg.f & Flag::Zero));                          return; // RET NZ
-        case 0xC1: stack_pop(reg.bc);                                   return; // POP BC
-        case 0xC2: jp(!(reg.f & Flag::Zero));                           return; // JP NZ, $imm16
-        case 0xC3: jp(true);                                            return; // JP $imm16
-        case 0xC4: call(!(reg.f & Flag::Zero));                         return; // CALL NZ, $imm16
-        case 0xC5: stack_push(reg.bc);                                  return; // PUSH BC
-        case 0xC6: add(read_next_byte());                               return; // ADD A, $imm8
-        case 0xC7: rst(0x0000);                                         return; // RST $0000
-        case 0xC8: ret(reg.f & Flag::Zero);                             return; // RET Z
-        case 0xC9: ret(true);                                           return; // RET
-        case 0xCA: jp(reg.f & Flag::Zero);                              return; // JP Z, $imm16
+        case 0x40:                                                  return; // LD B, B
+        case 0x41: reg.b = reg.c;                                   return; // LD B, C
+        case 0x42: reg.b = reg.d;                                   return; // LD B, D
+        case 0x43: reg.b = reg.e;                                   return; // LD B, E
+        case 0x44: reg.b = reg.h;                                   return; // LD B, H
+        case 0x45: reg.b = reg.l;                                   return; // LD B, L
+        case 0x46: reg.b = m_bus.read(reg.hl);                      return; // LD B, (HL)
+        case 0x47: reg.b = reg.a;                                   return; // LD B, A
+        case 0x48: reg.c = reg.b;                                   return; // LD C, B
+        case 0x49:                                                  return; // LD C, C
+        case 0x4A: reg.c = reg.d;                                   return; // LD C, D
+        case 0x4B: reg.c = reg.e;                                   return; // LD C, E
+        case 0x4C: reg.c = reg.h;                                   return; // LD C, H
+        case 0x4D: reg.c = reg.l;                                   return; // LD C, L
+        case 0x4E: reg.c = m_bus.read(reg.hl);                      return; // LD C, (HL)
+        case 0x4F: reg.c = reg.a;                                   return; // LD C, A
+        case 0x50: reg.d = reg.b;                                   return; // LD D, B
+        case 0x51: reg.d = reg.c;                                   return; // LD D, C
+        case 0x52:                                                  return; // LD D, D
+        case 0x53: reg.d = reg.e;                                   return; // LD D, E
+        case 0x54: reg.d = reg.h;                                   return; // LD D, H
+        case 0x55: reg.d = reg.l;                                   return; // LD D, L
+        case 0x56: reg.d = m_bus.read(reg.hl);                      return; // LD D, (HL)
+        case 0x57: reg.d = reg.a;                                   return; // LD D, A
+        case 0x58: reg.e = reg.b;                                   return; // LD E, B
+        case 0x59: reg.e = reg.c;                                   return; // LD E, C
+        case 0x5A: reg.e = reg.d;                                   return; // LD E, D
+        case 0x5B:                                                  return; // LD E, E
+        case 0x5C: reg.e = reg.h;                                   return; // LD E, H
+        case 0x5D: reg.e = reg.l;                                   return; // LD E, L
+        case 0x5E: reg.e = m_bus.read(reg.hl);                      return; // LD E, (HL)
+        case 0x5F: reg.e = reg.a;                                   return; // LD E, A
+        case 0x60: reg.h = reg.b;                                   return; // LD H, B
+        case 0x61: reg.h = reg.c;                                   return; // LD H, C
+        case 0x62: reg.h = reg.d;                                   return; // LD H, D
+        case 0x63: reg.h = reg.e;                                   return; // LD H, E
+        case 0x64:                                                  return; // LD H, H
+        case 0x65: reg.h = reg.l;                                   return; // LD H, L
+        case 0x66: reg.h = m_bus.read(reg.hl);                      return; // LD H, (HL)
+        case 0x67: reg.h = reg.a;                                   return; // LD H, A
+        case 0x68: reg.l = reg.b;                                   return; // LD L, B
+        case 0x69: reg.l = reg.c;                                   return; // LD L, C
+        case 0x6A: reg.l = reg.d;                                   return; // LD L, D
+        case 0x6B: reg.l = reg.e;                                   return; // LD L, E
+        case 0x6C: reg.l = reg.h;                                   return; // LD L, H
+        case 0x6D:                                                  return; // LD L, L
+        case 0x6E: reg.l = m_bus.read(reg.hl);                      return; // LD L, (HL)
+        case 0x6F: reg.l = reg.a;                                   return; // LD L, A
+        case 0x70: m_bus.write(reg.hl, reg.b);                      return; // LD (HL), B
+        case 0x71: m_bus.write(reg.hl, reg.c);                      return; // LD (HL), C
+        case 0x72: m_bus.write(reg.hl, reg.d);                      return; // LD (HL), D
+        case 0x73: m_bus.write(reg.hl, reg.e);                      return; // LD (HL), E
+        case 0x74: m_bus.write(reg.hl, reg.h);                      return; // LD (HL), H
+        case 0x75: m_bus.write(reg.hl, reg.l);                      return; // LD (HL), L
+        case 0x77: m_bus.write(reg.hl, reg.a);                      return; // LD (HL), A
+        case 0x78: reg.a = reg.b;                                   return; // LD A, B
+        case 0x79: reg.a = reg.c;                                   return; // LD A, C
+        case 0x7A: reg.a = reg.d;                                   return; // LD A, D
+        case 0x7B: reg.a = reg.e;                                   return; // LD A, E
+        case 0x7C: reg.a = reg.h;                                   return; // LD A, H
+        case 0x7D: reg.a = reg.l;                                   return; // LD A, L
+        case 0x7E: reg.a = m_bus.read(reg.hl);                      return; // LD A, (HL)
+        case 0x7F:                                                  return; // LD A, A
+        case 0x80: add(reg.b);                                      return; // ADD A, B
+        case 0x81: add(reg.c);                                      return; // ADD A, C
+        case 0x82: add(reg.d);                                      return; // ADD A, D
+        case 0x83: add(reg.e);                                      return; // ADD A, E
+        case 0x84: add(reg.h);                                      return; // ADD A, H
+        case 0x85: add(reg.l);                                      return; // ADD A, L
+        case 0x86: add(m_bus.read(reg.hl));                         return; // ADD A, (HL)
+        case 0x87: add(reg.a);                                      return; // ADD A, A
+        case 0x88: add(reg.b, ALUFlag::WithCarry);                  return; // ADC A, B
+        case 0x89: add(reg.c, ALUFlag::WithCarry);                  return; // ADC A, C
+        case 0x8A: add(reg.d, ALUFlag::WithCarry);                  return; // ADC A, D
+        case 0x8B: add(reg.e, ALUFlag::WithCarry);                  return; // ADC A, E
+        case 0x8C: add(reg.h, ALUFlag::WithCarry);                  return; // ADC A, H
+        case 0x8D: add(reg.l, ALUFlag::WithCarry);                  return; // ADC A, L
+        case 0x8E: add(m_bus.read(reg.hl), ALUFlag::WithCarry);     return; // ADC A, (HL)
+        case 0x8F: add(reg.a, ALUFlag::WithCarry);                  return; // ADC A, A
+        case 0x90: sub(reg.b);                                      return; // SUB B
+        case 0x91: sub(reg.c);                                      return; // SUB C
+        case 0x92: sub(reg.d);                                      return; // SUB D
+        case 0x93: sub(reg.e);                                      return; // SUB E
+        case 0x94: sub(reg.h);                                      return; // SUB H
+        case 0x95: sub(reg.l);                                      return; // SUB L
+        case 0x96: sub(m_bus.read(reg.hl));                         return; // SUB (HL)
+        case 0x97: sub(reg.a);                                      return; // SUB A
+        case 0x98: sub(reg.b, ALUFlag::WithCarry);                  return; // SBC A, B
+        case 0x99: sub(reg.c, ALUFlag::WithCarry);                  return; // SBC A, C
+        case 0x9A: sub(reg.d, ALUFlag::WithCarry);                  return; // SBC A, D
+        case 0x9B: sub(reg.e, ALUFlag::WithCarry);                  return; // SBC A, E
+        case 0x9C: sub(reg.h, ALUFlag::WithCarry);                  return; // SBC A, H
+        case 0x9D: sub(reg.l, ALUFlag::WithCarry);                  return; // SBC A, L
+        case 0x9E: sub(m_bus.read(reg.hl), ALUFlag::WithCarry);     return; // SBC A, (HL)
+        case 0x9F: sub(reg.a, ALUFlag::WithCarry);                  return; // SBC A, A
+        case 0xA0: bitwise_and(reg.b);                              return; // AND B
+        case 0xA1: bitwise_and(reg.c);                              return; // AND C
+        case 0xA2: bitwise_and(reg.d);                              return; // AND D
+        case 0xA3: bitwise_and(reg.e);                              return; // AND E
+        case 0xA4: bitwise_and(reg.h);                              return; // AND H
+        case 0xA5: bitwise_and(reg.l);                              return; // AND L
+        case 0xA6: bitwise_and(m_bus.read(reg.hl));                 return; // AND (HL)
+        case 0xA7: bitwise_and(reg.a);                              return; // AND A
+        case 0xA8: bitwise_xor(reg.b);                              return; // XOR B
+        case 0xA9: bitwise_xor(reg.c);                              return; // XOR C
+        case 0xAA: bitwise_xor(reg.d);                              return; // XOR D
+        case 0xAB: bitwise_xor(reg.e);                              return; // XOR E
+        case 0xAC: bitwise_xor(reg.h);                              return; // XOR H
+        case 0xAD: bitwise_xor(reg.l);                              return; // XOR L
+        case 0xAE: bitwise_xor(m_bus.read(reg.hl));                 return; // XOR (HL)
+        case 0xAF: bitwise_xor(reg.a);                              return; // XOR A
+        case 0xB0: bitwise_or(reg.b);                               return; // OR B
+        case 0xB1: bitwise_or(reg.c);                               return; // OR C
+        case 0xB2: bitwise_or(reg.d);                               return; // OR D
+        case 0xB3: bitwise_or(reg.e);                               return; // OR E
+        case 0xB4: bitwise_or(reg.h);                               return; // OR H
+        case 0xB5: bitwise_or(reg.l);                               return; // OR L
+        case 0xB6: bitwise_or(m_bus.read(reg.hl));                  return; // OR (HL)
+        case 0xB7: bitwise_or(reg.a);                               return; // OR A
+        case 0xB8: sub(reg.b, ALUFlag::DiscardResult);              return; // CP B
+        case 0xB9: sub(reg.c, ALUFlag::DiscardResult);              return; // CP C
+        case 0xBA: sub(reg.d, ALUFlag::DiscardResult);              return; // CP D
+        case 0xBB: sub(reg.e, ALUFlag::DiscardResult);              return; // CP E
+        case 0xBC: sub(reg.h, ALUFlag::DiscardResult);              return; // CP H
+        case 0xBD: sub(reg.l, ALUFlag::DiscardResult);              return; // CP L
+        case 0xBE: sub(m_bus.read(reg.hl), ALUFlag::DiscardResult); return; // CP (HL)
+        case 0xBF: sub(reg.a, ALUFlag::DiscardResult);              return; // CP A
+        case 0xC0: ret(!(reg.f & Flag::Zero));                      return; // RET NZ
+        case 0xC1: stack_pop(reg.bc);                               return; // POP BC
+        case 0xC2: jp(!(reg.f & Flag::Zero));                       return; // JP NZ, $imm16
+        case 0xC3: jp(true);                                        return; // JP $imm16
+        case 0xC4: call(!(reg.f & Flag::Zero));                     return; // CALL NZ, $imm16
+        case 0xC5: stack_push(reg.bc);                              return; // PUSH BC
+        case 0xC6: add(read_next_byte());                           return; // ADD A, $imm8
+        case 0xC7: rst(0x0000);                                     return; // RST $0000
+        case 0xC8: ret(reg.f & Flag::Zero);                         return; // RET Z
+        case 0xC9: ret(true);                                       return; // RET
+        case 0xCA: jp(reg.f & Flag::Zero);                          return; // JP Z, $imm16
 
         // CB-prefixed instruction
         case 0xCB:
@@ -725,7 +758,6 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x07: reg.a = rlc(reg.a); return; // RLC A
-
                 case 0x08: reg.b = rrc(reg.b); return; // RRC B
                 case 0x09: reg.c = rrc(reg.c); return; // RRC C
                 case 0x0A: reg.d = rrc(reg.d); return; // RRC D
@@ -748,7 +780,6 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x0F: reg.a = rrc(reg.a); return; // RRC A
-
                 case 0x10: reg.b = rl(reg.b); return; // RL B
                 case 0x11: reg.c = rl(reg.c); return; // RL C
                 case 0x12: reg.d = rl(reg.d); return; // RL D
@@ -771,7 +802,6 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x17: reg.a = rl(reg.a); return; // RL A
-
                 case 0x18: reg.b = rr(reg.b); return; // RR B
                 case 0x19: reg.c = rr(reg.c); return; // RR C
                 case 0x1A: reg.d = rr(reg.d); return; // RR D
@@ -794,7 +824,6 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x1F: reg.a = rr(reg.a); return; // RR A
-
                 case 0x20: reg.b = sla(reg.b); return; // SLA B
                 case 0x21: reg.c = sla(reg.c); return; // SLA C
                 case 0x22: reg.d = sla(reg.d); return; // SLA D
@@ -817,7 +846,6 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x27: reg.a = sla(reg.a); return; // SLA A
- 
                 case 0x28: reg.b = sra(reg.b); return; // SRA B
                 case 0x29: reg.c = sra(reg.c); return; // SRA C
                 case 0x2A: reg.d = sra(reg.d); return; // SRA D
@@ -841,7 +869,6 @@ auto CPU::step() noexcept -> void
 
                 // SRA A
                 case 0x2F: reg.a = sra(reg.a); return;
-
                 case 0x30: reg.b = swap(reg.b); return; // SWAP B
                 case 0x31: reg.c = swap(reg.c); return; // SWAP C
                 case 0x32: reg.d = swap(reg.d); return; // SWAP D
@@ -866,7 +893,6 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x37: reg.a = swap(reg.a); return; // SWAP A
-
                 case 0x38: reg.b = srl(reg.b); return; // SRL B
                 case 0x39: reg.c = srl(reg.c); return; // SRL C
                 case 0x3A: reg.d = srl(reg.d); return; // SRL D
@@ -889,14 +915,13 @@ auto CPU::step() noexcept -> void
                 }
 
                 case 0x3F: reg.a = srl(reg.a); return; // SRL A
-
                 case 0x40: bit(0, reg.b);                      return; // BIT 0, B
                 case 0x41: bit(0, reg.c);                      return; // BIT 0, C
                 case 0x42: bit(0, reg.d);                      return; // BIT 0, D
                 case 0x43: bit(0, reg.e);                      return; // BIT 0, E
                 case 0x44: bit(0, reg.h);                      return; // BIT 0, H
                 case 0x45: bit(0, reg.l);                      return; // BIT 0, L
-                case 0x46: bit(0, m_bus.read(reg.hl.value())); return; // BIT 0, (HL)
+                case 0x46: bit(0, m_bus.read(reg.hl)); return; // BIT 0, (HL)
                 case 0x47: bit(0, reg.a);                      return; // BIT 0, A
                 case 0x48: bit(1, reg.b);                      return; // BIT 1, B
                 case 0x49: bit(1, reg.c);                      return; // BIT 1, C
@@ -904,7 +929,7 @@ auto CPU::step() noexcept -> void
                 case 0x4B: bit(1, reg.e);                      return; // BIT 1, E
                 case 0x4C: bit(1, reg.h);                      return; // BIT 1, H
                 case 0x4D: bit(1, reg.l);                      return; // BIT 1, L
-                case 0x4E: bit(1, m_bus.read(reg.hl.value())); return; // BIT 1, (HL)
+                case 0x4E: bit(1, m_bus.read(reg.hl)); return; // BIT 1, (HL)
                 case 0x4F: bit(1, reg.a);                      return; // BIT 1, A
                 case 0x50: bit(2, reg.b);                      return; // BIT 2, B
                 case 0x51: bit(2, reg.c);                      return; // BIT 2, C
@@ -912,7 +937,7 @@ auto CPU::step() noexcept -> void
                 case 0x53: bit(2, reg.e);                      return; // BIT 2, E
                 case 0x54: bit(2, reg.h);                      return; // BIT 2, H
                 case 0x55: bit(2, reg.l);                      return; // BIT 2, L
-                case 0x56: bit(2, m_bus.read(reg.hl.value())); return; // BIT 2, (HL)
+                case 0x56: bit(2, m_bus.read(reg.hl)); return; // BIT 2, (HL)
                 case 0x57: bit(2, reg.a);                      return; // BIT 2, A
                 case 0x58: bit(3, reg.b);                      return; // BIT 3, B
                 case 0x59: bit(3, reg.c);                      return; // BIT 3, C
@@ -920,7 +945,7 @@ auto CPU::step() noexcept -> void
                 case 0x5B: bit(3, reg.e);                      return; // BIT 3, E
                 case 0x5C: bit(3, reg.h);                      return; // BIT 3, H
                 case 0x5D: bit(3, reg.l);                      return; // BIT 3, L
-                case 0x5E: bit(3, m_bus.read(reg.hl.value())); return; // BIT 3, (HL)
+                case 0x5E: bit(3, m_bus.read(reg.hl)); return; // BIT 3, (HL)
                 case 0x5F: bit(3, reg.a);                      return; // BIT 3, A
                 case 0x60: bit(4, reg.b);                      return; // BIT 4, B
                 case 0x61: bit(4, reg.c);                      return; // BIT 4, C
@@ -928,7 +953,7 @@ auto CPU::step() noexcept -> void
                 case 0x63: bit(4, reg.e);                      return; // BIT 4, E
                 case 0x64: bit(4, reg.h);                      return; // BIT 4, H
                 case 0x65: bit(4, reg.l);                      return; // BIT 4, L
-                case 0x66: bit(4, m_bus.read(reg.hl.value())); return; // BIT 4, (HL)
+                case 0x66: bit(4, m_bus.read(reg.hl)); return; // BIT 4, (HL)
                 case 0x67: bit(4, reg.a);                      return; // BIT 4, A
                 case 0x68: bit(5, reg.b);                      return; // BIT 5, B
                 case 0x69: bit(5, reg.c);                      return; // BIT 5, C
@@ -936,7 +961,7 @@ auto CPU::step() noexcept -> void
                 case 0x6B: bit(5, reg.e);                      return; // BIT 5, E
                 case 0x6C: bit(5, reg.h);                      return; // BIT 5, H
                 case 0x6D: bit(5, reg.l);                      return; // BIT 5, L
-                case 0x6E: bit(5, m_bus.read(reg.hl.value())); return; // BIT 5, (HL)
+                case 0x6E: bit(5, m_bus.read(reg.hl)); return; // BIT 5, (HL)
                 case 0x6F: bit(5, reg.a);                      return; // BIT 5, A
                 case 0x70: bit(6, reg.b);                      return; // BIT 6, B
                 case 0x71: bit(6, reg.c);                      return; // BIT 6, C
@@ -944,7 +969,7 @@ auto CPU::step() noexcept -> void
                 case 0x73: bit(6, reg.e);                      return; // BIT 6, E
                 case 0x74: bit(6, reg.h);                      return; // BIT 6, H
                 case 0x75: bit(6, reg.l);                      return; // BIT 6, L
-                case 0x76: bit(6, m_bus.read(reg.hl.value())); return; // BIT 6, (HL)
+                case 0x76: bit(6, m_bus.read(reg.hl)); return; // BIT 6, (HL)
                 case 0x77: bit(6, reg.a);                      return; // BIT 6, A
                 case 0x78: bit(7, reg.b);                      return; // BIT 7, B
                 case 0x79: bit(7, reg.c);                      return; // BIT 7, C
@@ -952,7 +977,7 @@ auto CPU::step() noexcept -> void
                 case 0x7B: bit(7, reg.e);                      return; // BIT 7, E
                 case 0x7C: bit(7, reg.h);                      return; // BIT 7, H
                 case 0x7D: bit(7, reg.l);                      return; // BIT 7, L
-                case 0x7E: bit(7, m_bus.read(reg.hl.value())); return; // BIT 7, (HL)
+                case 0x7E: bit(7, m_bus.read(reg.hl)); return; // BIT 7, (HL)
                 case 0x7F: bit(7, reg.a);                      return; // BIT 7, A
                 case 0x80: reg.b = res(0, reg.b);              return; // RES 0, B
                 case 0x81: reg.c = res(0, reg.c);              return; // RES 0, C
@@ -1107,59 +1132,23 @@ auto CPU::step() noexcept -> void
         case 0xE5: stack_push(reg.hl);                               return; // PUSH HL
         case 0xE6: bitwise_and(read_next_byte());                    return; // AND $imm8
         case 0xE7: rst(0x0020);                                      return; // RST $0020
-
-        // ADD SP, $simm8
-        case 0xE8:
-        {
-            set_zero_flag(false);
-            set_subtract_flag(false);
-
-            const int8_t imm{ static_cast<int8_t>(read_next_byte()) };
-
-            const int sum = reg.sp + imm;
-
-            set_half_carry_flag((reg.sp ^ imm ^ sum) & 0x10);
-            set_carry_flag((reg.sp ^ imm ^ sum) & 0x100);
-
-            reg.sp = static_cast<uint16_t>(sum);
-            return;
-        }
-
-        case 0xE9: reg.pc = reg.hl.value(); return;
-        case 0xEA: m_bus.write(read_next_word(), reg.a); return;
-        case 0xEE: bitwise_xor(read_next_byte()); return;
-        case 0xEF: rst(0x0028); return;
-        case 0xF0: m_bus.read(0xFF00 + read_next_byte()); return;
-        case 0xF1: reg.af = stack_pop(); return;
-        case 0xF2: reg.a = m_bus.read(0xFF00 + reg.c); return;
-        case 0xF3: return;
-        case 0xF5: stack_push(reg.af); return;
-        case 0xF6: bitwise_or(read_next_byte()); return;
-        case 0xF7: rst(0x0030); return;
-
-        // LD HL, SP+r8
-        case 0xF8:
-        {
-            set_zero_flag(false);
-            set_subtract_flag(false);
-
-            const int8_t imm{ static_cast<int8_t>(read_next_byte()) };
-
-            const int sum = reg.sp + imm;
-
-            set_half_carry_flag((reg.sp ^ imm ^ sum) & 0x10);
-            set_carry_flag((reg.sp ^ imm ^ sum) & 0x100);
-
-            reg.hl = static_cast<uint16_t>(sum);
-            return;
-        }
-
-        case 0xF9: reg.sp = reg.hl.value();                       return;
-        case 0xFA: reg.a = m_bus.read(read_next_word());          return;
-        case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult); return;
-        case 0xFF: rst(0x0038);                                   return;
-
-        default:
-            __debugbreak();
+        case 0xE8: reg.sp = add_sp();                                return; // ADD SP, $simm8
+        case 0xE9: reg.pc = reg.hl;                                  return; // JP (HL)
+        case 0xEA: m_bus.write(read_next_word(), reg.a);             return; // LD ($imm16), A
+        case 0xEE: bitwise_xor(read_next_byte());                    return; // XOR $imm8
+        case 0xEF: rst(0x0028);                                      return; // RST $0028
+        case 0xF0: m_bus.read(0xFF00 + read_next_byte());            return; // LDH A, ($imm8)
+        case 0xF1: stack_pop(reg.af);                                return; // POP AF
+        case 0xF2: reg.a = m_bus.read(0xFF00 + reg.c);               return; // LD A, (C)
+        case 0xF3:                                                   return; // DI
+        case 0xF5: stack_push(reg.af);                               return; // PUSH AF
+        case 0xF6: bitwise_or(read_next_byte());                     return; // OR $imm8
+        case 0xF7: rst(0x0030);                                      return; // RST $0030
+        case 0xF8: reg.hl = add_sp();                                return; // LD HL, SP+$simm8
+        case 0xF9: reg.sp = reg.hl;                                  return; // LD SP, HL
+        case 0xFA: reg.a = m_bus.read(read_next_word());             return; // LD A, ($imm16)
+        case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult);    return; // CP $imm8
+        case 0xFF: rst(0x0038);                                      return; // RST $0038
+        default: __debugbreak();                                     return;
     }
 }

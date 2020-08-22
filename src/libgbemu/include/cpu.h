@@ -122,6 +122,14 @@ namespace GameBoy
         auto update_flag(const enum Flag flag,
                          const bool condition_met) noexcept -> void;
 
+        auto bitwise_and(const uint8_t n) noexcept -> void;
+
+        auto bitwise_xor(const uint8_t n) noexcept -> void;
+
+        auto bitwise_or(const uint8_t n) noexcept -> void;
+
+        auto add_sp() noexcept -> uint16_t;
+
         // Sets the Zero flag to `true` if `value` is 0.
         template<typename T>
         auto set_zero_flag(const T value) noexcept -> void;
