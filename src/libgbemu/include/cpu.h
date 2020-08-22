@@ -29,6 +29,30 @@ namespace GameBoy
     // Forward declaration
     class SystemBus;
 
+    // Defines a register pair.
+    class RegisterPair
+    {
+    public:
+        RegisterPair(uint8_t& hi, uint8_t& lo) noexcept : m_hi(hi), m_lo(lo)
+        { };
+
+        auto value() const noexcept -> uint16_t
+        {
+            return ((m_hi << 8) | m_lo);
+        }
+
+        auto value(const uint16_t v) noexcept -> void
+        {
+            m_hi = v >> 8;
+            m_lo = v & 0x00FF;
+        }
+
+        operator uint16_t() { return value(); }
+        
+        uint8_t& m_hi;
+        uint8_t& m_lo;
+    };
+
     // Defines a Sharp SM83 CPU interpreter.
     class CPU
     {
@@ -43,21 +67,12 @@ namespace GameBoy
 
         struct
         {
-            uint8_t b;
-            uint8_t c;
+            uint8_t b, c, d, e, h, l, a, f;
 
-            uint8_t d;
-            uint8_t e;
-
-            uint8_t h;
-            uint8_t l;
-
-            // Accumulator
-            uint8_t a;
-
-            // Flag register. Only the 4 upper bits are used; the lower 4 bits
-            // are fixed to 0.
-            uint8_t f;
+            RegisterPair bc;
+            RegisterPair de;
+            RegisterPair hl;
+            RegisterPair af;
 
             // Program counter
             uint16_t pc;
@@ -87,22 +102,39 @@ namespace GameBoy
 
             // The flag register is updated, but the result is not stored into
             // the Accumulator (register A).
-            DiscardResult
+            DiscardResult,
+
+            // Force the Zero flag to be set to zero.
+            ClearZeroFlag,
+
+            Normal
         };
 
-        // Returns the value of the `BC` register pair.
-        auto bc() const noexcept -> uint16_t;
-
-        // Returns the value of the `DE` register pair.
-        auto de() const noexcept -> uint16_t;
-
-        // Returns the value of the `HL` register pair.
-        auto hl() const noexcept -> uint16_t;
-
-        // Returns the value of the `AF` register pair.
-        auto af() const noexcept -> uint16_t;
-
     private:
+        inline auto read_next_byte() noexcept -> uint8_t;
+
+        inline auto read_next_word() noexcept -> uint16_t;
+
+        auto stack_pop(RegisterPair& pair) noexcept -> void;
+
+        auto stack_push(const RegisterPair& pair) noexcept -> void;
+
+        auto update_flag(const enum Flag flag,
+                         const bool condition_met) noexcept -> void;
+
+        // Sets the Zero flag to `true` if `value` is 0.
+        template<typename T>
+        auto set_zero_flag(const T value) noexcept -> void;
+
+        // Sets the Subtract flag to `condition`.
+        auto set_subtract_flag(const bool condition) noexcept -> void;
+
+        // Sets the Half Carry flag to `condition`.
+        auto set_half_carry_flag(const bool condition) noexcept -> void;
+
+        // Sets the Carry flag to `condition`.
+        auto set_carry_flag(const bool condition) noexcept -> void;
+
         // Handles the `INC r` instruction.
         auto inc(uint8_t r) noexcept -> uint8_t;
 
@@ -110,7 +142,7 @@ namespace GameBoy
         auto dec(uint8_t r) noexcept -> uint8_t;
 
         // Handles the `ADD HL, xx` instruction.
-        auto add_hl(const uint16_t pair) noexcept -> void;
+        auto add_hl(const RegisterPair& pair) noexcept -> void;
 
         // Handles the `JR cond, $branch` instruction.
         auto jr(const bool condition_met) -> void;
@@ -143,16 +175,20 @@ namespace GameBoy
         auto rst(const uint16_t vector) noexcept -> void;
 
         // Handles the `RLC n` instruction.
-        auto rlc(uint8_t n) noexcept -> uint8_t;
+        auto rlc(uint8_t n,
+                 const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
         // Handles the `RRC n` instruction.
-        auto rrc(uint8_t n) noexcept -> uint8_t;
+        auto rrc(uint8_t n,
+                 const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
         // Handles the `RR n` instruction.
-        auto rr(uint8_t n) noexcept -> uint8_t;
+        auto rr(uint8_t n,
+                const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
         // Handles the `RL n` instruction.
-        auto rl(uint8_t n) noexcept -> uint8_t;
+        auto rl(uint8_t n,
+                const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
         // Handles the `SLA n` instruction.
         auto sla(uint8_t n) noexcept -> uint8_t;
