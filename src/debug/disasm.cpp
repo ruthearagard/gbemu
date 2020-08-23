@@ -111,10 +111,10 @@ auto Disassembler::after() noexcept -> std::string
 
     disasm += fmt::sprintf("; [BC=0x%04X, DE=0x%04X, HL=0x%04X, AF=0x%04X, "
                            "SP=0x%04X]",
-                           m_cpu.bc(),
-                           m_cpu.de(),
-                           m_cpu.hl(),
-                           m_cpu.af(),
+                           m_cpu.reg.bc,
+                           m_cpu.reg.de,
+                           m_cpu.reg.hl,
+                           m_cpu.reg.af,
                            m_cpu.reg.sp);
     return disasm;
 }
