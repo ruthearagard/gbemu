@@ -20,16 +20,31 @@
 
 using namespace GameBoy;
 
+SystemBus::SystemBus() noexcept : timer(*this)
+{ }
+
 // Sets the current cartridge to `cart`.
 auto SystemBus::cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void
 {
     m_cart = cart;
 }
 
+// Advances the hardware by 1 m-cycle.
+auto SystemBus::step() noexcept -> void
+{
+    timer.step();
+}
+
 // Returns a byte from memory referenced by memory address `address`.
 // This function incurs 1 m-cycle (or 4 T-cycles).
-auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
+auto SystemBus::read(const uint16_t address,
+                     const AccessType access_type) noexcept -> uint8_t
 {
+    if (access_type == AccessType::Emulated)
+    {
+        step();
+    }
+
     switch (address >> 12)
     {
         // [$0000 - $3FFF]: 16KB ROM Bank 0 (in cartridge, fixed at bank 0)
@@ -52,6 +67,10 @@ auto SystemBus::read(const uint16_t address) const noexcept -> uint8_t
         case 0xF:
             switch (address & 0x0FFF)
             {
+                // $FF0F - IF - Interrupt Flag (R/W)
+                case 0xF0F:
+                    return interrupt_flag;
+
                 // $FF44 - LY - LCDC Y-Coordinate (R)
                 case 0xF44:
                     return ppu.LY;
@@ -104,6 +123,11 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF02 - SC - Serial Transfer Control (R/W)
                 case 0xF02:
+                    return;
+
+                // FF05 - TIMA - Timer counter (R/W)
+                case 0xF05:
+                    timer.TIMA = data;
                     return;
 
                 // $FF07 - TAC - Timer Control (R/W)
@@ -170,4 +194,12 @@ auto SystemBus::write(const uint16_t address,
             __debugbreak();
             return;
     }
+
+    step();
+}
+
+// Signals an interrupt `interrupt`.
+auto SystemBus::signal_interrupt(const Interrupt interrupt) noexcept -> void
+{
+    interrupt_flag |= interrupt;
 }

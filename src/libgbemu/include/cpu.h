@@ -186,6 +186,11 @@ namespace GameBoy
             Normal
         };
 
+        // IME - Interrupt Master Enable Flag (Write Only)
+        bool ime;
+
+        bool halted;
+
     private:
         // Returns a byte from memory referenced by the program counter and
         // increments the program counter.

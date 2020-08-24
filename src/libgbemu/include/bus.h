@@ -44,15 +44,32 @@ namespace GameBoy
     // Forward declaration
     class Cartridge;
 
+    enum Interrupt : unsigned int
+    {
+        TimerInterrupt = 1 << 2
+    };
+
+    enum class AccessType
+    {
+        Emulated,
+        Direct
+    };
+
     class SystemBus
     {
     public:
+        SystemBus() noexcept;
+
         // Sets the current cartridge to `cart`.
         auto cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void;
 
+        // Advances the hardware by 1 m-cycle.
+        auto step() noexcept -> void;
+
         // Returns a byte from memory referenced by memory address `address`.
         // This function incurs 1 m-cycle (or 4 T-cycles).
-        auto read(const uint16_t address) const noexcept -> uint8_t;
+        auto read(const uint16_t address,
+                  const AccessType access_type = AccessType::Emulated) noexcept -> uint8_t;
 
         // Stores a byte `data` into memory referenced by memory address
         // `address`.
@@ -60,6 +77,9 @@ namespace GameBoy
         // This function incurs 1 m-cycle (or 4 T-cycles).
         auto write(const uint16_t address,
                    const uint8_t data) noexcept -> void;
+
+        // Signals an interrupt `interrupt`.
+        auto signal_interrupt(const Interrupt interrupt) noexcept -> void;
 
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
         std::array<uint8_t, 4096> wram;

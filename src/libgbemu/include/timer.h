@@ -26,9 +26,39 @@
 
 namespace GameBoy
 {
+    // Forward declaration
+    class SystemBus;
+
     class Timer
     {
     public:
+        explicit Timer(SystemBus& m_bus) noexcept;
+
+        // Resets the timers to the startup state.
+        auto reset() noexcept -> void;
+
+        // Advances the timers by 1 m-cycle.
+        auto step() noexcept -> void;
+
+        // $FF04 - DIV - Divider Register (R/W)
+        //
+        // This register is incremented at rate of 16384Hz. Writing any value
+        // to this register resets it to $00.
+        uint8_t DIV;
+
+        // $FF05 - TIMA - Timer counter (R/W)
+        //
+        // This timer is incremented by a clock frequency specified by the TAC
+        // register ($FF07). When the value overflows (gets bigger than $FF)
+        // then it will be reset to the value specified in TMA ($FF06), and an
+        // interrupt will be requested, as described below.
+        uint8_t TIMA;
+
+        // $FF06 - TMA - Timer Modulo (R/W)
+        //
+        // When the TIMA overflows, this data will be loaded.
+        uint8_t TMA;
+
         // $FF07 - TAC - Timer Control (R/W)
         //
         // Bit 2 - Timer Stop (0=Stop, 1=Start)
@@ -40,5 +70,12 @@ namespace GameBoy
         // 10 : 65536 Hz(~67110 Hz SGB)
         // 11 : 16384 Hz(~16780 Hz SGB)
         uint8_t TAC;
+
+        unsigned int div_counter;
+        unsigned int tima_counter;
+
+    private:
+        // System bus instance
+        SystemBus& bus;
     };
 }

@@ -224,7 +224,6 @@ auto CPU::stack_pop(RegisterPair& pair, const OpFlag flag) noexcept -> void
     {
         pair.m_lo &= ~0x0F;
     }
-
     pair.m_hi = m_bus.read(reg.sp++);
 }
 
@@ -452,12 +451,46 @@ auto CPU::reset() noexcept -> void
 
     reg.sp = 0xFFFE;
     reg.pc = 0x0100;
+
+    ime    = false;
+    halted = false;
 }
 
 // Executes the next instruction.
 auto CPU::step() noexcept -> void
 {
-    switch (read_next_byte())
+    const uint8_t ie{ m_bus.interrupt_enable };
+    uint8_t& m_if{ m_bus.interrupt_flag };
+
+    if (ie & m_if)
+    {
+        if (ime)
+        {
+            if ((ie & (1 << 2)) && (m_if & (1 << 2)))
+            {
+                stack_push(reg.pc);
+
+                ime = false;
+
+                m_if &= ~(1 << 2);
+                reg.pc = 0x0050;
+            }
+        }
+        else
+        {
+            halted = false;
+        }
+    }
+
+    if (halted)
+    {
+        m_bus.step();
+        return;
+    }
+
+    const uint8_t instruction{ read_next_byte() };
+
+    switch (instruction)
     {
         case 0x00:                                             return; // NOP
         case 0x01: reg.bc = read_next_word();                  return; // LD BC, $imm16
@@ -668,6 +701,7 @@ auto CPU::step() noexcept -> void
         case 0x74: m_bus.write(reg.hl, reg.h);                                      return; // LD (HL), H
         case 0x75: m_bus.write(reg.hl, reg.l);                                      return; // LD (HL), L
         case 0x77: m_bus.write(reg.hl, reg.a);                                      return; // LD (HL), A
+        case 0x76: halted = true;                                                   return; // HALT
         case 0x78: reg.a = reg.b;                                                   return; // LD A, B
         case 0x79: reg.a = reg.c;                                                   return; // LD A, C
         case 0x7A: reg.a = reg.d;                                                   return; // LD A, D
@@ -1026,7 +1060,7 @@ auto CPU::step() noexcept -> void
         case 0xD6: sub(read_next_byte());                                          return; // SUB $imm8
         case 0xD7: rst(0x0010);                                                    return; // RST $0010
         case 0xD8: ret(reg.f & Flag::Carry);                                       return; // RET C
-        case 0xD9: ret(true);                                                      return; // RETI
+        case 0xD9: ret(true); ime = true;                                          return; // RETI
         case 0xDA: jp(reg.f & Flag::Carry);                                        return; // JP C, $imm16
         case 0xDC: call(reg.f & Flag::Carry);                                      return; // CALL C, $imm16
         case 0xDE: sub(read_next_byte(), ALUFlag::WithCarry);                      return; // SBC A, $imm8
@@ -1045,13 +1079,14 @@ auto CPU::step() noexcept -> void
         case 0xF0: reg.a = m_bus.read(0xFF00 + read_next_byte());                  return; // LDH A, ($imm8)
         case 0xF1: stack_pop(reg.af, OpFlag::PopAF);                               return; // POP AF
         case 0xF2: reg.a = m_bus.read(0xFF00 + reg.c);                             return; // LD A, (C)
-        case 0xF3:                                                                 return; // DI
+        case 0xF3: ime = false;                                                    return; // DI
         case 0xF5: stack_push(reg.af);                                             return; // PUSH AF
         case 0xF6: bit_op(std::bit_or<uint8_t>(), read_next_byte(), 0x80, 0x00);   return; // OR $imm8
         case 0xF7: rst(0x0030);                                                    return; // RST $0030
         case 0xF8: add_sp(reg.hl);                                                 return; // LD HL, SP+$simm8
         case 0xF9: reg.sp = reg.hl;                                                return; // LD SP, HL
         case 0xFA: reg.a = m_bus.read(read_next_word());                           return; // LD A, ($imm16)
+        case 0xFB: ime = true;                                                     return; // EI
         case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult);                  return; // CP $imm8
         case 0xFF: rst(0x0038);                                                    return; // RST $0038
         default: __debugbreak();                                                   return;

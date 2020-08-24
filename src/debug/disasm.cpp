@@ -24,7 +24,7 @@
 // Required for the `GameBoy::CPU` class.
 #include "../libgbemu/include/cpu.h"
 
-Disassembler::Disassembler(const GameBoy::SystemBus& bus,
+Disassembler::Disassembler(GameBoy::SystemBus& bus,
                            const GameBoy::CPU& cpu) noexcept : m_bus(bus),
                                                                m_cpu(cpu)
 { }
@@ -34,7 +34,7 @@ auto Disassembler::before() noexcept -> void
 {
     disasm = fmt::sprintf("$%04X: ", m_cpu.reg.pc.value());
 
-    auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc.value())] };
+    auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc.value(), GameBoy::AccessType::Direct)] };
 
     if (instruction.empty())
     {
@@ -58,7 +58,7 @@ auto Disassembler::before() noexcept -> void
 
         if (instruction.compare(index, 5, "$imm8") == 0)
         {
-            const uint8_t imm{ m_bus.read(m_cpu.reg.pc.value() + 1) };
+            const uint8_t imm{ m_bus.read(m_cpu.reg.pc.value() + 1, GameBoy::AccessType::Direct) };
 
             disasm += fmt::sprintf("$%02X", imm);
             index  += 5;
@@ -68,7 +68,8 @@ auto Disassembler::before() noexcept -> void
         {
             const int8_t imm
             {
-                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1))
+                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1,
+                                    GameBoy::AccessType::Direct))
             };
 
             disasm += fmt::sprintf("%s$%02X", (imm < 0) ? "-" : "", abs(imm));
@@ -77,8 +78,8 @@ auto Disassembler::before() noexcept -> void
 
         if (instruction.compare(index, 6, "$imm16") == 0)
         {
-            const uint8_t lo{ m_bus.read(m_cpu.reg.pc.value() + 1) };
-            const uint8_t hi{ m_bus.read(m_cpu.reg.pc.value() + 2) };
+            const uint8_t lo{ m_bus.read(m_cpu.reg.pc.value() + 1, GameBoy::AccessType::Direct) };
+            const uint8_t hi{ m_bus.read(m_cpu.reg.pc.value() + 2, GameBoy::AccessType::Direct) };
 
             const uint16_t imm = (hi << 8) | lo;
 
@@ -90,7 +91,7 @@ auto Disassembler::before() noexcept -> void
         {
             const int8_t imm
             {
-                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1))
+                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1, GameBoy::AccessType::Direct))
             };
 
             const uint16_t address = imm + m_cpu.reg.pc.value() + 2;

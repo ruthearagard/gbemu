@@ -38,7 +38,7 @@ namespace GameBoy
 class Disassembler
 {
 public:
-    Disassembler(const GameBoy::SystemBus& bus,
+    Disassembler(GameBoy::SystemBus& bus,
                  const GameBoy::CPU& cpu) noexcept;
 
     // Disassembles the current instruction before execution.
@@ -570,7 +570,7 @@ private:
 
 private:
     // System bus instance
-    const GameBoy::SystemBus& m_bus;
+    GameBoy::SystemBus& m_bus;
 
     // Sharp SM83 CPU interpreter instance
     const GameBoy::CPU& m_cpu;

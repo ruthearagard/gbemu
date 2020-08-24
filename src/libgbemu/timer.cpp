@@ -12,4 +12,64 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+// Required for the `GameBoy::SystemBus` class.
+#include "bus.h"
+
+// Required for the `GameBoy::Timer` class.
 #include "timer.h"
+
+using namespace GameBoy;
+
+Timer::Timer(SystemBus& m_bus) noexcept : bus(m_bus)
+{
+    reset();
+}
+
+// Resets the timers to the startup state.
+auto Timer::reset() noexcept -> void
+{
+    TIMA = 0x00;
+    TMA  = 0x00;
+    TAC  = 0x00;
+
+    div_counter  = 0;
+    tima_counter = 0;
+}
+
+// Advances the timers by 1 m-cycle.
+auto Timer::step() noexcept -> void
+{
+    div_counter += 4;
+
+    if (div_counter == 256)
+    {
+        DIV++;
+    }
+
+    if (TAC & (1 << 2))
+    {
+        tima_counter += 4;
+
+        unsigned int threshold{ 0 };
+
+        switch (TAC & 0x03)
+        {
+            case 0: threshold = 1024; break;
+            case 1: threshold = 16;   break;
+            case 2: threshold = 64;   break;
+            case 3: threshold = 256;  break;
+        }
+
+        if (tima_counter == threshold)
+        {
+            if (TIMA == 0xFF)
+            {
+                bus.signal_interrupt(Interrupt::TimerInterrupt);
+                TIMA = TMA;
+            }
+
+            TIMA++;
+            tima_counter = 0;
+        }
+    }
+}
