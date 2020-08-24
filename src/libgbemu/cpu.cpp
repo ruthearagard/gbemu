@@ -65,6 +65,12 @@ auto CPU::set_zero_flag(const T value) noexcept -> void
     update_flag(Flag::Zero, value == 0);
 }
 
+// Sets the Zero flag to `condition`.
+auto CPU::set_zero_flag(const bool condition) noexcept -> void
+{
+    update_flag(Flag::Zero, condition);
+}
+
 // Sets the Subtract flag.
 auto CPU::set_subtract_flag(const bool condition) noexcept -> void
 {
@@ -88,9 +94,7 @@ auto CPU::set_carry_flag(const bool condition) noexcept -> void
 // memory referenced by register pair HL.
 auto CPU::rw_hl(const ALUFunc& f) noexcept -> void
 {
-    uint8_t data{ m_bus.read(reg.hl) };
-    data = f(data);
-    m_bus.write(reg.hl, data);
+    m_bus.write(reg.hl, f(m_bus.read(reg.hl)));
 }
 
 // Performs bitwise operation `op` between the Accumulator (register A) and
@@ -102,9 +106,7 @@ auto CPU::bit_op(const Operator op,
                  const unsigned int flags_if_zero,
                  const unsigned int flags_if_nonzero) noexcept -> void
 {
-    op<uint8_t> result{ reg.a, n };
-
-    reg.a = result;
+    reg.a = op(reg.a, n);
     reg.f = (reg.a == 0) ? flags_if_zero : flags_if_nonzero;
 }
 
@@ -138,7 +140,7 @@ auto CPU::add_hl(const RegisterPair& pair) noexcept -> void
     set_half_carry_flag((reg.hl ^ pair ^ result) & 0x1000);
     set_carry_flag(result > 0xFFFF);
 
-    reg.hl = result;
+    reg.hl = static_cast<uint16_t>(result);
 }
 
 // Handles the `JR cond, $branch` instruction.
@@ -148,7 +150,7 @@ auto CPU::jr(const bool condition_met) -> void
 
     if (condition_met)
     {
-        reg.pc += offset;
+        reg.pc = reg.pc + offset;
     }
 }
 
@@ -167,11 +169,13 @@ auto CPU::add(const uint8_t addend, const ALUFlag flag) noexcept -> void
         result += (reg.f & Flag::Carry) != 0;
     }
 
-    reg.a = static_cast<uint8_t>(result);
+    const uint8_t sum{ static_cast<uint8_t>(result) };
 
-    set_zero_flag(reg.a);
+    set_zero_flag(sum);
     set_half_carry_flag((reg.a ^ addend ^ result) & 0x10);
     set_carry_flag(result > 0xFF);
+
+    reg.a = sum;
 }
 
 // Handles a subtraction instruction, based on `flag`:
@@ -212,9 +216,15 @@ auto CPU::ret(const bool condition_met) -> void
 }
 
 // Pops the stack into register pair `pair`.
-auto CPU::stack_pop(RegisterPair& pair) noexcept -> void
+auto CPU::stack_pop(RegisterPair& pair, const OpFlag flag) noexcept -> void
 {
     pair.m_lo = m_bus.read(reg.sp++);
+
+    if (flag == OpFlag::PopAF)
+    {
+        pair.m_lo &= ~0x0F;
+    }
+
     pair.m_hi = m_bus.read(reg.sp++);
 }
 
@@ -303,7 +313,14 @@ auto CPU::rrc(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 
     n = (n >> 1) | (n << 7);
 
-    set_zero_flag(n);
+    if (flag == ALUFlag::ClearZeroFlag)
+    {
+        set_zero_flag(false);
+    }
+    else
+    {
+        set_zero_flag(n);
+    }
     return n;
 }
 
@@ -319,7 +336,14 @@ auto CPU::rl(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 
     n = (n << 1) | carry;
 
-    set_zero_flag(n);
+    if (flag == ALUFlag::ClearZeroFlag)
+    {
+        set_zero_flag(false);
+    }
+    else
+    {
+        set_zero_flag(n);
+    }
     return n;
 }
 
@@ -334,9 +358,16 @@ auto CPU::rr(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 
     n = (n >> 1) | (carry << 7);
 
-    set_zero_flag(n);
-    set_carry_flag(old_carry);
+    if (flag == ALUFlag::ClearZeroFlag)
+    {
+        set_zero_flag(false);
+    }
+    else
+    {
+        set_zero_flag(n);
+    }
 
+    set_carry_flag(old_carry);
     return n;
 }
 
@@ -405,12 +436,10 @@ auto CPU::bit(const unsigned int b, const uint8_t n) -> void
 // bitwise operation `op` against bit `bit`, and stores the result back into
 // memory referenced by register pair `HL`.
 template<class Operator>
-auto bit_hl(const Operator op,
-            const unsigned int bit) noexcept -> void
+auto CPU::bit_hl(const Operator op,
+                 const unsigned int bit) noexcept -> void
 {
-    const uint8_t data{ m_bus.read(reg.hl) };
-    op<uint8_t> result{ data, bit };
-    m_bus.write(reg.hl, result);
+    m_bus.write(reg.hl, op(m_bus.read(reg.hl), bit));
 }
 
 // Resets the CPU to the startup state.
@@ -428,11 +457,7 @@ auto CPU::reset() noexcept -> void
 // Executes the next instruction.
 auto CPU::step() noexcept -> void
 {
-    const uint8_t instruction{ read_next_byte() };
-
-    auto fn = std::mem_fn(&CPU::reset);
-
-    switch (instruction)
+    switch (read_next_byte())
     {
         case 0x00:                                             return; // NOP
         case 0x01: reg.bc = read_next_word();                  return; // LD BC, $imm16
@@ -572,13 +597,13 @@ auto CPU::step() noexcept -> void
 
             return;
 
-        case 0x38: jr(reg.f & Flag::Carry);      return;
-        case 0x39: add_hl(reg.sp);               return;
-        case 0x3A: m_bus.read(reg.hl); reg.hl--; return;
-        case 0x3B: reg.sp--;                     return;
-        case 0x3C: reg.a = inc(reg.a);           return;
-        case 0x3D: reg.a = dec(reg.a);           return;
-        case 0x3E: reg.a = read_next_byte();     return;
+        case 0x38: jr(reg.f & Flag::Carry);              return;
+        case 0x39: add_hl(reg.sp);                       return;
+        case 0x3A: reg.a = m_bus.read(reg.hl); reg.hl--; return;
+        case 0x3B: reg.sp--;                             return;
+        case 0x3C: reg.a = inc(reg.a);                   return;
+        case 0x3D: reg.a = dec(reg.a);                   return;
+        case 0x3E: reg.a = read_next_byte();             return;
 
         // CCF
         case 0x3F:
@@ -697,7 +722,7 @@ auto CPU::step() noexcept -> void
         case 0xAB: bit_op(std::bit_xor<uint8_t>(), reg.e, 0x80, 0x00);              return; // XOR E
         case 0xAC: bit_op(std::bit_xor<uint8_t>(), reg.h, 0x80, 0x00);              return; // XOR H
         case 0xAD: bit_op(std::bit_xor<uint8_t>(), reg.l, 0x80, 0x00);              return; // XOR L
-        case 0xAE: bit_op(std::bit_and<uint8_t>(), m_bus.read(reg.hl), 0x80, 0x00); return; // XOR (HL)
+        case 0xAE: bit_op(std::bit_xor<uint8_t>(), m_bus.read(reg.hl), 0x80, 0x00); return; // XOR (HL)
         case 0xAF: bit_op(std::bit_xor<uint8_t>(), reg.a, 0x80, 0x00);              return; // XOR A
         case 0xB0: bit_op(std::bit_or<uint8_t>(),  reg.b, 0x80, 0x00);              return; // OR B
         case 0xB1: bit_op(std::bit_or<uint8_t>(),  reg.c, 0x80, 0x00);              return; // OR C
@@ -731,262 +756,262 @@ auto CPU::step() noexcept -> void
         case 0xCB:
             switch (read_next_byte())
             {
-                case 0x00: reg.b = rlc(reg.b);                         return; // RLC B
-                case 0x01: reg.c = rlc(reg.c);                         return; // RLC C
-                case 0x02: reg.d = rlc(reg.d);                         return; // RLC D
-                case 0x03: reg.e = rlc(reg.e);                         return; // RLC E
-                case 0x04: reg.h = rlc(reg.h);                         return; // RLC H
-                case 0x05: reg.l = rlc(reg.l);                         return; // RLC L
-                case 0x06: rw_hl(std::bind(&CPU::rlc, this, _1));      return; // RLC (HL)
-                case 0x07: reg.a = rlc(reg.a);                         return; // RLC A
-                case 0x08: reg.b = rrc(reg.b);                         return; // RRC B
-                case 0x09: reg.c = rrc(reg.c);                         return; // RRC C
-                case 0x0A: reg.d = rrc(reg.d);                         return; // RRC D
-                case 0x0B: reg.e = rrc(reg.e);                         return; // RRC E
-                case 0x0C: reg.h = rrc(reg.h);                         return; // RRC H
-                case 0x0D: reg.l = rrc(reg.l);                         return; // RRC L
-                case 0x0E: rw_hl(std::bind(&CPU::rrc, this, _1));      return; // RRC (HL)
-                case 0x0F: reg.a = rrc(reg.a);                         return; // RRC A
-                case 0x10: reg.b = rl(reg.b);                          return; // RL B
-                case 0x11: reg.c = rl(reg.c);                          return; // RL C
-                case 0x12: reg.d = rl(reg.d);                          return; // RL D
-                case 0x13: reg.e = rl(reg.e);                          return; // RL E
-                case 0x14: reg.h = rl(reg.h);                          return; // RL H
-                case 0x15: reg.l = rl(reg.l);                          return; // RL L
-                case 0x16: rw_hl(std::bind(&CPU::rl, this, _1));       return; // RL (HL)
-                case 0x17: reg.a = rl(reg.a);                          return; // RL A
-                case 0x18: reg.b = rr(reg.b);                          return; // RR B
-                case 0x19: reg.c = rr(reg.c);                          return; // RR C
-                case 0x1A: reg.d = rr(reg.d);                          return; // RR D
-                case 0x1B: reg.e = rr(reg.e);                          return; // RR E
-                case 0x1C: reg.h = rr(reg.h);                          return; // RR H
-                case 0x1D: reg.l = rr(reg.l);                          return; // RR L
-                case 0x1E: rw_hl(std::bind(&CPU::swap, this, _1));     return; // RR (HL)
-                case 0x1F: reg.a = rr(reg.a);                          return; // RR A
-                case 0x20: reg.b = sla(reg.b);                         return; // SLA B
-                case 0x21: reg.c = sla(reg.c);                         return; // SLA C
-                case 0x22: reg.d = sla(reg.d);                         return; // SLA D
-                case 0x23: reg.e = sla(reg.e);                         return; // SLA E
-                case 0x24: reg.h = sla(reg.h);                         return; // SLA H
-                case 0x25: reg.l = sla(reg.l);                         return; // SLA L
-                case 0x26: rw_hl(std::bind(&CPU::sla, this, _1));      return; // SLA (HL)
-                case 0x27: reg.a = sla(reg.a);                         return; // SLA A
-                case 0x28: reg.b = sra(reg.b);                         return; // SRA B
-                case 0x29: reg.c = sra(reg.c);                         return; // SRA C
-                case 0x2A: reg.d = sra(reg.d);                         return; // SRA D
-                case 0x2B: reg.e = sra(reg.e);                         return; // SRA E
-                case 0x2C: reg.h = sra(reg.h);                         return; // SRA H
-                case 0x2D: reg.l = sra(reg.l);                         return; // SRA L
-                case 0x2E: rw_hl(std::bind(&CPU::sra, this, _1));      return; // SRA (HL)
-                case 0x2F: reg.a = sra(reg.a);                         return; // SRA A
-                case 0x30: reg.b = swap(reg.b);                        return; // SWAP B
-                case 0x31: reg.c = swap(reg.c);                        return; // SWAP C
-                case 0x32: reg.d = swap(reg.d);                        return; // SWAP D
-                case 0x33: reg.e = swap(reg.e);                        return; // SWAP E
-                case 0x34: reg.h = swap(reg.h);                        return; // SWAP H
-                case 0x35: reg.l = swap(reg.l);                        return; // SWAP L
-                case 0x36: rw_hl(std::bind(&CPU::swap, this, _1));     return; // SWAP (HL)
-                case 0x37: reg.a = swap(reg.a);                        return; // SWAP A
-                case 0x38: reg.b = srl(reg.b);                         return; // SRL B
-                case 0x39: reg.c = srl(reg.c);                         return; // SRL C
-                case 0x3A: reg.d = srl(reg.d);                         return; // SRL D
-                case 0x3B: reg.e = srl(reg.e);                         return; // SRL E
-                case 0x3C: reg.h = srl(reg.h);                         return; // SRL H
-                case 0x3D: reg.l = srl(reg.l);                         return; // SRL L
-                case 0x3E: rw_hl(std::bind(&CPU::srl, this, _1));      return; // SRL (HL)
-                case 0x3F: reg.a = srl(reg.a);                         return; // SRL A
-                case 0x40: bit(0, reg.b);                              return; // BIT 0, B
-                case 0x41: bit(0, reg.c);                              return; // BIT 0, C
-                case 0x42: bit(0, reg.d);                              return; // BIT 0, D
-                case 0x43: bit(0, reg.e);                              return; // BIT 0, E
-                case 0x44: bit(0, reg.h);                              return; // BIT 0, H
-                case 0x45: bit(0, reg.l);                              return; // BIT 0, L
-                case 0x46: bit(0, m_bus.read(reg.hl));                 return; // BIT 0, (HL)
-                case 0x47: bit(0, reg.a);                              return; // BIT 0, A
-                case 0x48: bit(1, reg.b);                              return; // BIT 1, B
-                case 0x49: bit(1, reg.c);                              return; // BIT 1, C
-                case 0x4A: bit(1, reg.d);                              return; // BIT 1, D
-                case 0x4B: bit(1, reg.e);                              return; // BIT 1, E
-                case 0x4C: bit(1, reg.h);                              return; // BIT 1, H
-                case 0x4D: bit(1, reg.l);                              return; // BIT 1, L
-                case 0x4E: bit(1, m_bus.read(reg.hl));                 return; // BIT 1, (HL)
-                case 0x4F: bit(1, reg.a);                              return; // BIT 1, A
-                case 0x50: bit(2, reg.b);                              return; // BIT 2, B
-                case 0x51: bit(2, reg.c);                              return; // BIT 2, C
-                case 0x52: bit(2, reg.d);                              return; // BIT 2, D
-                case 0x53: bit(2, reg.e);                              return; // BIT 2, E
-                case 0x54: bit(2, reg.h);                              return; // BIT 2, H
-                case 0x55: bit(2, reg.l);                              return; // BIT 2, L
-                case 0x56: bit(2, m_bus.read(reg.hl));                 return; // BIT 2, (HL)
-                case 0x57: bit(2, reg.a);                              return; // BIT 2, A
-                case 0x58: bit(3, reg.b);                              return; // BIT 3, B
-                case 0x59: bit(3, reg.c);                              return; // BIT 3, C
-                case 0x5A: bit(3, reg.d);                              return; // BIT 3, D
-                case 0x5B: bit(3, reg.e);                              return; // BIT 3, E
-                case 0x5C: bit(3, reg.h);                              return; // BIT 3, H
-                case 0x5D: bit(3, reg.l);                              return; // BIT 3, L
-                case 0x5E: bit(3, m_bus.read(reg.hl));                 return; // BIT 3, (HL)
-                case 0x5F: bit(3, reg.a);                              return; // BIT 3, A
-                case 0x60: bit(4, reg.b);                              return; // BIT 4, B
-                case 0x61: bit(4, reg.c);                              return; // BIT 4, C
-                case 0x62: bit(4, reg.d);                              return; // BIT 4, D
-                case 0x63: bit(4, reg.e);                              return; // BIT 4, E
-                case 0x64: bit(4, reg.h);                              return; // BIT 4, H
-                case 0x65: bit(4, reg.l);                              return; // BIT 4, L
-                case 0x66: bit(4, m_bus.read(reg.hl));                 return; // BIT 4, (HL)
-                case 0x67: bit(4, reg.a);                              return; // BIT 4, A
-                case 0x68: bit(5, reg.b);                              return; // BIT 5, B
-                case 0x69: bit(5, reg.c);                              return; // BIT 5, C
-                case 0x6A: bit(5, reg.d);                              return; // BIT 5, D
-                case 0x6B: bit(5, reg.e);                              return; // BIT 5, E
-                case 0x6C: bit(5, reg.h);                              return; // BIT 5, H
-                case 0x6D: bit(5, reg.l);                              return; // BIT 5, L
-                case 0x6E: bit(5, m_bus.read(reg.hl));                 return; // BIT 5, (HL)
-                case 0x6F: bit(5, reg.a);                              return; // BIT 5, A
-                case 0x70: bit(6, reg.b);                              return; // BIT 6, B
-                case 0x71: bit(6, reg.c);                              return; // BIT 6, C
-                case 0x72: bit(6, reg.d);                              return; // BIT 6, D
-                case 0x73: bit(6, reg.e);                              return; // BIT 6, E
-                case 0x74: bit(6, reg.h);                              return; // BIT 6, H
-                case 0x75: bit(6, reg.l);                              return; // BIT 6, L
-                case 0x76: bit(6, m_bus.read(reg.hl));                 return; // BIT 6, (HL)
-                case 0x77: bit(6, reg.a);                              return; // BIT 6, A
-                case 0x78: bit(7, reg.b);                              return; // BIT 7, B
-                case 0x79: bit(7, reg.c);                              return; // BIT 7, C
-                case 0x7A: bit(7, reg.d);                              return; // BIT 7, D
-                case 0x7B: bit(7, reg.e);                              return; // BIT 7, E
-                case 0x7C: bit(7, reg.h);                              return; // BIT 7, H
-                case 0x7D: bit(7, reg.l);                              return; // BIT 7, L
-                case 0x7E: bit(7, m_bus.read(reg.hl));                 return; // BIT 7, (HL)
-                case 0x7F: bit(7, reg.a);                              return; // BIT 7, A
-                case 0x80: reg.b &= ~(1 << 0);                         return; // RES 0, B
-                case 0x81: reg.c &= ~(1 << 0);                         return; // RES 0, C
-                case 0x82: reg.d &= ~(1 << 0);                         return; // RES 0, D
-                case 0x83: reg.e &= ~(1 << 0);                         return; // RES 0, E
-                case 0x84: reg.h &= ~(1 << 0);                         return; // RES 0, H
-                case 0x85: reg.l &= ~(1 << 0);                         return; // RES 0, L
-                case 0x86: bit_hl(std::bit_and<uint8_t>(), ~(1 << 0)); return; // RES 0, (HL)
-                case 0x87: reg.a &= ~(1 << 0);                         return; // RES 0, A
-                case 0x88: reg.b &= ~(1 << 1);                         return; // RES 1, B
-                case 0x89: reg.c &= ~(1 << 1);                         return; // RES 1, C
-                case 0x8A: reg.d &= ~(1 << 1);                         return; // RES 1, D
-                case 0x8B: reg.e &= ~(1 << 1);                         return; // RES 1, E
-                case 0x8C: reg.h &= ~(1 << 1);                         return; // RES 1, H
-                case 0x8D: reg.l &= ~(1 << 1);                         return; // RES 1, L
-                case 0x8E: bit_hl(std::bit_and<uint8_t>(), ~(1 << 1)); return; // RES 1, (HL)
-                case 0x8F: reg.a &= ~(1 << 1);                         return; // RES 1, A
-                case 0x90: reg.b &= ~(1 << 2);                         return; // RES 2, B
-                case 0x91: reg.c &= ~(1 << 2);                         return; // RES 2, C
-                case 0x92: reg.d &= ~(1 << 2);                         return; // RES 2, D
-                case 0x93: reg.e &= ~(1 << 2);                         return; // RES 2, E
-                case 0x94: reg.h &= ~(1 << 2);                         return; // RES 2, H
-                case 0x95: reg.l &= ~(1 << 2);                         return; // RES 2, L
-                case 0x96: bit_hl(std::bit_and<uint8_t>(), ~(1 << 2)); return; // RES 2, (HL)
-                case 0x97: reg.a &= ~(1 << 2);                         return; // RES 2, A
-                case 0x98: reg.b &= ~(1 << 3);                         return; // RES 3, B
-                case 0x99: reg.c &= ~(1 << 3);                         return; // RES 3, C
-                case 0x9A: reg.d &= ~(1 << 3);                         return; // RES 3, D
-                case 0x9B: reg.e &= ~(1 << 3);                         return; // RES 3, E
-                case 0x9C: reg.h &= ~(1 << 3);                         return; // RES 3, H
-                case 0x9D: reg.l &= ~(1 << 3);                         return; // RES 3, L
-                case 0x9E: bit_hl(std::bit_and<uint8_t>(), ~(1 << 3)); return; // RES 3, (HL)
-                case 0x9F: reg.a &= ~(1 << 3);                         return; // RES 3, A
-                case 0xA0: reg.b &= ~(1 << 4);                         return; // RES 4, B
-                case 0xA1: reg.c &= ~(1 << 4);                         return; // RES 4, C
-                case 0xA2: reg.d &= ~(1 << 4);                         return; // RES 4, D
-                case 0xA3: reg.e &= ~(1 << 4);                         return; // RES 4, E
-                case 0xA4: reg.h &= ~(1 << 4);                         return; // RES 4, H
-                case 0xA5: reg.l &= ~(1 << 4);                         return; // RES 4, L
-                case 0xA6: bit_hl(std::bit_and<uint8_t>(), ~(1 << 4)); return; // RES 4, (HL)
-                case 0xA7: reg.a &= ~(1 << 4);                         return; // RES 4, A
-                case 0xA8: reg.b &= ~(1 << 5);                         return; // RES 5, B
-                case 0xA9: reg.c &= ~(1 << 5);                         return; // RES 5, C
-                case 0xAA: reg.d &= ~(1 << 5);                         return; // RES 5, D
-                case 0xAB: reg.e &= ~(1 << 5);                         return; // RES 5, E
-                case 0xAC: reg.h &= ~(1 << 5);                         return; // RES 5, H
-                case 0xAD: reg.l &= ~(1 << 5);                         return; // RES 5, L
-                case 0xAE: bit_hl(std::bit_and<uint8_t>(), ~(1 << 5)); return; // RES 5, (HL)
-                case 0xAF: reg.a &= ~(1 << 5);                         return; // RES 5, A
-                case 0xB0: reg.b &= ~(1 << 6);                         return; // RES 6, B
-                case 0xB1: reg.c &= ~(1 << 6);                         return; // RES 6, C
-                case 0xB2: reg.d &= ~(1 << 6);                         return; // RES 6, D
-                case 0xB3: reg.e &= ~(1 << 6);                         return; // RES 6, E
-                case 0xB4: reg.h &= ~(1 << 6);                         return; // RES 6, H
-                case 0xB5: reg.l &= ~(1 << 6);                         return; // RES 6, L
-                case 0xB6: bit_hl(std::bit_and<uint8_t>(), ~(1 << 6)); return; // RES 6, (HL)
-                case 0xB7: reg.a &= ~(1 << 6);                         return; // RES 6, A
-                case 0xB8: reg.b &= ~(1 << 7);                         return; // RES 7, B
-                case 0xB9: reg.c &= ~(1 << 7);                         return; // RES 7, C
-                case 0xBA: reg.d &= ~(1 << 7);                         return; // RES 7, D
-                case 0xBB: reg.e &= ~(1 << 7);                         return; // RES 7, E
-                case 0xBC: reg.h &= ~(1 << 7);                         return; // RES 7, H
-                case 0xBD: reg.l &= ~(1 << 7);                         return; // RES 7, L
-                case 0xBE: bit_hl(std::bit_and<uint8_t>(), ~(1 << 7)); return; // RES 7, (HL)
-                case 0xBF: reg.a &= ~(1 << 7);                         return; // RES 7, A
-                case 0xC0: reg.b |= (1 << 0);                          return; // SET 0, B
-                case 0xC1: reg.c |= (1 << 0);                          return; // SET 0, C
-                case 0xC2: reg.d |= (1 << 0);                          return; // SET 0, D
-                case 0xC3: reg.e |= (1 << 0);                          return; // SET 0, E
-                case 0xC4: reg.h |= (1 << 0);                          return; // SET 0, H
-                case 0xC5: reg.l |= (1 << 0);                          return; // SET 0, L
-                case 0xC6: bit_hl(std::bit_or<uint8_t>(), 1 << 0);     return; // SET 0, (HL)
-                case 0xC7: reg.a |= (1 << 0);                          return; // SET 0, A
-                case 0xC8: reg.b |= (1 << 1);                          return; // SET 1, B
-                case 0xC9: reg.c |= (1 << 1);                          return; // SET 1, C
-                case 0xCA: reg.d |= (1 << 1);                          return; // SET 1, D
-                case 0xCB: reg.e |= (1 << 1);                          return; // SET 1, E
-                case 0xCC: reg.h |= (1 << 1);                          return; // SET 1, H
-                case 0xCD: reg.l |= (1 << 1);                          return; // SET 1, L
-                case 0xCE: bit_hl(std::bit_or<uint8_t>(), 1 << 1);     return; // SET 1, (HL)
-                case 0xCF: reg.a |= (1 << 1);                          return; // SET 1, A
-                case 0xD0: reg.b |= (1 << 2);                          return; // SET 2, B
-                case 0xD1: reg.c |= (1 << 2);                          return; // SET 2, C
-                case 0xD2: reg.d |= (1 << 2);                          return; // SET 2, D
-                case 0xD3: reg.e |= (1 << 2);                          return; // SET 2, E
-                case 0xD4: reg.h |= (1 << 2);                          return; // SET 2, H
-                case 0xD5: reg.l |= (1 << 2);                          return; // SET 2, L
-                case 0xD6: bit_hl(std::bit_or<uint8_t>(), 1 << 2);     return; // SET 2, (HL)
-                case 0xD7: reg.a |= (1 << 2);                          return; // SET 2, A
-                case 0xD8: reg.b |= (1 << 3);                          return; // SET 3, B
-                case 0xD9: reg.c |= (1 << 3);                          return; // SET 3, C
-                case 0xDA: reg.d |= (1 << 3);                          return; // SET 3, D
-                case 0xDB: reg.e |= (1 << 3);                          return; // SET 3, E
-                case 0xDC: reg.h |= (1 << 3);                          return; // SET 3, H
-                case 0xDD: reg.l |= (1 << 3);                          return; // SET 3, L
-                case 0xDE: bit_hl(std::bit_or<uint8_t>(), 1 << 3);     return; // SET 3, (HL)
-                case 0xDF: reg.a |= (1 << 3);                          return; // SET 3, A
-                case 0xE0: reg.b |= (1 << 4);                          return; // SET 4, B
-                case 0xE1: reg.c |= (1 << 4);                          return; // SET 4, C
-                case 0xE2: reg.d |= (1 << 4);                          return; // SET 4, D
-                case 0xE3: reg.e |= (1 << 4);                          return; // SET 4, E
-                case 0xE4: reg.h |= (1 << 4);                          return; // SET 4, H
-                case 0xE5: reg.l |= (1 << 4);                          return; // SET 4, L
-                case 0xE6: bit_hl(std::bit_or<uint8_t>(), 1 << 4);     return; // SET 4, (HL)
-                case 0xE7: reg.a |= (1 << 4);                          return; // SET 4, A
-                case 0xE8: reg.b |= (1 << 5);                          return; // SET 5, B
-                case 0xE9: reg.c |= (1 << 5);                          return; // SET 5, C
-                case 0xEA: reg.d |= (1 << 5);                          return; // SET 5, D
-                case 0xEB: reg.e |= (1 << 5);                          return; // SET 5, E
-                case 0xEC: reg.h |= (1 << 5);                          return; // SET 5, H
-                case 0xED: reg.l |= (1 << 5);                          return; // SET 5, L
-                case 0xEE: bit_hl(std::bit_or<uint8_t>(), 1 << 5);     return; // SET 5, (HL)
-                case 0xEF: reg.a |= (1 << 5);                          return; // SET 5, A
-                case 0xF0: reg.b |= (1 << 6);                          return; // SET 6, B
-                case 0xF1: reg.c |= (1 << 6);                          return; // SET 6, C
-                case 0xF2: reg.d |= (1 << 6);                          return; // SET 6, D
-                case 0xF3: reg.e |= (1 << 6);                          return; // SET 6, E
-                case 0xF4: reg.h |= (1 << 6);                          return; // SET 6, H
-                case 0xF5: reg.l |= (1 << 6);                          return; // SET 6, L
-                case 0xF6: bit_hl(std::bit_or<uint8_t>(), 1 << 6);     return; // SET 6, (HL)
-                case 0xF7: reg.a |= (1 << 6);                          return; // SET 6, A
-                case 0xF8: reg.b |= (1 << 7);                          return; // SET 7, B
-                case 0xF9: reg.c |= (1 << 7);                          return; // SET 7, C
-                case 0xFA: reg.d |= (1 << 7);                          return; // SET 7, D
-                case 0xFB: reg.e |= (1 << 7);                          return; // SET 7, E
-                case 0xFC: reg.h |= (1 << 7);                          return; // SET 7, H
-                case 0xFD: reg.l |= (1 << 7);                          return; // SET 7, L
-                case 0xFE: bit_hl(std::bit_or<uint8_t>(), 1 << 7);     return; // SET 7, (HL)
-                case 0xFF: reg.a |= (1 << 7);                          return; // SET 7, A
+                case 0x00: reg.b = rlc(reg.b);                                     return; // RLC B
+                case 0x01: reg.c = rlc(reg.c);                                     return; // RLC C
+                case 0x02: reg.d = rlc(reg.d);                                     return; // RLC D
+                case 0x03: reg.e = rlc(reg.e);                                     return; // RLC E
+                case 0x04: reg.h = rlc(reg.h);                                     return; // RLC H
+                case 0x05: reg.l = rlc(reg.l);                                     return; // RLC L
+                case 0x06: rw_hl(std::bind(&CPU::rlc, this, _1, ALUFlag::Normal)); return; // RLC (HL)
+                case 0x07: reg.a = rlc(reg.a);                                     return; // RLC A
+                case 0x08: reg.b = rrc(reg.b);                                     return; // RRC B
+                case 0x09: reg.c = rrc(reg.c);                                     return; // RRC C
+                case 0x0A: reg.d = rrc(reg.d);                                     return; // RRC D
+                case 0x0B: reg.e = rrc(reg.e);                                     return; // RRC E
+                case 0x0C: reg.h = rrc(reg.h);                                     return; // RRC H
+                case 0x0D: reg.l = rrc(reg.l);                                     return; // RRC L
+                case 0x0E: rw_hl(std::bind(&CPU::rrc, this, _1, ALUFlag::Normal)); return; // RRC (HL)
+                case 0x0F: reg.a = rrc(reg.a);                                     return; // RRC A
+                case 0x10: reg.b = rl(reg.b);                                      return; // RL B
+                case 0x11: reg.c = rl(reg.c);                                      return; // RL C
+                case 0x12: reg.d = rl(reg.d);                                      return; // RL D
+                case 0x13: reg.e = rl(reg.e);                                      return; // RL E
+                case 0x14: reg.h = rl(reg.h);                                      return; // RL H
+                case 0x15: reg.l = rl(reg.l);                                      return; // RL L
+                case 0x16: rw_hl(std::bind(&CPU::rl, this, _1, ALUFlag::Normal));  return; // RL (HL)
+                case 0x17: reg.a = rl(reg.a);                                      return; // RL A
+                case 0x18: reg.b = rr(reg.b);                                      return; // RR B
+                case 0x19: reg.c = rr(reg.c);                                      return; // RR C
+                case 0x1A: reg.d = rr(reg.d);                                      return; // RR D
+                case 0x1B: reg.e = rr(reg.e);                                      return; // RR E
+                case 0x1C: reg.h = rr(reg.h);                                      return; // RR H
+                case 0x1D: reg.l = rr(reg.l);                                      return; // RR L
+                case 0x1E: rw_hl(std::bind(&CPU::rr, this, _1, ALUFlag::Normal));  return; // RR (HL)
+                case 0x1F: reg.a = rr(reg.a);                                      return; // RR A
+                case 0x20: reg.b = sla(reg.b);                                     return; // SLA B
+                case 0x21: reg.c = sla(reg.c);                                     return; // SLA C
+                case 0x22: reg.d = sla(reg.d);                                     return; // SLA D
+                case 0x23: reg.e = sla(reg.e);                                     return; // SLA E
+                case 0x24: reg.h = sla(reg.h);                                     return; // SLA H
+                case 0x25: reg.l = sla(reg.l);                                     return; // SLA L
+                case 0x26: rw_hl(std::bind(&CPU::sla, this, _1));                  return; // SLA (HL)
+                case 0x27: reg.a = sla(reg.a);                                     return; // SLA A
+                case 0x28: reg.b = sra(reg.b);                                     return; // SRA B
+                case 0x29: reg.c = sra(reg.c);                                     return; // SRA C
+                case 0x2A: reg.d = sra(reg.d);                                     return; // SRA D
+                case 0x2B: reg.e = sra(reg.e);                                     return; // SRA E
+                case 0x2C: reg.h = sra(reg.h);                                     return; // SRA H
+                case 0x2D: reg.l = sra(reg.l);                                     return; // SRA L
+                case 0x2E: rw_hl(std::bind(&CPU::sra, this, _1));                  return; // SRA (HL)
+                case 0x2F: reg.a = sra(reg.a);                                     return; // SRA A
+                case 0x30: reg.b = swap(reg.b);                                    return; // SWAP B
+                case 0x31: reg.c = swap(reg.c);                                    return; // SWAP C
+                case 0x32: reg.d = swap(reg.d);                                    return; // SWAP D
+                case 0x33: reg.e = swap(reg.e);                                    return; // SWAP E
+                case 0x34: reg.h = swap(reg.h);                                    return; // SWAP H
+                case 0x35: reg.l = swap(reg.l);                                    return; // SWAP L
+                case 0x36: rw_hl(std::bind(&CPU::swap, this, _1));                 return; // SWAP (HL)
+                case 0x37: reg.a = swap(reg.a);                                    return; // SWAP A
+                case 0x38: reg.b = srl(reg.b);                                     return; // SRL B
+                case 0x39: reg.c = srl(reg.c);                                     return; // SRL C
+                case 0x3A: reg.d = srl(reg.d);                                     return; // SRL D
+                case 0x3B: reg.e = srl(reg.e);                                     return; // SRL E
+                case 0x3C: reg.h = srl(reg.h);                                     return; // SRL H
+                case 0x3D: reg.l = srl(reg.l);                                     return; // SRL L
+                case 0x3E: rw_hl(std::bind(&CPU::srl, this, _1));                  return; // SRL (HL)
+                case 0x3F: reg.a = srl(reg.a);                                     return; // SRL A
+                case 0x40: bit(0, reg.b);                                          return; // BIT 0, B
+                case 0x41: bit(0, reg.c);                                          return; // BIT 0, C
+                case 0x42: bit(0, reg.d);                                          return; // BIT 0, D
+                case 0x43: bit(0, reg.e);                                          return; // BIT 0, E
+                case 0x44: bit(0, reg.h);                                          return; // BIT 0, H
+                case 0x45: bit(0, reg.l);                                          return; // BIT 0, L
+                case 0x46: bit(0, m_bus.read(reg.hl));                             return; // BIT 0, (HL)
+                case 0x47: bit(0, reg.a);                                          return; // BIT 0, A
+                case 0x48: bit(1, reg.b);                                          return; // BIT 1, B
+                case 0x49: bit(1, reg.c);                                          return; // BIT 1, C
+                case 0x4A: bit(1, reg.d);                                          return; // BIT 1, D
+                case 0x4B: bit(1, reg.e);                                          return; // BIT 1, E
+                case 0x4C: bit(1, reg.h);                                          return; // BIT 1, H
+                case 0x4D: bit(1, reg.l);                                          return; // BIT 1, L
+                case 0x4E: bit(1, m_bus.read(reg.hl));                             return; // BIT 1, (HL)
+                case 0x4F: bit(1, reg.a);                                          return; // BIT 1, A
+                case 0x50: bit(2, reg.b);                                          return; // BIT 2, B
+                case 0x51: bit(2, reg.c);                                          return; // BIT 2, C
+                case 0x52: bit(2, reg.d);                                          return; // BIT 2, D
+                case 0x53: bit(2, reg.e);                                          return; // BIT 2, E
+                case 0x54: bit(2, reg.h);                                          return; // BIT 2, H
+                case 0x55: bit(2, reg.l);                                          return; // BIT 2, L
+                case 0x56: bit(2, m_bus.read(reg.hl));                             return; // BIT 2, (HL)
+                case 0x57: bit(2, reg.a);                                          return; // BIT 2, A
+                case 0x58: bit(3, reg.b);                                          return; // BIT 3, B
+                case 0x59: bit(3, reg.c);                                          return; // BIT 3, C
+                case 0x5A: bit(3, reg.d);                                          return; // BIT 3, D
+                case 0x5B: bit(3, reg.e);                                          return; // BIT 3, E
+                case 0x5C: bit(3, reg.h);                                          return; // BIT 3, H
+                case 0x5D: bit(3, reg.l);                                          return; // BIT 3, L
+                case 0x5E: bit(3, m_bus.read(reg.hl));                             return; // BIT 3, (HL)
+                case 0x5F: bit(3, reg.a);                                          return; // BIT 3, A
+                case 0x60: bit(4, reg.b);                                          return; // BIT 4, B
+                case 0x61: bit(4, reg.c);                                          return; // BIT 4, C
+                case 0x62: bit(4, reg.d);                                          return; // BIT 4, D
+                case 0x63: bit(4, reg.e);                                          return; // BIT 4, E
+                case 0x64: bit(4, reg.h);                                          return; // BIT 4, H
+                case 0x65: bit(4, reg.l);                                          return; // BIT 4, L
+                case 0x66: bit(4, m_bus.read(reg.hl));                             return; // BIT 4, (HL)
+                case 0x67: bit(4, reg.a);                                          return; // BIT 4, A
+                case 0x68: bit(5, reg.b);                                          return; // BIT 5, B
+                case 0x69: bit(5, reg.c);                                          return; // BIT 5, C
+                case 0x6A: bit(5, reg.d);                                          return; // BIT 5, D
+                case 0x6B: bit(5, reg.e);                                          return; // BIT 5, E
+                case 0x6C: bit(5, reg.h);                                          return; // BIT 5, H
+                case 0x6D: bit(5, reg.l);                                          return; // BIT 5, L
+                case 0x6E: bit(5, m_bus.read(reg.hl));                             return; // BIT 5, (HL)
+                case 0x6F: bit(5, reg.a);                                          return; // BIT 5, A
+                case 0x70: bit(6, reg.b);                                          return; // BIT 6, B
+                case 0x71: bit(6, reg.c);                                          return; // BIT 6, C
+                case 0x72: bit(6, reg.d);                                          return; // BIT 6, D
+                case 0x73: bit(6, reg.e);                                          return; // BIT 6, E
+                case 0x74: bit(6, reg.h);                                          return; // BIT 6, H
+                case 0x75: bit(6, reg.l);                                          return; // BIT 6, L
+                case 0x76: bit(6, m_bus.read(reg.hl));                             return; // BIT 6, (HL)
+                case 0x77: bit(6, reg.a);                                          return; // BIT 6, A
+                case 0x78: bit(7, reg.b);                                          return; // BIT 7, B
+                case 0x79: bit(7, reg.c);                                          return; // BIT 7, C
+                case 0x7A: bit(7, reg.d);                                          return; // BIT 7, D
+                case 0x7B: bit(7, reg.e);                                          return; // BIT 7, E
+                case 0x7C: bit(7, reg.h);                                          return; // BIT 7, H
+                case 0x7D: bit(7, reg.l);                                          return; // BIT 7, L
+                case 0x7E: bit(7, m_bus.read(reg.hl));                             return; // BIT 7, (HL)
+                case 0x7F: bit(7, reg.a);                                          return; // BIT 7, A
+                case 0x80: reg.b &= ~(1 << 0);                                     return; // RES 0, B
+                case 0x81: reg.c &= ~(1 << 0);                                     return; // RES 0, C
+                case 0x82: reg.d &= ~(1 << 0);                                     return; // RES 0, D
+                case 0x83: reg.e &= ~(1 << 0);                                     return; // RES 0, E
+                case 0x84: reg.h &= ~(1 << 0);                                     return; // RES 0, H
+                case 0x85: reg.l &= ~(1 << 0);                                     return; // RES 0, L
+                case 0x86: bit_hl(std::bit_and<uint8_t>(), ~(1 << 0));             return; // RES 0, (HL)
+                case 0x87: reg.a &= ~(1 << 0);                                     return; // RES 0, A
+                case 0x88: reg.b &= ~(1 << 1);                                     return; // RES 1, B
+                case 0x89: reg.c &= ~(1 << 1);                                     return; // RES 1, C
+                case 0x8A: reg.d &= ~(1 << 1);                                     return; // RES 1, D
+                case 0x8B: reg.e &= ~(1 << 1);                                     return; // RES 1, E
+                case 0x8C: reg.h &= ~(1 << 1);                                     return; // RES 1, H
+                case 0x8D: reg.l &= ~(1 << 1);                                     return; // RES 1, L
+                case 0x8E: bit_hl(std::bit_and<uint8_t>(), ~(1 << 1));             return; // RES 1, (HL)
+                case 0x8F: reg.a &= ~(1 << 1);                                     return; // RES 1, A
+                case 0x90: reg.b &= ~(1 << 2);                                     return; // RES 2, B
+                case 0x91: reg.c &= ~(1 << 2);                                     return; // RES 2, C
+                case 0x92: reg.d &= ~(1 << 2);                                     return; // RES 2, D
+                case 0x93: reg.e &= ~(1 << 2);                                     return; // RES 2, E
+                case 0x94: reg.h &= ~(1 << 2);                                     return; // RES 2, H
+                case 0x95: reg.l &= ~(1 << 2);                                     return; // RES 2, L
+                case 0x96: bit_hl(std::bit_and<uint8_t>(), ~(1 << 2));             return; // RES 2, (HL)
+                case 0x97: reg.a &= ~(1 << 2);                                     return; // RES 2, A
+                case 0x98: reg.b &= ~(1 << 3);                                     return; // RES 3, B
+                case 0x99: reg.c &= ~(1 << 3);                                     return; // RES 3, C
+                case 0x9A: reg.d &= ~(1 << 3);                                     return; // RES 3, D
+                case 0x9B: reg.e &= ~(1 << 3);                                     return; // RES 3, E
+                case 0x9C: reg.h &= ~(1 << 3);                                     return; // RES 3, H
+                case 0x9D: reg.l &= ~(1 << 3);                                     return; // RES 3, L
+                case 0x9E: bit_hl(std::bit_and<uint8_t>(), ~(1 << 3));             return; // RES 3, (HL)
+                case 0x9F: reg.a &= ~(1 << 3);                                     return; // RES 3, A
+                case 0xA0: reg.b &= ~(1 << 4);                                     return; // RES 4, B
+                case 0xA1: reg.c &= ~(1 << 4);                                     return; // RES 4, C
+                case 0xA2: reg.d &= ~(1 << 4);                                     return; // RES 4, D
+                case 0xA3: reg.e &= ~(1 << 4);                                     return; // RES 4, E
+                case 0xA4: reg.h &= ~(1 << 4);                                     return; // RES 4, H
+                case 0xA5: reg.l &= ~(1 << 4);                                     return; // RES 4, L
+                case 0xA6: bit_hl(std::bit_and<uint8_t>(), ~(1 << 4));             return; // RES 4, (HL)
+                case 0xA7: reg.a &= ~(1 << 4);                                     return; // RES 4, A
+                case 0xA8: reg.b &= ~(1 << 5);                                     return; // RES 5, B
+                case 0xA9: reg.c &= ~(1 << 5);                                     return; // RES 5, C
+                case 0xAA: reg.d &= ~(1 << 5);                                     return; // RES 5, D
+                case 0xAB: reg.e &= ~(1 << 5);                                     return; // RES 5, E
+                case 0xAC: reg.h &= ~(1 << 5);                                     return; // RES 5, H
+                case 0xAD: reg.l &= ~(1 << 5);                                     return; // RES 5, L
+                case 0xAE: bit_hl(std::bit_and<uint8_t>(), ~(1 << 5));             return; // RES 5, (HL)
+                case 0xAF: reg.a &= ~(1 << 5);                                     return; // RES 5, A
+                case 0xB0: reg.b &= ~(1 << 6);                                     return; // RES 6, B
+                case 0xB1: reg.c &= ~(1 << 6);                                     return; // RES 6, C
+                case 0xB2: reg.d &= ~(1 << 6);                                     return; // RES 6, D
+                case 0xB3: reg.e &= ~(1 << 6);                                     return; // RES 6, E
+                case 0xB4: reg.h &= ~(1 << 6);                                     return; // RES 6, H
+                case 0xB5: reg.l &= ~(1 << 6);                                     return; // RES 6, L
+                case 0xB6: bit_hl(std::bit_and<uint8_t>(), ~(1 << 6));             return; // RES 6, (HL)
+                case 0xB7: reg.a &= ~(1 << 6);                                     return; // RES 6, A
+                case 0xB8: reg.b &= ~(1 << 7);                                     return; // RES 7, B
+                case 0xB9: reg.c &= ~(1 << 7);                                     return; // RES 7, C
+                case 0xBA: reg.d &= ~(1 << 7);                                     return; // RES 7, D
+                case 0xBB: reg.e &= ~(1 << 7);                                     return; // RES 7, E
+                case 0xBC: reg.h &= ~(1 << 7);                                     return; // RES 7, H
+                case 0xBD: reg.l &= ~(1 << 7);                                     return; // RES 7, L
+                case 0xBE: bit_hl(std::bit_and<uint8_t>(), ~(1 << 7));             return; // RES 7, (HL)
+                case 0xBF: reg.a &= ~(1 << 7);                                     return; // RES 7, A
+                case 0xC0: reg.b |= (1 << 0);                                      return; // SET 0, B
+                case 0xC1: reg.c |= (1 << 0);                                      return; // SET 0, C
+                case 0xC2: reg.d |= (1 << 0);                                      return; // SET 0, D
+                case 0xC3: reg.e |= (1 << 0);                                      return; // SET 0, E
+                case 0xC4: reg.h |= (1 << 0);                                      return; // SET 0, H
+                case 0xC5: reg.l |= (1 << 0);                                      return; // SET 0, L
+                case 0xC6: bit_hl(std::bit_or<uint8_t>(), 1 << 0);                 return; // SET 0, (HL)
+                case 0xC7: reg.a |= (1 << 0);                                      return; // SET 0, A
+                case 0xC8: reg.b |= (1 << 1);                                      return; // SET 1, B
+                case 0xC9: reg.c |= (1 << 1);                                      return; // SET 1, C
+                case 0xCA: reg.d |= (1 << 1);                                      return; // SET 1, D
+                case 0xCB: reg.e |= (1 << 1);                                      return; // SET 1, E
+                case 0xCC: reg.h |= (1 << 1);                                      return; // SET 1, H
+                case 0xCD: reg.l |= (1 << 1);                                      return; // SET 1, L
+                case 0xCE: bit_hl(std::bit_or<uint8_t>(), 1 << 1);                 return; // SET 1, (HL)
+                case 0xCF: reg.a |= (1 << 1);                                      return; // SET 1, A
+                case 0xD0: reg.b |= (1 << 2);                                      return; // SET 2, B
+                case 0xD1: reg.c |= (1 << 2);                                      return; // SET 2, C
+                case 0xD2: reg.d |= (1 << 2);                                      return; // SET 2, D
+                case 0xD3: reg.e |= (1 << 2);                                      return; // SET 2, E
+                case 0xD4: reg.h |= (1 << 2);                                      return; // SET 2, H
+                case 0xD5: reg.l |= (1 << 2);                                      return; // SET 2, L
+                case 0xD6: bit_hl(std::bit_or<uint8_t>(), 1 << 2);                 return; // SET 2, (HL)
+                case 0xD7: reg.a |= (1 << 2);                                      return; // SET 2, A
+                case 0xD8: reg.b |= (1 << 3);                                      return; // SET 3, B
+                case 0xD9: reg.c |= (1 << 3);                                      return; // SET 3, C
+                case 0xDA: reg.d |= (1 << 3);                                      return; // SET 3, D
+                case 0xDB: reg.e |= (1 << 3);                                      return; // SET 3, E
+                case 0xDC: reg.h |= (1 << 3);                                      return; // SET 3, H
+                case 0xDD: reg.l |= (1 << 3);                                      return; // SET 3, L
+                case 0xDE: bit_hl(std::bit_or<uint8_t>(), 1 << 3);                 return; // SET 3, (HL)
+                case 0xDF: reg.a |= (1 << 3);                                      return; // SET 3, A
+                case 0xE0: reg.b |= (1 << 4);                                      return; // SET 4, B
+                case 0xE1: reg.c |= (1 << 4);                                      return; // SET 4, C
+                case 0xE2: reg.d |= (1 << 4);                                      return; // SET 4, D
+                case 0xE3: reg.e |= (1 << 4);                                      return; // SET 4, E
+                case 0xE4: reg.h |= (1 << 4);                                      return; // SET 4, H
+                case 0xE5: reg.l |= (1 << 4);                                      return; // SET 4, L
+                case 0xE6: bit_hl(std::bit_or<uint8_t>(), 1 << 4);                 return; // SET 4, (HL)
+                case 0xE7: reg.a |= (1 << 4);                                      return; // SET 4, A
+                case 0xE8: reg.b |= (1 << 5);                                      return; // SET 5, B
+                case 0xE9: reg.c |= (1 << 5);                                      return; // SET 5, C
+                case 0xEA: reg.d |= (1 << 5);                                      return; // SET 5, D
+                case 0xEB: reg.e |= (1 << 5);                                      return; // SET 5, E
+                case 0xEC: reg.h |= (1 << 5);                                      return; // SET 5, H
+                case 0xED: reg.l |= (1 << 5);                                      return; // SET 5, L
+                case 0xEE: bit_hl(std::bit_or<uint8_t>(), 1 << 5);                 return; // SET 5, (HL)
+                case 0xEF: reg.a |= (1 << 5);                                      return; // SET 5, A
+                case 0xF0: reg.b |= (1 << 6);                                      return; // SET 6, B
+                case 0xF1: reg.c |= (1 << 6);                                      return; // SET 6, C
+                case 0xF2: reg.d |= (1 << 6);                                      return; // SET 6, D
+                case 0xF3: reg.e |= (1 << 6);                                      return; // SET 6, E
+                case 0xF4: reg.h |= (1 << 6);                                      return; // SET 6, H
+                case 0xF5: reg.l |= (1 << 6);                                      return; // SET 6, L
+                case 0xF6: bit_hl(std::bit_or<uint8_t>(), 1 << 6);                 return; // SET 6, (HL)
+                case 0xF7: reg.a |= (1 << 6);                                      return; // SET 6, A
+                case 0xF8: reg.b |= (1 << 7);                                      return; // SET 7, B
+                case 0xF9: reg.c |= (1 << 7);                                      return; // SET 7, C
+                case 0xFA: reg.d |= (1 << 7);                                      return; // SET 7, D
+                case 0xFB: reg.e |= (1 << 7);                                      return; // SET 7, E
+                case 0xFC: reg.h |= (1 << 7);                                      return; // SET 7, H
+                case 0xFD: reg.l |= (1 << 7);                                      return; // SET 7, L
+                case 0xFE: bit_hl(std::bit_or<uint8_t>(), 1 << 7);                 return; // SET 7, (HL)
+                case 0xFF: reg.a |= (1 << 7);                                      return; // SET 7, A
             }
 
         case 0xCC: call(reg.f & Flag::Zero);                                       return; // CALL Z, $imm16
@@ -1017,12 +1042,12 @@ auto CPU::step() noexcept -> void
         case 0xEA: m_bus.write(read_next_word(), reg.a);                           return; // LD ($imm16), A
         case 0xEE: bit_op(std::bit_xor<uint8_t>(), read_next_byte(), 0x80, 0x00);  return; // XOR $imm8
         case 0xEF: rst(0x0028);                                                    return; // RST $0028
-        case 0xF0: m_bus.read(0xFF00 + read_next_byte());                          return; // LDH A, ($imm8)
-        case 0xF1: stack_pop(reg.af);                                              return; // POP AF
+        case 0xF0: reg.a = m_bus.read(0xFF00 + read_next_byte());                  return; // LDH A, ($imm8)
+        case 0xF1: stack_pop(reg.af, OpFlag::PopAF);                               return; // POP AF
         case 0xF2: reg.a = m_bus.read(0xFF00 + reg.c);                             return; // LD A, (C)
         case 0xF3:                                                                 return; // DI
         case 0xF5: stack_push(reg.af);                                             return; // PUSH AF
-        case 0xF6: bit_op(std::bit_or<uint8_t>(), m_bus.read(reg.hl), 0x80, 0x00); return; // OR $imm8
+        case 0xF6: bit_op(std::bit_or<uint8_t>(), read_next_byte(), 0x80, 0x00);   return; // OR $imm8
         case 0xF7: rst(0x0030);                                                    return; // RST $0030
         case 0xF8: add_sp(reg.hl);                                                 return; // LD HL, SP+$simm8
         case 0xF9: reg.sp = reg.hl;                                                return; // LD SP, HL

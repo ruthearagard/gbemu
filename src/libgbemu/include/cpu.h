@@ -39,7 +39,7 @@ namespace GameBoy
     {
     public:
         RegisterPair(uint8_t& hi, uint8_t& lo) noexcept : m_hi(hi), m_lo(lo)
-        { };
+        { }
 
         auto value() const noexcept -> uint16_t
         {
@@ -58,18 +58,38 @@ namespace GameBoy
             return value();
         }
 
-        auto operator++(int) -> uint16_t
+        auto operator++() -> uint16_t
         {
             uint16_t v{ value() };
             value(++v);
+            return v;
+        }
+
+        auto operator--() -> uint16_t
+        {
+            uint16_t v{ value() };
+            value(--v);
+            return v;
+        }
+
+        auto operator++(int) -> uint16_t
+        {
+            uint16_t v{ value() };
+            value(v + 1);
+            return v;
+        }
+
+        auto operator--(int) -> uint16_t
+        {
+            uint16_t v{ value() };
+            value(v - 1);
 
             return v;
         }
 
-        auto operator--(int) -> void
+        auto operator^(const RegisterPair& pair) -> uint16_t
         {
-            uint16_t v{ value() };
-            value(--v);
+            return value() ^ pair.value();
         }
 
         auto operator=(const uint16_t v) -> void
@@ -82,10 +102,20 @@ namespace GameBoy
             value(v.value());
         }
 
-        template<typename T>
-        auto operator+=(const T t) -> void
+        auto operator+(const RegisterPair& v) -> int
         {
-            value(t);
+            const uint16_t v0{ value() };
+            const uint16_t v1{ v.value() };
+
+            return v0 + v1;
+        }
+
+        auto operator+=(const RegisterPair& rhs) -> RegisterPair&
+        {
+            uint16_t v{ value() };
+            v++;
+
+            return *this;
         }
         
         uint8_t& m_hi;
@@ -107,17 +137,18 @@ namespace GameBoy
         struct
         {
             uint8_t b, c, d, e, h, l, a, f;
+            RegisterPair bc{ b, c };
+            RegisterPair de{ d, e };
+            RegisterPair hl{ h, l };
+            RegisterPair af{ a, f };
 
-            RegisterPair bc;
-            RegisterPair de;
-            RegisterPair hl;
-            RegisterPair af;
+            uint8_t pc_hi;
+            uint8_t pc_lo;
+            RegisterPair pc{ pc_hi, pc_lo };
 
-            // Program counter
-            RegisterPair pc;
-
-            // Stack pointer
-            RegisterPair sp;
+            uint8_t sp_hi;
+            uint8_t sp_lo;
+            RegisterPair sp{ sp_hi, sp_lo };
         } reg;
 
         // Flag register bits
@@ -127,6 +158,12 @@ namespace GameBoy
             Subtract  = 1 << 6,
             HalfCarry = 1 << 5,
             Carry     = 1 << 4
+        };
+
+        enum OpFlag : unsigned int
+        {
+            PopAF,
+            Normal
         };
 
         // ALU function flags
@@ -166,6 +203,9 @@ namespace GameBoy
         // Sets the Zero flag to `true` if `value` is 0.
         template<typename T>
         auto set_zero_flag(const T value) noexcept -> void;
+
+        // Sets the Zero flag to `condition`.
+        auto set_zero_flag(const bool condition) noexcept -> void;
 
         // Sets the Subtract flag to `condition`.
         auto set_subtract_flag(const bool condition) noexcept -> void;
@@ -221,7 +261,7 @@ namespace GameBoy
         auto ret(const bool condition_met) -> void;
 
         // Pops the stack into register pair `pair`.
-        auto stack_pop(RegisterPair& pair) noexcept -> void;
+        auto stack_pop(RegisterPair& pair, const OpFlag flag = OpFlag::Normal) noexcept -> void;
 
         // Handles the `JP cond, $imm16` instruction.
         auto jp(const bool condition_met) noexcept -> void;

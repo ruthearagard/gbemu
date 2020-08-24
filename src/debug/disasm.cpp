@@ -32,9 +32,9 @@ Disassembler::Disassembler(const GameBoy::SystemBus& bus,
 // Disassembles the current instruction before execution.
 auto Disassembler::before() noexcept -> void
 {
-    disasm = fmt::sprintf("$%04X: ", m_cpu.reg.pc);
+    disasm = fmt::sprintf("$%04X: ", m_cpu.reg.pc.value());
 
-    auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc)] };
+    auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc.value())] };
 
     if (instruction.empty())
     {
@@ -42,7 +42,7 @@ auto Disassembler::before() noexcept -> void
     }
     else if (instruction == "CB_INSTR")
     {
-        instruction = cb_opcodes[m_bus.read(m_cpu.reg.pc + 1)];
+        instruction = cb_opcodes[m_bus.read(m_cpu.reg.pc.value() + 1)];
     }
 
     // Go through each character, one at a time.
@@ -58,7 +58,7 @@ auto Disassembler::before() noexcept -> void
 
         if (instruction.compare(index, 5, "$imm8") == 0)
         {
-            const uint8_t imm{ m_bus.read(m_cpu.reg.pc + 1) };
+            const uint8_t imm{ m_bus.read(m_cpu.reg.pc.value() + 1) };
 
             disasm += fmt::sprintf("$%02X", imm);
             index  += 5;
@@ -68,7 +68,7 @@ auto Disassembler::before() noexcept -> void
         {
             const int8_t imm
             {
-                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc + 1))
+                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1))
             };
 
             disasm += fmt::sprintf("%s$%02X", (imm < 0) ? "-" : "", abs(imm));
@@ -77,8 +77,8 @@ auto Disassembler::before() noexcept -> void
 
         if (instruction.compare(index, 6, "$imm16") == 0)
         {
-            const uint8_t lo{ m_bus.read(m_cpu.reg.pc + 1) };
-            const uint8_t hi{ m_bus.read(m_cpu.reg.pc + 2) };
+            const uint8_t lo{ m_bus.read(m_cpu.reg.pc.value() + 1) };
+            const uint8_t hi{ m_bus.read(m_cpu.reg.pc.value() + 2) };
 
             const uint16_t imm = (hi << 8) | lo;
 
@@ -90,10 +90,10 @@ auto Disassembler::before() noexcept -> void
         {
             const int8_t imm
             {
-                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc + 1))
+                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1))
             };
 
-            const uint16_t address = imm + m_cpu.reg.pc + 2;
+            const uint16_t address = imm + m_cpu.reg.pc.value() + 2;
 
             disasm += fmt::sprintf("$%04X", address);
             index  += 7;
@@ -111,10 +111,10 @@ auto Disassembler::after() noexcept -> std::string
 
     disasm += fmt::sprintf("; [BC=0x%04X, DE=0x%04X, HL=0x%04X, AF=0x%04X, "
                            "SP=0x%04X]",
-                           m_cpu.reg.bc,
-                           m_cpu.reg.de,
-                           m_cpu.reg.hl,
-                           m_cpu.reg.af,
-                           m_cpu.reg.sp);
+                           m_cpu.reg.bc.value(),
+                           m_cpu.reg.de.value(),
+                           m_cpu.reg.hl.value(),
+                           m_cpu.reg.af.value(),
+                           m_cpu.reg.sp.value());
     return disasm;
 }
