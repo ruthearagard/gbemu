@@ -141,6 +141,7 @@ auto CPU::add_hl(const RegisterPair& pair) noexcept -> void
     set_carry_flag(result > 0xFFFF);
 
     reg.hl = static_cast<uint16_t>(result);
+    m_bus.step();
 }
 
 // Handles the `JR cond, $branch` instruction.
@@ -150,6 +151,7 @@ auto CPU::jr(const bool condition_met) -> void
 
     if (condition_met)
     {
+        m_bus.step();
         reg.pc = reg.pc + offset;
     }
 }
@@ -207,11 +209,21 @@ auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
 }
 
 // Handles the `RET cond` instruction.
-auto CPU::ret(const bool condition_met) -> void
+auto CPU::ret(const bool condition_met, const OpFlag flag) -> void
 {
     if (condition_met)
     {
         stack_pop(reg.pc);
+
+        if (flag == OpFlag::TrulyConditional)
+        {
+            m_bus.step();
+        }
+        m_bus.step();
+    }
+    else
+    {
+        m_bus.step();
     }
 }
 
@@ -234,6 +246,7 @@ auto CPU::jp(const bool condition_met) noexcept -> void
 
     if (condition_met)
     {
+        m_bus.step();
         reg.pc = address;
     }
 }
@@ -253,6 +266,8 @@ auto CPU::call(const bool condition_met) noexcept -> void
 // Pushes the contents of register pair `pair` onto the stack.
 auto CPU::stack_push(const RegisterPair& pair) noexcept -> void
 {
+    m_bus.step();
+
     m_bus.write(--reg.sp, pair.m_hi);
     m_bus.write(--reg.sp, pair.m_lo);
 }
@@ -260,6 +275,8 @@ auto CPU::stack_push(const RegisterPair& pair) noexcept -> void
 // Handles the `RST $vector` instruction.
 auto CPU::rst(const uint16_t vector) noexcept -> void
 {
+    m_bus.step();
+
     stack_push(reg.pc);
     reg.pc = vector;
 }
@@ -504,7 +521,7 @@ auto CPU::step() noexcept -> void
         // LD ($imm16), SP
         case 0x08:
         {
-            const auto address{ read_next_word() };
+            const uint16_t address{ read_next_word() };
 
             m_bus.write(address,     reg.sp & 0x00FF);
             m_bus.write(address + 1, reg.sp >> 8);
@@ -514,14 +531,14 @@ auto CPU::step() noexcept -> void
 
         case 0x09: add_hl(reg.bc);                             return; // ADD HL, BC
         case 0x0A: reg.a = m_bus.read(reg.bc);                 return; // LD A, (BC)
-        case 0x0B: reg.bc--;                                   return; // DEC BC
+        case 0x0B: reg.bc--; m_bus.step();                     return; // DEC BC
         case 0x0C: reg.c = inc(reg.c);                         return; // INC C
         case 0x0D: reg.c = dec(reg.c);                         return; // DEC C
         case 0x0E: reg.c = read_next_byte();                   return; // LD C, $imm8
         case 0x0F: reg.a = rrc(reg.a, ALUFlag::ClearZeroFlag); return; // RRCA
         case 0x11: reg.de = read_next_word();                  return; // LD DE, $imm16
         case 0x12: m_bus.write(reg.de, reg.a);                 return; // LD (DE), A
-        case 0x13: reg.de++;                                   return; // INC DE
+        case 0x13: reg.de++; m_bus.step();                     return; // INC DE
         case 0x14: reg.d = inc(reg.d);                         return; // INC D
         case 0x15: reg.d = dec(reg.d);                         return; // DEC D
         case 0x16: reg.d = read_next_byte();                   return; // LD D, $imm8
@@ -529,7 +546,7 @@ auto CPU::step() noexcept -> void
         case 0x18: jr(true);                                   return; // JR $branch
         case 0x19: add_hl(reg.de);                             return; // ADD HL, DE
         case 0x1A: reg.a = m_bus.read(reg.de);                 return; // LD A, (DE)
-        case 0x1B: reg.de--;                                   return; // DEC DE
+        case 0x1B: reg.de--; m_bus.step();                     return; // DEC DE
         case 0x1C: reg.e = inc(reg.e);                         return; // INC E
         case 0x1D: reg.e = dec(reg.e);                         return; // DEC E
         case 0x1E: reg.e = read_next_byte();                   return; // LD E, $imm8
@@ -537,7 +554,7 @@ auto CPU::step() noexcept -> void
         case 0x20: jr(!(reg.f & Flag::Zero));                  return; // JR NZ, $branch
         case 0x21: reg.hl = read_next_word();                  return; // LD HL, $imm16
         case 0x22: m_bus.write(reg.hl, reg.a); reg.hl++;       return; // LD (HL+), A
-        case 0x23: reg.hl++;                                   return; // INC HL
+        case 0x23: reg.hl++; m_bus.step();                     return; // INC HL
         case 0x24: reg.h = inc(reg.h);                         return; // INC H
         case 0x25: reg.h = dec(reg.h);                         return; // DEC H
         case 0x26: reg.h = read_next_byte();                   return; // LD H, $imm8
@@ -600,7 +617,7 @@ auto CPU::step() noexcept -> void
         case 0x28: jr(reg.f & Flag::Zero);               return; // JR Z, $branch
         case 0x29: add_hl(reg.hl);                       return; // ADD HL, HL
         case 0x2A: reg.a = m_bus.read(reg.hl); reg.hl++; return; // LD A, (HL+)
-        case 0x2B: reg.hl--;                             return; // DEC HL
+        case 0x2B: reg.hl--; m_bus.step();               return; // DEC HL
         case 0x2C: reg.l = inc(reg.l);                   return; // INC L
         case 0x2D: reg.l = dec(reg.l);                   return; // DEC L
         case 0x2E: reg.l = read_next_byte();             return; // LD L, $imm8
@@ -633,7 +650,7 @@ auto CPU::step() noexcept -> void
         case 0x38: jr(reg.f & Flag::Carry);              return;
         case 0x39: add_hl(reg.sp);                       return;
         case 0x3A: reg.a = m_bus.read(reg.hl); reg.hl--; return;
-        case 0x3B: reg.sp--;                             return;
+        case 0x3B: reg.sp--; m_bus.step();               return;
         case 0x3C: reg.a = inc(reg.a);                   return;
         case 0x3D: reg.a = dec(reg.a);                   return;
         case 0x3E: reg.a = read_next_byte();             return;
@@ -774,7 +791,7 @@ auto CPU::step() noexcept -> void
         case 0xBD: sub(reg.l,              ALUFlag::DiscardResult);                 return; // CP L
         case 0xBE: sub(m_bus.read(reg.hl), ALUFlag::DiscardResult);                 return; // CP (HL)
         case 0xBF: sub(reg.a,              ALUFlag::DiscardResult);                 return; // CP A
-        case 0xC0: ret(!(reg.f & Flag::Zero));                                      return; // RET NZ
+        case 0xC0: ret(!(reg.f & Flag::Zero), OpFlag::TrulyConditional);            return; // RET NZ
         case 0xC1: stack_pop(reg.bc);                                               return; // POP BC
         case 0xC2: jp(!(reg.f & Flag::Zero));                                       return; // JP NZ, $imm16
         case 0xC3: jp(true);                                                        return; // JP $imm16
@@ -782,7 +799,7 @@ auto CPU::step() noexcept -> void
         case 0xC5: stack_push(reg.bc);                                              return; // PUSH BC
         case 0xC6: add(read_next_byte());                                           return; // ADD A, $imm8
         case 0xC7: rst(0x0000);                                                     return; // RST $0000
-        case 0xC8: ret(reg.f & Flag::Zero);                                         return; // RET Z
+        case 0xC8: ret(reg.f & Flag::Zero, OpFlag::TrulyConditional);               return; // RET Z
         case 0xC9: ret(true);                                                       return; // RET
         case 0xCA: jp(reg.f & Flag::Zero);                                          return; // JP Z, $imm16
 
@@ -1052,14 +1069,14 @@ auto CPU::step() noexcept -> void
         case 0xCD: call(true);                                                     return; // CALL $imm16
         case 0xCE: add(read_next_byte(), ALUFlag::WithCarry);                      return; // ADC A, $imm8
         case 0xCF: rst(0x0008);                                                    return; // RST $08
-        case 0xD0: ret(!(reg.f & Flag::Carry));                                    return; // RET NC
+        case 0xD0: ret(!(reg.f & Flag::Carry), OpFlag::TrulyConditional);          return; // RET NC
         case 0xD1: stack_pop(reg.de);                                              return; // POP DE
         case 0xD2: jp(!(reg.f & Flag::Carry));                                     return; // JP NC, $imm16
         case 0xD4: call(!(reg.f & Flag::Carry));                                   return; // CALL NC, $imm16
         case 0xD5: stack_push(reg.de);                                             return; // PUSH DE
         case 0xD6: sub(read_next_byte());                                          return; // SUB $imm8
         case 0xD7: rst(0x0010);                                                    return; // RST $0010
-        case 0xD8: ret(reg.f & Flag::Carry);                                       return; // RET C
+        case 0xD8: ret(reg.f & Flag::Carry, OpFlag::TrulyConditional);             return; // RET C
         case 0xD9: ret(true); ime = true;                                          return; // RETI
         case 0xDA: jp(reg.f & Flag::Carry);                                        return; // JP C, $imm16
         case 0xDC: call(reg.f & Flag::Carry);                                      return; // CALL C, $imm16
@@ -1084,7 +1101,7 @@ auto CPU::step() noexcept -> void
         case 0xF6: bit_op(std::bit_or<uint8_t>(), read_next_byte(), 0x80, 0x00);   return; // OR $imm8
         case 0xF7: rst(0x0030);                                                    return; // RST $0030
         case 0xF8: add_sp(reg.hl);                                                 return; // LD HL, SP+$simm8
-        case 0xF9: reg.sp = reg.hl;                                                return; // LD SP, HL
+        case 0xF9: reg.sp = reg.hl; m_bus.step();                                  return; // LD SP, HL
         case 0xFA: reg.a = m_bus.read(read_next_word());                           return; // LD A, ($imm16)
         case 0xFB: ime = true;                                                     return; // EI
         case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult);                  return; // CP $imm8

@@ -105,6 +105,8 @@ namespace GameBoy
         // Timer hardware instance
         Timer timer;
 
+        unsigned int cycles = 0;
+
     private:
         std::shared_ptr<Cartridge> m_cart;
     };

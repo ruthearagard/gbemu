@@ -32,6 +32,7 @@ auto SystemBus::cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void
 // Advances the hardware by 1 m-cycle.
 auto SystemBus::step() noexcept -> void
 {
+    cycles += 4;
     timer.step();
 }
 
@@ -79,6 +80,10 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF80 ... 0xFFE:
                     return hram[address - 0xFF80];
 
+                // $FFFF - IE - Interrupt Enable (R/W)
+                case 0xFFF:
+                    return interrupt_enable;
+
                 default:
                     __debugbreak();
                     return 0xFF;
@@ -125,9 +130,14 @@ auto SystemBus::write(const uint16_t address,
                 case 0xF02:
                     return;
 
-                // FF05 - TIMA - Timer counter (R/W)
+                // $FF05 - TIMA - Timer counter (R/W)
                 case 0xF05:
                     timer.TIMA = data;
+                    return;
+
+                // $FF06 - TMA - Timer Modulo (R/W)
+                case 0xF06:
+                    timer.TMA = data;
                     return;
 
                 // $FF07 - TAC - Timer Control (R/W)

@@ -163,7 +163,8 @@ namespace GameBoy
         enum OpFlag : unsigned int
         {
             PopAF,
-            Normal
+            Normal,
+            TrulyConditional
         };
 
         // ALU function flags
@@ -263,7 +264,8 @@ namespace GameBoy
                  const ALUFlag flag = ALUFlag::WithoutCarry) noexcept -> void;
 
         // Handles the `RET cond` instruction.
-        auto ret(const bool condition_met) -> void;
+        auto ret(const bool condition_met,
+                 const OpFlag flag = OpFlag::Normal) -> void;
 
         // Pops the stack into register pair `pair`.
         auto stack_pop(RegisterPair& pair, const OpFlag flag = OpFlag::Normal) noexcept -> void;

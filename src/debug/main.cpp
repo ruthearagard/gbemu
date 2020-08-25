@@ -93,6 +93,7 @@ auto main(int argc, char* argv[]) -> int
         disasm.before();
         gb.step();
         trace_file << disasm.after() << std::endl;
+        gb.bus.cycles = 0;
     }
     return EXIT_SUCCESS;
 }
