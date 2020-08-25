@@ -68,6 +68,10 @@ auto SystemBus::read(const uint16_t address,
         case 0xF:
             switch (address & 0x0FFF)
             {
+                // $FF05 - TIMA - Timer counter (R/W)
+                case 0xF05:
+                    return timer.TIMA;
+
                 // $FF0F - IF - Interrupt Flag (R/W)
                 case 0xF0F:
                     return interrupt_flag;
@@ -101,6 +105,8 @@ auto SystemBus::read(const uint16_t address,
 auto SystemBus::write(const uint16_t address,
                       const uint8_t data) noexcept -> void
 {
+    step();
+
     switch (address >> 12)
     {
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
@@ -204,8 +210,6 @@ auto SystemBus::write(const uint16_t address,
             __debugbreak();
             return;
     }
-
-    step();
 }
 
 // Signals an interrupt `interrupt`.

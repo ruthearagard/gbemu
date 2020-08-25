@@ -485,6 +485,9 @@ auto CPU::step() noexcept -> void
         {
             if ((ie & (1 << 2)) && (m_if & (1 << 2)))
             {
+                m_bus.step();
+                m_bus.step();
+
                 stack_push(reg.pc);
 
                 ime = false;
@@ -512,7 +515,7 @@ auto CPU::step() noexcept -> void
         case 0x00:                                             return; // NOP
         case 0x01: reg.bc = read_next_word();                  return; // LD BC, $imm16
         case 0x02: m_bus.write(reg.bc, reg.a);                 return; // LD (BC), A
-        case 0x03: reg.bc++;                                   return; // INC BC
+        case 0x03: reg.bc++; m_bus.step();                     return; // INC BC
         case 0x04: reg.b = inc(reg.b);                         return; // INC B
         case 0x05: reg.b = dec(reg.b);                         return; // DEC B
         case 0x06: reg.b = read_next_byte();                   return; // LD B, $imm8
@@ -634,7 +637,7 @@ auto CPU::step() noexcept -> void
         case 0x30: jr(!(reg.f & Flag::Carry));            return; // JR NC, $branch
         case 0x31: reg.sp = read_next_word();             return; // LD SP, $imm16
         case 0x32: m_bus.write(reg.hl, reg.a); reg.hl--;  return; // LD (HL-), A
-        case 0x33: reg.sp++;                              return; // INC SP
+        case 0x33: reg.sp++; m_bus.step();                return; // INC SP
         case 0x34: rw_hl(std::bind(&CPU::inc, this, _1)); return; // INC (HL)
         case 0x35: rw_hl(std::bind(&CPU::dec, this, _1)); return; // DEC (HL)
         case 0x36: m_bus.write(reg.hl, read_next_byte()); return; // LD (HL), $imm8
@@ -1065,47 +1068,47 @@ auto CPU::step() noexcept -> void
                 case 0xFF: reg.a |= (1 << 7);                                      return; // SET 7, A
             }
 
-        case 0xCC: call(reg.f & Flag::Zero);                                       return; // CALL Z, $imm16
-        case 0xCD: call(true);                                                     return; // CALL $imm16
-        case 0xCE: add(read_next_byte(), ALUFlag::WithCarry);                      return; // ADC A, $imm8
-        case 0xCF: rst(0x0008);                                                    return; // RST $08
-        case 0xD0: ret(!(reg.f & Flag::Carry), OpFlag::TrulyConditional);          return; // RET NC
-        case 0xD1: stack_pop(reg.de);                                              return; // POP DE
-        case 0xD2: jp(!(reg.f & Flag::Carry));                                     return; // JP NC, $imm16
-        case 0xD4: call(!(reg.f & Flag::Carry));                                   return; // CALL NC, $imm16
-        case 0xD5: stack_push(reg.de);                                             return; // PUSH DE
-        case 0xD6: sub(read_next_byte());                                          return; // SUB $imm8
-        case 0xD7: rst(0x0010);                                                    return; // RST $0010
-        case 0xD8: ret(reg.f & Flag::Carry, OpFlag::TrulyConditional);             return; // RET C
-        case 0xD9: ret(true); ime = true;                                          return; // RETI
-        case 0xDA: jp(reg.f & Flag::Carry);                                        return; // JP C, $imm16
-        case 0xDC: call(reg.f & Flag::Carry);                                      return; // CALL C, $imm16
-        case 0xDE: sub(read_next_byte(), ALUFlag::WithCarry);                      return; // SBC A, $imm8
-        case 0xDF: rst(0x0018);                                                    return; // RST $0018
-        case 0xE0: m_bus.write(0xFF00 + read_next_byte(), reg.a);                  return; // LDH ($imm8), A
-        case 0xE1: stack_pop(reg.hl);                                              return; // POP HL
-        case 0xE2: m_bus.write(0xFF00 + reg.c, reg.a);                             return; // LD (C), A
-        case 0xE5: stack_push(reg.hl);                                             return; // PUSH HL
-        case 0xE6: bit_op(std::bit_and<uint8_t>(), read_next_byte(), 0xA0, 0x20);  return; // AND $imm8
-        case 0xE7: rst(0x0020);                                                    return; // RST $0020
-        case 0xE8: add_sp(reg.sp);                                                 return; // ADD SP, $simm8
-        case 0xE9: reg.pc = reg.hl;                                                return; // JP (HL)
-        case 0xEA: m_bus.write(read_next_word(), reg.a);                           return; // LD ($imm16), A
-        case 0xEE: bit_op(std::bit_xor<uint8_t>(), read_next_byte(), 0x80, 0x00);  return; // XOR $imm8
-        case 0xEF: rst(0x0028);                                                    return; // RST $0028
-        case 0xF0: reg.a = m_bus.read(0xFF00 + read_next_byte());                  return; // LDH A, ($imm8)
-        case 0xF1: stack_pop(reg.af, OpFlag::PopAF);                               return; // POP AF
-        case 0xF2: reg.a = m_bus.read(0xFF00 + reg.c);                             return; // LD A, (C)
-        case 0xF3: ime = false;                                                    return; // DI
-        case 0xF5: stack_push(reg.af);                                             return; // PUSH AF
-        case 0xF6: bit_op(std::bit_or<uint8_t>(), read_next_byte(), 0x80, 0x00);   return; // OR $imm8
-        case 0xF7: rst(0x0030);                                                    return; // RST $0030
-        case 0xF8: add_sp(reg.hl);                                                 return; // LD HL, SP+$simm8
-        case 0xF9: reg.sp = reg.hl; m_bus.step();                                  return; // LD SP, HL
-        case 0xFA: reg.a = m_bus.read(read_next_word());                           return; // LD A, ($imm16)
-        case 0xFB: ime = true;                                                     return; // EI
-        case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult);                  return; // CP $imm8
-        case 0xFF: rst(0x0038);                                                    return; // RST $0038
-        default: __debugbreak();                                                   return;
+        case 0xCC: call(reg.f & Flag::Zero);                                      return; // CALL Z, $imm16
+        case 0xCD: call(true);                                                    return; // CALL $imm16
+        case 0xCE: add(read_next_byte(), ALUFlag::WithCarry);                     return; // ADC A, $imm8
+        case 0xCF: rst(0x0008);                                                   return; // RST $08
+        case 0xD0: ret(!(reg.f & Flag::Carry), OpFlag::TrulyConditional);         return; // RET NC
+        case 0xD1: stack_pop(reg.de);                                             return; // POP DE
+        case 0xD2: jp(!(reg.f & Flag::Carry));                                    return; // JP NC, $imm16
+        case 0xD4: call(!(reg.f & Flag::Carry));                                  return; // CALL NC, $imm16
+        case 0xD5: stack_push(reg.de);                                            return; // PUSH DE
+        case 0xD6: sub(read_next_byte());                                         return; // SUB $imm8
+        case 0xD7: rst(0x0010);                                                   return; // RST $0010
+        case 0xD8: ret(reg.f & Flag::Carry, OpFlag::TrulyConditional);            return; // RET C
+        case 0xD9: ret(true); ime = true;                                         return; // RETI
+        case 0xDA: jp(reg.f & Flag::Carry);                                       return; // JP C, $imm16
+        case 0xDC: call(reg.f & Flag::Carry);                                     return; // CALL C, $imm16
+        case 0xDE: sub(read_next_byte(), ALUFlag::WithCarry);                     return; // SBC A, $imm8
+        case 0xDF: rst(0x0018);                                                   return; // RST $0018
+        case 0xE0: m_bus.write(0xFF00 + read_next_byte(), reg.a);                 return; // LDH ($imm8), A
+        case 0xE1: stack_pop(reg.hl);                                             return; // POP HL
+        case 0xE2: m_bus.write(0xFF00 + reg.c, reg.a);                            return; // LD (C), A
+        case 0xE5: stack_push(reg.hl);                                            return; // PUSH HL
+        case 0xE6: bit_op(std::bit_and<uint8_t>(), read_next_byte(), 0xA0, 0x20); return; // AND $imm8
+        case 0xE7: rst(0x0020);                                                   return; // RST $0020
+        case 0xE8: add_sp(reg.sp);                                                return; // ADD SP, $simm8
+        case 0xE9: reg.pc = reg.hl;                                               return; // JP (HL)
+        case 0xEA: m_bus.write(read_next_word(), reg.a);                          return; // LD ($imm16), A
+        case 0xEE: bit_op(std::bit_xor<uint8_t>(), read_next_byte(), 0x80, 0x00); return; // XOR $imm8
+        case 0xEF: rst(0x0028);                                                   return; // RST $0028
+        case 0xF0: reg.a = m_bus.read(0xFF00 + read_next_byte());                 return; // LDH A, ($imm8)
+        case 0xF1: stack_pop(reg.af, OpFlag::PopAF);                              return; // POP AF
+        case 0xF2: reg.a = m_bus.read(0xFF00 + reg.c);                            return; // LD A, (C)
+        case 0xF3: ime = false;                                                   return; // DI
+        case 0xF5: stack_push(reg.af);                                            return; // PUSH AF
+        case 0xF6: bit_op(std::bit_or<uint8_t>(), read_next_byte(), 0x80, 0x00);  return; // OR $imm8
+        case 0xF7: rst(0x0030);                                                   return; // RST $0030
+        case 0xF8: add_sp(reg.hl);                                                return; // LD HL, SP+$simm8
+        case 0xF9: reg.sp = reg.hl; m_bus.step();                                 return; // LD SP, HL
+        case 0xFA: reg.a = m_bus.read(read_next_word());                          return; // LD A, ($imm16)
+        case 0xFB: ime = true;                                                    return; // EI
+        case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult);                 return; // CP $imm8
+        case 0xFF: rst(0x0038);                                                   return; // RST $0038
+        default: __debugbreak();                                                  return;
     }
 }

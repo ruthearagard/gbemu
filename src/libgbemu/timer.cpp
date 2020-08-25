@@ -32,7 +32,7 @@ auto Timer::reset() noexcept -> void
     TMA  = 0x00;
     TAC  = 0x00;
 
-    div_counter  = 0;
+    div_counter = 0;
     tima_counter = 0;
 }
 
@@ -60,16 +60,15 @@ auto Timer::step() noexcept -> void
             case 3: threshold = 256;  break;
         }
 
-        if (tima_counter == threshold)
+        while (tima_counter >= threshold)
         {
             if (TIMA == 0xFF)
             {
                 bus.signal_interrupt(Interrupt::TimerInterrupt);
                 TIMA = TMA;
             }
-
             TIMA++;
-            tima_counter = 0;
+            tima_counter -= threshold;
         }
     }
 }

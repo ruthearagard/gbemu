@@ -34,6 +34,9 @@ namespace GameBoy
     public:
         explicit Timer(SystemBus& m_bus) noexcept;
 
+        // Updates the TAC register to `tac`.
+        auto set_tac(const uint8_t tac) noexcept -> void;
+
         // Resets the timers to the startup state.
         auto reset() noexcept -> void;
 
@@ -65,14 +68,14 @@ namespace GameBoy
         //
         // Bits 1-0: Input Clock Select
         //
-        // 00 : 4096 Hz(~4194 Hz SGB)
-        // 01 : 262144 Hz(~268400 Hz SGB)
-        // 10 : 65536 Hz(~67110 Hz SGB)
-        // 11 : 16384 Hz(~16780 Hz SGB)
+        // 00 : 4096 Hz
+        // 01 : 262144 Hz
+        // 10 : 65536 Hz
+        // 11 : 16384 Hz
         uint8_t TAC;
 
-        unsigned int div_counter;
-        unsigned int tima_counter;
+        uint16_t div_counter;
+        uint16_t tima_counter;
 
     private:
         // System bus instance
