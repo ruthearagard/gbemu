@@ -63,6 +63,9 @@ namespace GameBoy
         // Sets the current cartridge to `cart`.
         auto cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void;
 
+        // Resets the hardware to the startup state.
+        auto reset() noexcept -> void;
+
         // Advances the hardware by 1 m-cycle.
         auto step() noexcept -> void;
 

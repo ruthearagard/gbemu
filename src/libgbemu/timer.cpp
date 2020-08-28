@@ -44,6 +44,7 @@ auto Timer::step() noexcept -> void
     if (div_counter == 256)
     {
         DIV++;
+        div_counter = 0;
     }
 
     if (TAC & (1 << 2))

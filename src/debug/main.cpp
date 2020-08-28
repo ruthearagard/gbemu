@@ -12,11 +12,17 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+// Required for time functions.
+#include <chrono>
+
 // Required for file I/O streams.
 #include <fstream>
 
 // Required for I/O streams.
 #include <iostream>
+
+// Required for SDL2.
+#include <SDL2/SDL.h>
 
 // Required for the `GameBoy::System` class.
 #include "../libgbemu/include/gb.h"
@@ -88,12 +94,83 @@ auto main(int argc, char* argv[]) -> int
         return EXIT_FAILURE;
     }
 
-    for (;;)
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+
+    SDL_Window* window = SDL_CreateWindow("gbemu debugging station",
+                                          SDL_WINDOWPOS_CENTERED,
+                                          SDL_WINDOWPOS_CENTERED,
+                                          680,
+                                          480,
+                                          SDL_WINDOW_ALLOW_HIGHDPI);
+
+    SDL_Renderer* renderer = SDL_CreateRenderer(window,
+                                                -1,
+                                                SDL_RENDERER_ACCELERATED);
+
+    SDL_Texture* texture = SDL_CreateTexture(renderer,
+                                             SDL_PIXELFORMAT_ARGB8888,
+                                             SDL_TEXTUREACCESS_TARGET,
+                                             160,
+                                             144);
+
+    bool done{ false };
+    SDL_Event event;
+
+    const unsigned int max_cycles{ 4194304 / 60 };
+    unsigned int cycles{ 0 };
+
+    while (!done)
     {
-        disasm.before();
-        gb.step();
-        trace_file << disasm.after() << std::endl;
-        gb.bus.cycles = 0;
+        SDL_PollEvent(&event);
+
+        switch (event.type)
+        {
+            case SDL_QUIT:
+                done = true;
+                break;
+
+            case SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_CLOSE &&
+                    event.window.windowID == SDL_GetWindowID(window))
+                {
+                    done = true;
+                    break;
+                }
+                break;
+        }
+
+        const auto start{ std::chrono::steady_clock::now() };
+            while (cycles < max_cycles)
+            {
+                disasm.before();
+                gb.step();
+                trace_file << disasm.after() << std::endl;
+
+                cycles += gb.bus.cycles;
+                gb.bus.cycles = 0;
+            }
+
+            cycles -= max_cycles;
+
+            SDL_UpdateTexture(texture,
+                              nullptr,
+                              gb.bus.ppu.screen_data.data(),
+                              sizeof(uint32_t) * 144);
+
+            SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+            SDL_RenderPresent(renderer);
+        const auto end{ std::chrono::steady_clock::now() };
+
+        const auto diff
+        {
+            std::chrono::duration_cast<std::chrono::milliseconds>
+            (end - start).count()
+        };
+
+        if (diff < (1000 / 60))
+        {
+            SDL_Delay((1000 / 60) - diff);
+        }
     }
     return EXIT_SUCCESS;
 }

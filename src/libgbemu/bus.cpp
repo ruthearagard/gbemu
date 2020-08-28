@@ -20,7 +20,7 @@
 
 using namespace GameBoy;
 
-SystemBus::SystemBus() noexcept : timer(*this)
+SystemBus::SystemBus() noexcept : timer(*this), ppu(*this)
 { }
 
 // Sets the current cartridge to `cart`.
@@ -29,11 +29,20 @@ auto SystemBus::cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void
     m_cart = cart;
 }
 
+// Resets the hardware to the startup state.
+auto SystemBus::reset() noexcept -> void
+{
+    timer.reset();
+    ppu.reset();
+}
+
 // Advances the hardware by 1 m-cycle.
 auto SystemBus::step() noexcept -> void
 {
     cycles += 4;
+
     timer.step();
+    ppu.step();
 }
 
 // Returns a byte from memory referenced by memory address `address`.
@@ -76,6 +85,10 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF0F:
                     return interrupt_flag;
 
+                // $FF40 - LCDC - LCD Control (R/W)
+                case 0xF40:
+                    return ppu.LCDC;
+
                 // $FF44 - LY - LCDC Y-Coordinate (R)
                 case 0xF44:
                     return ppu.LY;
@@ -109,6 +122,8 @@ auto SystemBus::write(const uint16_t address,
 
     switch (address >> 12)
     {
+        case 0x0 ... 0x7: return;
+
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
         case 0x8 ... 0x9:
             ppu.vram[address - 0x8000] = data;
@@ -134,6 +149,11 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF02 - SC - Serial Transfer Control (R/W)
                 case 0xF02:
+                    return;
+
+                // $FF04 - DIV - Divider Register (R/W)
+                case 0xF04:
+                    timer.DIV = 0;
                     return;
 
                 // $FF05 - TIMA - Timer counter (R/W)
@@ -173,7 +193,12 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF40 - LCDC - LCD Control (R/W)
                 case 0xF40:
-                    ppu.LCDC = data;
+                    ppu.set_LCDC(data);
+                    return;
+                
+                // $FF41 - STAT - LCDC Status (R/W)
+                case 0xF41:
+                    ppu.STAT = data;
                     return;
 
                 // $FF42 - SCY - Scroll Y (R/W)
@@ -189,6 +214,24 @@ auto SystemBus::write(const uint16_t address,
                 // $FF47 - BGP - BG Palette Data (R/W)
                 case 0xF47:
                     ppu.BGP = data;
+                    return;
+
+                // $FF48 - OBP0 - Object Palette 0 Data (R/W)
+                case 0xF48:
+                    return;
+
+                // $FF49 - OBP1 - Object Palette 1 Data (R/W)
+                case 0xF49:
+                    return;
+
+                // $FF4A - WY - Window Y Position (R/W)
+                case 0xF4A:
+                    ppu.WY = data;
+                    return;
+
+                // $FF4B - WX - Window X Position minus 7 (R/W)
+                case 0xF4B:
+                    ppu.WX = data;
                     return;
 
                 // [$FF80 - $FFFE] - High RAM (HRAM)

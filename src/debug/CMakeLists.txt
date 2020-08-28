@@ -13,6 +13,7 @@
 # PERFORMANCE OF THIS SOFTWARE.
 
 find_package(fmt CONFIG REQUIRED)
+find_package(SDL2 REQUIRED)
 
 # List of source files (*.cpp) and header files (*.h).
 #
@@ -40,7 +41,11 @@ set_target_properties(gbemu_debugger PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS ON)
 
-target_link_libraries(gbemu_debugger PRIVATE gbemu fmt::fmt fmt::fmt-header-only)
+target_link_libraries(gbemu_debugger PRIVATE gbemu
+                                             fmt::fmt
+                                             fmt::fmt-header-only
+                                             SDL2::SDL2
+                                             SDL2::SDL2main)
 
 target_compile_options(gbemu_debugger PRIVATE -Wno-c++98-compat
                                               -Wno-c++98-compat-pedantic
