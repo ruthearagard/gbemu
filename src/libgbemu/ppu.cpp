@@ -86,7 +86,7 @@ auto PPU::pixel(const uint8_t lo,
     const unsigned int p0{ (lo & (1 << bit)) != 0 };
     const unsigned int p1{ (hi & (1 << bit)) != 0 };
 
-    const unsigned int pixel{ (p0 << 1) | p1 };
+    const unsigned int pixel{ (p1 << 1) | p0 };
 
     static const std::array<enum Colors, 4> colors =
     {
@@ -96,7 +96,7 @@ auto PPU::pixel(const uint8_t lo,
         Colors::Black
     };
 
-    const unsigned int index{ (LY * 144) + screen_x };
+    const unsigned int index{ (LY * ScreenX) + screen_x };
 
     switch (pixel)
     {
@@ -199,9 +199,9 @@ auto PPU::step() noexcept -> void
         case Mode::Drawing:
             if (ly_counter == 172)
             {
-                while (screen_x < 160)
+                for (; screen_x < ScreenX; ++screen_x)
                 {
-                    draw_scanline(screen_x++);
+                    draw_scanline(screen_x);
                 }
 
                 screen_x = 0;

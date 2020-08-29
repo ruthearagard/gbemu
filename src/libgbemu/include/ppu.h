@@ -136,6 +136,9 @@ namespace GameBoy
 
         unsigned int ly_counter;
 
+        static constexpr auto ScreenX = 160;
+        static constexpr auto ScreenY = 144;
+
     private:
         auto draw_scanline(const unsigned int x) noexcept -> void;
 

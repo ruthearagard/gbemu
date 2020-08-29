@@ -108,10 +108,10 @@ auto main(int argc, char* argv[]) -> int
                                                 SDL_RENDERER_ACCELERATED);
 
     SDL_Texture* texture = SDL_CreateTexture(renderer,
-                                             SDL_PIXELFORMAT_ARGB8888,
+                                             SDL_PIXELFORMAT_BGRA32,
                                              SDL_TEXTUREACCESS_TARGET,
-                                             160,
-                                             144);
+                                             GameBoy::PPU::ScreenX,
+                                             GameBoy::PPU::ScreenY);
 
     bool done{ false };
     SDL_Event event;
@@ -155,7 +155,7 @@ auto main(int argc, char* argv[]) -> int
             SDL_UpdateTexture(texture,
                               nullptr,
                               gb.bus.ppu.screen_data.data(),
-                              sizeof(uint32_t) * 144);
+                              sizeof(uint32_t) * GameBoy::PPU::ScreenX);
 
             SDL_RenderCopy(renderer, texture, nullptr, nullptr);
             SDL_RenderPresent(renderer);
