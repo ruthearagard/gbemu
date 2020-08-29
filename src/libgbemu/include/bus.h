@@ -30,6 +30,9 @@
 // Required for `std::unique_ptr<>`.
 #include <memory>
 
+// Required for `std::vector<>`.
+#include <vector>
+
 // Required for the `GameBoy::APU` class.
 #include "apu.h"
 
@@ -46,7 +49,8 @@ namespace GameBoy
 
     enum Interrupt : unsigned int
     {
-        TimerInterrupt = 1 << 2
+        VBlankInterrupt = 1 << 0,
+        TimerInterrupt  = 1 << 2
     };
 
     enum class AccessType
@@ -62,6 +66,9 @@ namespace GameBoy
 
         // Sets the current cartridge to `cart`.
         auto cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void;
+
+        // Sets the current boot ROM to `data`.
+        auto boot_rom(const std::vector<uint8_t>& data) noexcept -> void;
 
         // Resets the hardware to the startup state.
         auto reset() noexcept -> void;
@@ -111,6 +118,8 @@ namespace GameBoy
         unsigned int cycles = 0;
 
     private:
+        bool boot_rom_disabled;
+        std::vector<uint8_t> m_boot_rom;
         std::shared_ptr<Cartridge> m_cart;
     };
 }

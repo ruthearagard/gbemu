@@ -164,7 +164,8 @@ namespace GameBoy
         {
             PopAF,
             Normal,
-            TrulyConditional
+            TrulyConditional,
+            ExtraDelay
         };
 
         // ALU function flags
@@ -200,6 +201,10 @@ namespace GameBoy
         // Returns the next two bytes from memory referenced by the program
         // counter, incrementing the program counter twice.
         inline auto read_next_word() noexcept -> uint16_t;
+
+        inline auto interrupt_check(const Interrupt intr,
+                                    const uint8_t ie,
+                                    uint8_t& m_if) noexcept -> void;
 
         // If `condition_met` is true, sets bit `flag` of the Flag Register
         // (F), otherwise unsets it.
@@ -284,7 +289,7 @@ namespace GameBoy
 
         // Performs a special addition operation between the stack pointer (SP)
         // and an immediate byte, and stores the result in `pair`.
-        auto add_sp(RegisterPair& pair) noexcept -> void;
+        auto add_sp(RegisterPair& pair, const OpFlag flag = Normal) noexcept -> void;
 
         // Handles the `RLC n` instruction.
         auto rlc(uint8_t n,

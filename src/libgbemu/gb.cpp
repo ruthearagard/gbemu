@@ -34,6 +34,20 @@ auto System::cart(const std::shared_ptr<Cartridge>& c) noexcept -> void
     bus.cart(c);
 }
 
+// Sets the current boot ROM data to `boot_rom`.
+auto System::boot_rom(const std::vector<uint8_t>& data) noexcept -> void
+{
+    bus.boot_rom(data);
+
+    cpu.reg.bc = 0x0000;
+    cpu.reg.de = 0x0000;
+    cpu.reg.hl = 0x0000;
+    cpu.reg.af = 0x0000;
+
+    cpu.reg.sp = 0x0000;
+    cpu.reg.pc = 0x0000;
+}
+
 // Executes one full step and returns the number of cycles taken.
 auto System::step() noexcept -> unsigned int
 {

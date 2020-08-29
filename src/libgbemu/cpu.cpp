@@ -43,6 +43,24 @@ inline auto CPU::read_next_word() noexcept -> uint16_t
     return (hi << 8) | lo;
 }
 
+inline auto CPU::interrupt_check(const Interrupt intr,
+                                 const uint8_t ie,
+                                 uint8_t& m_if) noexcept -> void
+{
+    if ((ie & intr) && (m_if & intr))
+    {
+        m_bus.step();
+        m_bus.step();
+
+        stack_push(reg.pc);
+
+        ime = false;
+
+        m_if &= ~(1 << 0);
+        reg.pc = 0x0040;
+    }
+}
+
 // If `condition_met` is true, sets bit `flag` of the Flag Register (F),
 // otherwise unsets it.
 auto CPU::update_flag(const enum Flag flag,
@@ -275,20 +293,25 @@ auto CPU::stack_push(const RegisterPair& pair) noexcept -> void
 // Handles the `RST $vector` instruction.
 auto CPU::rst(const uint16_t vector) noexcept -> void
 {
-    m_bus.step();
-
     stack_push(reg.pc);
     reg.pc = vector;
 }
 
 // Performs a special addition operation between the stack pointer (SP) and
 // an immediate byte, and stores the result in `pair`.
-auto CPU::add_sp(RegisterPair& pair) noexcept -> void
+auto CPU::add_sp(RegisterPair& pair, const OpFlag flag) noexcept -> void
 {
     set_zero_flag(false);
     set_subtract_flag(false);
 
     const int8_t imm{ static_cast<int8_t>(read_next_byte()) };
+
+    m_bus.step();
+
+    if (flag == ExtraDelay)
+    {
+        m_bus.step();
+    }
 
     const int sum = reg.sp + imm;
 
@@ -483,18 +506,8 @@ auto CPU::step() noexcept -> void
     {
         if (ime)
         {
-            if ((ie & (1 << 2)) && (m_if & (1 << 2)))
-            {
-                m_bus.step();
-                m_bus.step();
-
-                stack_push(reg.pc);
-
-                ime = false;
-
-                m_if &= ~(1 << 2);
-                reg.pc = 0x0050;
-            }
+            interrupt_check(Interrupt::VBlankInterrupt, ie, m_if);
+            interrupt_check(Interrupt::TimerInterrupt, ie, m_if);
         }
         else
         {
@@ -1091,7 +1104,7 @@ auto CPU::step() noexcept -> void
         case 0xE5: stack_push(reg.hl);                                            return; // PUSH HL
         case 0xE6: bit_op(std::bit_and<uint8_t>(), read_next_byte(), 0xA0, 0x20); return; // AND $imm8
         case 0xE7: rst(0x0020);                                                   return; // RST $0020
-        case 0xE8: add_sp(reg.sp);                                                return; // ADD SP, $simm8
+        case 0xE8: add_sp(reg.sp, ExtraDelay);                                    return; // ADD SP, $simm8
         case 0xE9: reg.pc = reg.hl;                                               return; // JP (HL)
         case 0xEA: m_bus.write(read_next_word(), reg.a);                          return; // LD ($imm16), A
         case 0xEE: bit_op(std::bit_xor<uint8_t>(), read_next_byte(), 0x80, 0x00); return; // XOR $imm8

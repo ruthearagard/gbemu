@@ -30,38 +30,66 @@
 // Required for the `Disassembler` class.
 #include "disasm.h"
 
+static auto open_file_and_read
+(const std::string& file) noexcept -> std::vector<uint8_t>
+{
+    std::basic_ifstream<unsigned char> handle
+    {
+        file,            // File path
+        std::ios::binary // Open mode
+    };
+
+    if (!handle)
+    {
+        return { };
+    }
+
+    std::vector<uint8_t> data
+    {
+        std::istreambuf_iterator<unsigned char>{handle}, // File contents
+        {}
+    };
+
+    handle.close();
+    return data;
+}
+
 // Program entry point.
 auto main(int argc, char* argv[]) -> int
 {
     if (argc < 2)
     {
-        std::cerr << argv[0] << ": Missing required argument. " << std::endl;
-        std::cerr << argv[0] << ": Syntax: " << argv[0] << " cart_file"
+        std::cerr << argv[0] << ": Missing required argument(s). "
                   << std::endl;
+
+        std::cerr << argv[0] << ": Syntax: " << argv[0] << " cart_file "
+        "[boot_rom]" << std::endl;
 
         return EXIT_FAILURE;
     }
 
-    std::basic_ifstream<unsigned char> cart_file
-    {
-        argv[1],         // File path
-        std::ios::binary // Open mode
-    };
+    std::vector<uint8_t> boot_rom;
 
-    if (!cart_file)
+    if (argc > 2)
     {
-        std::cerr << argv[0] << ": Unable to open " << argv[1] << ": "
+        boot_rom = open_file_and_read(argv[2]);
+
+        if (boot_rom.empty())
+        {
+            std::cerr << argv[0] << ": Unable to open " << argv[2] << ": "
+                      << strerror(errno) << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    const auto cart_data{ open_file_and_read(argv[1]) };
+
+    if (cart_data.empty())
+    {
+        std::cerr << argv[0] << ": Unable to open " << argv[2] << ": "
                   << strerror(errno) << std::endl;
         return EXIT_FAILURE;
     }
-
-    std::vector<uint8_t> cart_data
-    {
-        std::istreambuf_iterator<unsigned char>{cart_file}, // File contents
-        {}
-    };
-
-    cart_file.close();
 
     std::shared_ptr<GameBoy::Cartridge> cart;
 
@@ -78,6 +106,11 @@ auto main(int argc, char* argv[]) -> int
 
     GameBoy::System gb;
     gb.cart(cart);
+
+    if (!boot_rom.empty())
+    {
+        gb.boot_rom(boot_rom);
+    }
 
     Disassembler disasm
     {
@@ -99,8 +132,8 @@ auto main(int argc, char* argv[]) -> int
     SDL_Window* window = SDL_CreateWindow("gbemu debugging station",
                                           SDL_WINDOWPOS_CENTERED,
                                           SDL_WINDOWPOS_CENTERED,
-                                          680,
-                                          480,
+                                          640,
+                                          576,
                                           SDL_WINDOW_ALLOW_HIGHDPI);
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window,
@@ -142,9 +175,9 @@ auto main(int argc, char* argv[]) -> int
         const auto start{ std::chrono::steady_clock::now() };
             while (cycles < max_cycles)
             {
-                disasm.before();
+                //disasm.before();
                 gb.step();
-                trace_file << disasm.after() << std::endl;
+                //trace_file << disasm.after() << std::endl;
 
                 cycles += gb.bus.cycles;
                 gb.bus.cycles = 0;

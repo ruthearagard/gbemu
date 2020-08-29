@@ -29,11 +29,19 @@ auto SystemBus::cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void
     m_cart = cart;
 }
 
+// Sets the current boot ROM to `data`.
+auto SystemBus::boot_rom(const std::vector<uint8_t>& data) noexcept -> void
+{
+    m_boot_rom = data;
+}
+
 // Resets the hardware to the startup state.
 auto SystemBus::reset() noexcept -> void
 {
     timer.reset();
     ppu.reset();
+
+    boot_rom_disabled = false;
 }
 
 // Advances the hardware by 1 m-cycle.
@@ -57,13 +65,18 @@ auto SystemBus::read(const uint16_t address,
 
     switch (address >> 12)
     {
-        // [$0000 - $3FFF]: 16KB ROM Bank 0 (in cartridge, fixed at bank 0)
-        case 0x0 ... 0x3:
+        case 0x0:
+        {
+            if ((address < 0x0100)  &&
+                !m_boot_rom.empty() &&
+                !boot_rom_disabled)
+            {
+                return m_boot_rom[address];
+            }
             return m_cart->read(address);
+        }
 
-        // [$4000 - $7FFF]: 16KB ROM Bank 1..N
-        // (in cartridge, switchable bank number)
-        case 0x4 ... 0x7:
+        case 0x1 ... 0x7:
             return m_cart->read(address);
 
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
@@ -77,6 +90,10 @@ auto SystemBus::read(const uint16_t address,
         case 0xF:
             switch (address & 0x0FFF)
             {
+                // $FF00 - P1/JOYP - Joypad (R/W)
+                case 0xF00:
+                    return 0xFF;
+
                 // $FF05 - TIMA - Timer counter (R/W)
                 case 0xF05:
                     return timer.TIMA;
@@ -88,6 +105,10 @@ auto SystemBus::read(const uint16_t address,
                 // $FF40 - LCDC - LCD Control (R/W)
                 case 0xF40:
                     return ppu.LCDC;
+
+                // $FF42 - SCY - Scroll Y (R/W)
+                case 0xF42:
+                    return ppu.SCY;
 
                 // $FF44 - LY - LCDC Y-Coordinate (R)
                 case 0xF44:
@@ -102,12 +123,12 @@ auto SystemBus::read(const uint16_t address,
                     return interrupt_enable;
 
                 default:
-                    __debugbreak();
+                    //__debugbreak();
                     return 0xFF;
             }
 
         default:
-            __debugbreak();
+            //__debugbreak();
             return 0xFF;
     }
 }
@@ -142,6 +163,10 @@ auto SystemBus::write(const uint16_t address,
         case 0xF:
             switch (address & 0x0FFF)
             {
+                // $FF00 - P1 / JOYP - Joypad (R/W)
+                case 0xF00:
+                    return;
+
                 // $FF01 - SB - Serial transfer data (R/W)
                 case 0xF01:
                     printf("%c", data);
@@ -174,6 +199,22 @@ auto SystemBus::write(const uint16_t address,
                 // $FF0F - IF - Interrupt Flag (R/W)
                 case 0xF0F:
                     interrupt_flag = data;
+                    return;
+
+                // $FF12 - NR12 - Channel 1 Volume Envelope (R/W)
+                case 0xF12:
+                    return;
+
+                // $FF14 - NR14 - Channel 1 Frequency hi (R/W)
+                case 0xF14:
+                    return;
+
+                // $FF17 - NR22 - Channel 2 Volume Envelope (R/W)
+                case 0xF17:
+                    return;
+
+                // $FF21 - NR42 - Channel 4 Volume Envelope (R/W)
+                case 0xF21:
                     return;
 
                 // $FF24 - NR50 - Channel control / ON-OFF / Volume (R/W)
@@ -234,6 +275,11 @@ auto SystemBus::write(const uint16_t address,
                     ppu.WX = data;
                     return;
 
+                // $FF50 - Disable boot ROM
+                case 0xF50:
+                    boot_rom_disabled = true;
+                    return;
+
                 // [$FF80 - $FFFE] - High RAM (HRAM)
                 case 0xF80 ... 0xFFE:
                     hram[address - 0xFF80] = data;
@@ -245,12 +291,12 @@ auto SystemBus::write(const uint16_t address,
                     return;
 
                 default:
-                    __debugbreak();
+                    //__debugbreak();
                     return;
             }
 
         default:
-            __debugbreak();
+            //__debugbreak();
             return;
     }
 }

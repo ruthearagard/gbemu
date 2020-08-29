@@ -44,6 +44,9 @@ namespace GameBoy
         // Sets the current cartridge to `cart`.
         auto cart(const std::shared_ptr<Cartridge>& c) noexcept -> void;
 
+        // Sets the current boot ROM data to `boot_rom`.
+        auto boot_rom(const std::vector<uint8_t>& data) noexcept -> void;
+
         // Executes one full step and returns the number of cycles taken.
         auto step() noexcept -> unsigned int;
 

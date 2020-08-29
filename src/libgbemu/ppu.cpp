@@ -35,6 +35,7 @@ auto PPU::set_LCDC(const uint8_t data) noexcept -> void
     if (LCDC & (1 << 4))
     {
         bg_win_tile_data = 0x8000;
+        signed_tile_id = false;
     }
     else
     {
@@ -48,32 +49,30 @@ auto PPU::draw_scanline(const unsigned int x) noexcept -> void
     // Is the background enabled?
     if (LCDC & 1)
     {
-        const unsigned int offset_x = SCX + x;
+        const unsigned int offset_x{ SCX + x };
         const unsigned int offset_y = SCY + LY;
 
-        const unsigned int row = (offset_y / 8) * 32;
-        const unsigned int col = offset_x / 8;
+        const unsigned int row{ (offset_y / 8) * 32 };
+        const unsigned int col{ offset_x / 8 };
 
         const unsigned int index{ bg_tile_map + row + col };
 
-        uint16_t data = bg_win_tile_data;
-        int16_t tile_id;
+        uint16_t data{ bg_win_tile_data };
+        uint8_t tile_id{ vram_access(index) };
 
         if (!signed_tile_id)
         {
-            tile_id = vram_access(index);
             data += tile_id * 16;
         }
         else
         {
-            tile_id = static_cast<int16_t>(vram_access(index));
             data += (tile_id + 128) * 16;
         }
 
-        const unsigned int line = (offset_y % 8) * 2;
+        const unsigned int line{ (offset_y % 8) * 2 };
 
-        const uint8_t lo = vram_access(data + line);
-        const uint8_t hi = vram_access(data + line + 1);
+        const uint8_t lo{ vram_access(data + line)     };
+        const uint8_t hi{ vram_access(data + line + 1) };
 
         pixel(lo, hi, ((offset_x % 8) - 7) * -1);
     }
@@ -123,9 +122,9 @@ auto PPU::reset() noexcept -> void
 {
     set_LCDC(0x91);
 
-    SCX  = 0x00;
-    SCY  = 0x00;
-    BGP  = 0xFC;
+    SCX = 0x00;
+    SCY = 0x00;
+    BGP = 0xFC;
 
     STAT = 0x00;
 
@@ -164,6 +163,7 @@ auto PPU::step() noexcept -> void
 
                 if (LY == 144)
                 {
+                    m_bus.signal_interrupt(Interrupt::VBlankInterrupt);
                     STAT = (STAT & ~0x03) | (Mode::VBlankOrDisabled & 0x03);
                 }
                 else
