@@ -150,6 +150,8 @@ auto SystemBus::write(const uint16_t address,
             ppu.vram[address - 0x8000] = data;
             return;
 
+        case 0xA: printf("%c", data); return;
+
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
         case 0xC:
             wram[address - 0xC000] = data;
