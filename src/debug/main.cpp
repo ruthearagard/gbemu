@@ -59,12 +59,10 @@ auto main(int argc, char* argv[]) -> int
 {
     if (argc < 2)
     {
-        std::cerr << argv[0] << ": Missing required argument(s). "
+        std::cerr << "Missing required argument(s)." << std::endl;
+
+        std::cerr << "Syntax: " << argv[0] << " cart_file [boot_rom]"
                   << std::endl;
-
-        std::cerr << argv[0] << ": Syntax: " << argv[0] << " cart_file "
-        "[boot_rom]" << std::endl;
-
         return EXIT_FAILURE;
     }
 
@@ -76,10 +74,12 @@ auto main(int argc, char* argv[]) -> int
 
         if (boot_rom.empty())
         {
-            std::cerr << argv[0] << ": Unable to open " << argv[2] << ": "
+            std::cerr << "Unable to open " << argv[2] << ": "
                       << strerror(errno) << std::endl;
             return EXIT_FAILURE;
         }
+
+        std::cout << "Using boot ROM: " << argv[2] << std::endl;
     }
 
     const auto cart_data{ open_file_and_read(argv[1]) };
@@ -91,6 +91,8 @@ auto main(int argc, char* argv[]) -> int
         return EXIT_FAILURE;
     }
 
+    std::cout << "Using cartridge file: " << argv[1] << std::endl;
+
     GameBoy::System gb;
     std::shared_ptr<GameBoy::Cartridge> cart;
 
@@ -100,10 +102,15 @@ auto main(int argc, char* argv[]) -> int
     }
     catch (std::runtime_error& err)
     {
-        std::cerr << argv[0] << ": Unable to use cartridge file " << argv[1]
-                  << ": " << err.what() << std::endl;
+        std::cerr << "Unable to use cartridge file: " << err.what()
+                  << std::endl;
         return EXIT_FAILURE;
     }
+
+    std::cout << "Cartridge title: "    << cart->title()    << std::endl;
+    std::cout << "Cartridge type: "     << cart->type()     << std::endl;
+    std::cout << "Cartridge ROM size: " << cart->rom_size() << std::endl;
+    std::cout << "Cartridge RAM size: " << cart->ram_size() << std::endl;
 
     if (!boot_rom.empty())
     {
@@ -120,7 +127,7 @@ auto main(int argc, char* argv[]) -> int
 
     if (!trace_file)
     {
-        std::cerr << argv[0] << ": Unable to open trace file for writing: "
+        std::cerr << "Unable to open trace file for writing: "
                   << strerror(errno) << std::endl;
         return EXIT_FAILURE;
     }

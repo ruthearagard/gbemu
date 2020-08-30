@@ -25,6 +25,9 @@
 # reliably, there is still a cost to perform the check on every rebuild."
 #
 # Source (heh): https://cmake.org/cmake/help/v3.13/command/file.html#filesystem
+
+find_package(fmt CONFIG REQUIRED)
+
 set(SRCS apu.cpp bus.cpp cpu.cpp gb.cpp ppu.cpp timer.cpp)
 
 set(HDRS include/apu.h
@@ -43,6 +46,8 @@ set_target_properties(gbemu PROPERTIES
                       CXX_STANDARD 17
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS ON)
+
+target_link_libraries(gbemu fmt::fmt fmt::fmt-header-only)
 
 target_include_directories(gbemu PRIVATE include)
 target_compile_options(gbemu PRIVATE -Wno-c++98-compat

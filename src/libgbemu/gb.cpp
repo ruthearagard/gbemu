@@ -15,6 +15,9 @@
 // Required for built-in exceptions.
 #include <stdexcept>
 
+// Required for `fmt::sprintf()`.
+#include <fmt/printf.h>
+
 // Required for the `GameBoy::System` class.
 #include "gb.h"
 
@@ -98,8 +101,19 @@ std::shared_ptr<Cartridge>
         return cart;
     }
 
-    __debugbreak();
-    throw std::runtime_error("Unsupported memory bank controller.");
+    std::string mbc;
+
+    try
+    {
+        mbc = Cartridge::types.at(cart_data[0x0147]);
+    }
+    catch (std::out_of_range&)
+    {
+        mbc = "unknown";
+    }
+
+    throw std::runtime_error
+    (fmt::sprintf("Unsupported memory bank controller (%s)", mbc));
 }
 
 // Sets the current boot ROM data to `boot_rom`.

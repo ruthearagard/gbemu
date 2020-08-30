@@ -22,7 +22,7 @@ Cartridge(data)
 {
     mode = Mode::ROM;
 
-    rom_bank.byte = 0x00;
+    rom_bank.byte = 0x01;
     ram_bank      = 0x00;
     
     ram = { };
