@@ -21,23 +21,50 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for `std::vector<>`.
-#include <vector>
+// Required for `std::array<>`.
+#include <array>
+
+// Required for the `GameBoy::Cartridge` class.
+#include "cart.h"
 
 namespace GameBoy
 {
-    class Cartridge
+    class MBC1Cartridge : public Cartridge
     {
     public:
-        // This will throw `std::runtime_error` if the cartridge data is invalid.
-        explicit Cartridge(const std::vector<uint8_t>& data);
+        MBC1Cartridge(const std::vector<uint8_t>& data) noexcept;
 
-        // Returns a byte from the cartridge data referenced by memory address
+        // Returns data from the cartridge referenced by memory address
         // `address`.
-        auto read(const uint16_t address) const noexcept -> uint8_t;
+        auto read(const uint16_t address) noexcept -> uint8_t;
+
+        // Updates the memory bank controller configuration `address` to
+        // `value`.
+        auto write(const uint16_t address,
+                   const uint8_t value) noexcept -> void;
 
     private:
-        // Cartridge data
-        const std::vector<uint8_t>& m_data;
+        std::array<uint8_t, 32768> ram;
+
+        enum class Mode
+        {
+            ROM,
+            RAM
+        };
+
+        union
+        {
+            struct
+            {
+                unsigned int lo : 5;
+                unsigned int hi : 2;
+                unsigned int    : 1;
+            };
+            uint8_t byte;
+        } rom_bank;
+
+        uint8_t ram_bank;
+
+        Mode mode;
     };
 }

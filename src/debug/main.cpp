@@ -91,11 +91,12 @@ auto main(int argc, char* argv[]) -> int
         return EXIT_FAILURE;
     }
 
+    GameBoy::System gb;
     std::shared_ptr<GameBoy::Cartridge> cart;
 
     try
     {
-        cart = std::make_shared<GameBoy::Cartridge>(cart_data);
+        cart = gb.cart(cart_data);
     }
     catch (std::runtime_error& err)
     {
@@ -103,9 +104,6 @@ auto main(int argc, char* argv[]) -> int
                   << ": " << err.what() << std::endl;
         return EXIT_FAILURE;
     }
-
-    GameBoy::System gb;
-    gb.cart(cart);
 
     if (!boot_rom.empty())
     {
@@ -176,11 +174,8 @@ auto main(int argc, char* argv[]) -> int
             while (cycles < max_cycles)
             {
                 //disasm.before();
-                gb.step();
+                cycles += gb.step();
                 //trace_file << disasm.after() << std::endl;
-
-                cycles += gb.bus.cycles;
-                gb.bus.cycles = 0;
             }
 
             cycles -= max_cycles;

@@ -59,6 +59,7 @@ namespace GameBoy
         Direct
     };
 
+    // Interconnect between the CPU and devices.
     class SystemBus
     {
     public:
@@ -79,7 +80,7 @@ namespace GameBoy
         // Returns a byte from memory referenced by memory address `address`.
         // This function incurs 1 m-cycle (or 4 T-cycles).
         auto read(const uint16_t address,
-                  const AccessType access_type = AccessType::Emulated) noexcept -> uint8_t;
+                  const AccessType type = AccessType::Emulated) noexcept -> uint8_t;
 
         // Stores a byte `data` into memory referenced by memory address
         // `address`.
@@ -98,13 +99,23 @@ namespace GameBoy
         std::array<uint8_t, 4096> wram1;
 
         // $FF0F - IF - Interrupt Flag (R/W)
-        uint8_t interrupt_flag;
+        // $FFFF - IE - Interrupt Enable (R/W)
+        union
+        {
+            struct
+            {
+                unsigned int vblank   : 1;
+                unsigned int lcd_stat : 1;
+                unsigned int timer    : 1;
+                unsigned int serial   : 1;
+                unsigned int joypad   : 1;
+                unsigned int          : 3;
+            };
+            uint8_t byte;
+        } interrupt_enable, interrupt_flag;
 
         // [$FF80 - $FFFE] - High RAM (HRAM)
         std::array<uint8_t, 127> hram;
-
-        // $FFFF - IE - Interrupt Enable (R/W)
-        uint8_t interrupt_enable;
 
         // APU (audio processing unit) hardware instance
         APU apu;
@@ -115,11 +126,19 @@ namespace GameBoy
         // Timer hardware instance
         Timer timer;
 
-        unsigned int cycles = 0;
+        // The number of cycles taken by the current step.
+        unsigned int cycles;
 
     private:
+        // If, and only if the boot ROM is present, this boolean determines
+        // whether or not memory reads from addresses <0x100 will be from the
+        // boot ROM (false) or the cartridge (true).
         bool boot_rom_disabled;
+
+        // Boot ROM data
         std::vector<uint8_t> m_boot_rom;
+
+        // Game Boy cartridge
         std::shared_ptr<Cartridge> m_cart;
     };
 }

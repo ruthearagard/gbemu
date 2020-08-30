@@ -48,31 +48,70 @@ namespace GameBoy
         auto set_LCDC(const uint8_t data) noexcept -> void;
 
         // $FF40 - LCDC - LCD Control (R/W)
-        //
-        // Bit 7 - LCD Display Enable (0=Off, 1=On)
-        // Bit 6 - Window Tile Map Display Select (0=$9800-$9BFF, 1=$9C00-$9FFF)
-        // Bit 5 - Window Display Enable (0=Off, 1=On)
-        // Bit 4 - BG & Window Tile Data Select (0=$8800-$97FF, 1=$8000-$8FFF)
-        // Bit 3 - BG Tile Map Display Select (0=$9800-$9BFF, 1=$9C00-$9FFF)
-        // Bit 2 - OBJ(Sprite) Size (0=8x8, 1=8x16)
-        // Bit 1 - OBJ(Sprite) Display Enable (0=Off, 1=On)
-        // Bit 0 - BG Display (0=Off, 1=On)
-        uint8_t LCDC;
+        union
+        {
+            struct
+            {
+                // Bit 0 - BG Display (0=Off, 1=On)
+                unsigned int bg_enabled : 1;
+
+                // Bit 1 - OBJ(Sprite) Display Enable (0=Off, 1=On)
+                unsigned int sprites_enabled : 1;
+
+                // Bit 2 - OBJ(Sprite) Size (0=8x8, 1=8x16)
+                unsigned int sprite_size : 1;
+
+                // Bit 3 - BG Tile Map Display Select
+                // (0=$9800-$9BFF, 1=$9C00-$9FFF)
+                unsigned int bg_tile_map : 1;
+
+                // Bit 4 - BG & Window Tile Data Select
+                // (0=$8800-$97FF, 1=$8000-$8FFF)
+                unsigned int bg_win_tile_data : 1;
+
+                // Bit 5 - Window Display Enable (0=Off, 1=On)
+                unsigned int window_enabled : 1;
+
+                // Bit 6 - Window Tile Map Display Select
+                // (0=$9800-$9BFF, 1=$9C00-$9FFF)
+                unsigned int window_tile_map : 1;
+
+                // Bit 7 - LCD Display Enable (0=Off, 1=On)
+                unsigned int enabled : 1;
+            };
+            uint8_t byte;
+        } LCDC;
 
         // $FF41 - STAT - LCDC Status (R/W)
-        //
-        // Bit 6 - LYC=LY Coincidence Interrupt (1=Enable) (R/W)
-        // Bit 5 - Mode 2 OAM Interrupt (1=Enable) (R/W)
-        // Bit 4 - Mode 1 V-Blank Interrupt (1=Enable) (R/W)
-        // Bit 3 - Mode 0 H-Blank Interrupt (1=Enable) (R/W)
-        // Bit 2 - Coincidence Flag (0:LYC!=LY, 1: LYC=LY) (R)
-        // Bit 1-0: Mode Flag(Mode 0-3) (R)
-        //
-        // 0: During H-Blank
-        // 1: During V-Blank
-        // 2: During Searching OAM RAM
-        // 3: During Transfering Data to LCD Driver
-        uint8_t STAT;
+        union
+        {
+            struct
+            {
+                // Bit 1-0: Mode Flag (Mode 0-3) (R)
+                //
+                // 0: During H-Blank
+                // 1: During V-Blank
+                // 2: During Searching OAM RAM
+                // 3: During Transfering Data to LCD Driver
+                unsigned int mode : 2;
+
+                // Bit 2 - Coincidence Flag (0:LYC!=LY, 1: LYC=LY) (R)
+                unsigned int lyc_eq_ly : 1;
+
+                // Bit 3 - Mode 0 H-Blank Interrupt (1=Enable) (R/W)
+                unsigned int hblank_interrupt_enabled : 1;
+
+                // Bit 4 - Mode 1 V-Blank Interrupt (1=Enable) (R/W)
+                unsigned int vblank_interrupt_enabled : 1;
+
+                // Bit 5 - Mode 2 OAM Interrupt (1=Enable) (R/W)
+                unsigned int oam_interrupt_enabled : 1;
+
+                // Bit 6 - LYC=LY Coincidence Interrupt (1=Enable) (R/W)
+                unsigned int lyc_eq_ly_interrupt_enabled : 1;
+            };
+            uint8_t byte;
+        } STAT;
 
         // $FF42 - SCY - Scroll Y (R/W)
         //
@@ -109,18 +148,30 @@ namespace GameBoy
         // This register assigns gray shades to the color numbers of the BG and
         // Window tiles.
         //
-        // Bit 7-6: Shade for Color Number 3
-        // Bit 5-4: Shade for Color Number 2
-        // Bit 3-2: Shade for Color Number 1
-        // Bit 1-0: Shade for Color Number 0
-        //
         // The four possible gray shades are:
         //
         // 0 - White
         // 1 - Light gray
         // 2 - Dark gray
         // 3 - Black
-        uint8_t BGP;
+        union
+        {
+            struct
+            {
+                // Bit 1-0: Shade for Color Number 0
+                unsigned int c0 : 2;
+
+                // Bit 3-2: Shade for Color Number 1
+                unsigned int c1 : 2;
+
+                // Bit 5-4: Shade for Color Number 2
+                unsigned int c2 : 2;
+
+                // Bit 7-6: Shade for Color Number 3
+                unsigned int c3 : 2;
+            };
+            uint8_t byte;
+        } BGP;
 
         // $FF4A - WY - Window Y Position (R/W)
         uint8_t WY;
@@ -131,16 +182,16 @@ namespace GameBoy
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
         std::array<uint8_t, 8192> vram;
 
-        // Screen data (BGRA32)
-        std::array<uint32_t, 160 * 144> screen_data;
-
-        unsigned int ly_counter;
-
         static constexpr auto ScreenX{ 160 };
         static constexpr auto ScreenY{ 144 };
 
+        // Screen data (BGRA32)
+        std::array<uint32_t, ScreenX * ScreenY> screen_data;
+
+        unsigned int ly_counter;
+
     private:
-        auto draw_scanline(const unsigned int x) noexcept -> void;
+        auto draw_scanline() noexcept -> void;
 
         auto pixel(const uint8_t lo,
                    const uint8_t hi,

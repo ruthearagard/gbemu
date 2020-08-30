@@ -63,16 +63,21 @@ namespace GameBoy
         uint8_t TMA;
 
         // $FF07 - TAC - Timer Control (R/W)
-        //
-        // Bit 2 - Timer Stop (0=Stop, 1=Start)
-        //
-        // Bits 1-0: Input Clock Select
-        //
-        // 00 : 4096 Hz
-        // 01 : 262144 Hz
-        // 10 : 65536 Hz
-        // 11 : 16384 Hz
-        uint8_t TAC;
+        union
+        {
+            struct
+            {
+                // 0: 4096 Hz
+                // 1: 262144 Hz
+                // 2: 65536 Hz
+                // 3: 16384 Hz
+                unsigned int input_clock : 2;
+
+                // Bit 2 - Timer Stop (0=Stop, 1=Start)
+                unsigned int active : 1;
+            };
+            uint8_t byte;
+        } TAC;
 
         uint16_t div_counter;
         uint16_t tima_counter;

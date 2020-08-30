@@ -28,11 +28,11 @@ PPU::PPU(SystemBus& bus) noexcept : m_bus(bus)
 // Updates LCDC and changes the internal state of the scanline renderer.
 auto PPU::set_LCDC(const uint8_t data) noexcept -> void
 {
-    LCDC = data;
+    LCDC.byte = data;
 
-    bg_tile_map = (LCDC & (1 << 3)) ? 0x9C00 : 0x9800;
+    bg_tile_map = LCDC.bg_tile_map ? 0x9C00 : 0x9800;
 
-    if (LCDC & (1 << 4))
+    if (LCDC.bg_win_tile_data)
     {
         bg_win_tile_data = 0x8000;
         signed_tile_id = false;
@@ -44,12 +44,12 @@ auto PPU::set_LCDC(const uint8_t data) noexcept -> void
     }
 }
 
-auto PPU::draw_scanline(const unsigned int x) noexcept -> void
+auto PPU::draw_scanline() noexcept -> void
 {
     // Is the background enabled?
-    if (LCDC & 1)
+    if (LCDC.bg_enabled)
     {
-        const unsigned int offset_x{ SCX + x };
+        const unsigned int offset_x{ SCX + screen_x };
         const unsigned int offset_y = SCY + LY;
 
         const unsigned int row{ (offset_y / 8) * 32 };
@@ -100,19 +100,19 @@ auto PPU::pixel(const uint8_t lo,
     switch (pixel)
     {
         case 0:
-            screen_data[index] = colors[BGP & 0x03];
+            screen_data[index] = colors[BGP.c0];
             return;
 
         case 1:
-            screen_data[index] = colors[(BGP >> 2) & 0x03];
+            screen_data[index] = colors[BGP.c1];
             return;
 
         case 2:
-            screen_data[index] = colors[(BGP >> 4) & 0x03];
+            screen_data[index] = colors[BGP.c2];
             return;
 
         case 3:
-            screen_data[index] = colors[(BGP >> 6) & 0x03];
+            screen_data[index] = colors[BGP.c3];
             return;
     }
 }
@@ -124,9 +124,9 @@ auto PPU::reset() noexcept -> void
 
     SCX = 0x00;
     SCY = 0x00;
-    BGP = 0xFC;
+    BGP.byte = 0xFC;
 
-    STAT = 0x00;
+    STAT.byte = 0x00;
 
     WY = 0x00;
     WX = 0x00;
@@ -141,10 +141,10 @@ auto PPU::reset() noexcept -> void
 auto PPU::step() noexcept -> void
 {
     // We do nothing if the PPU isn't enabled.
-    if (!(LCDC & 0x80))
+    if (!LCDC.enabled)
     {
         LY = 0x00;
-        STAT = (STAT & ~0x03) | (Mode::VBlankOrDisabled & 0x03);
+        STAT.mode = Mode::VBlankOrDisabled;
 
         screen_data = { };
         ly_counter = 0;
@@ -154,7 +154,7 @@ auto PPU::step() noexcept -> void
 
     ly_counter += 4;
 
-    switch (STAT & 0x03)
+    switch (STAT.mode)
     {
         case Mode::HBlank:
             if (ly_counter == 204)
@@ -164,11 +164,11 @@ auto PPU::step() noexcept -> void
                 if (LY == 144)
                 {
                     m_bus.signal_interrupt(Interrupt::VBlankInterrupt);
-                    STAT = (STAT & ~0x03) | (Mode::VBlankOrDisabled & 0x03);
+                    STAT.mode = Mode::VBlankOrDisabled;
                 }
                 else
                 {
-                    STAT = (STAT & ~0x03) | (Mode::OAMSearch & 0x03);
+                    STAT.mode = Mode::OAMSearch;
                 }
                 ly_counter = 0;
             }
@@ -181,7 +181,7 @@ auto PPU::step() noexcept -> void
 
                 if (LY == 154)
                 {
-                    STAT = (STAT & ~0x03) | (Mode::OAMSearch & 0x03);
+                    STAT.mode = Mode::OAMSearch;
                     LY   = 0;
                 }
                 ly_counter = 0;
@@ -191,7 +191,7 @@ auto PPU::step() noexcept -> void
         case Mode::OAMSearch:
             if (ly_counter == 80)
             {
-                STAT = (STAT & ~0x03) | (Mode::Drawing & 0x03);
+                STAT.mode = Mode::Drawing;
                 ly_counter = 0;
             }
             break;
@@ -201,12 +201,12 @@ auto PPU::step() noexcept -> void
             {
                 for (; screen_x < ScreenX; ++screen_x)
                 {
-                    draw_scanline(screen_x);
+                    draw_scanline();
                 }
 
                 screen_x = 0;
                 ly_counter = 0;
-                STAT = (STAT & ~0x03) | (Mode::HBlank & 0x03);
+                STAT.mode = Mode::HBlank;
             }
             break;
     }

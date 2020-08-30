@@ -34,94 +34,6 @@ namespace GameBoy
 
     using ALUFunc = std::function<uint8_t(uint8_t)>;
 
-    // Defines a register pair.
-    class RegisterPair
-    {
-    public:
-        RegisterPair(uint8_t& hi, uint8_t& lo) noexcept : m_hi(hi), m_lo(lo)
-        { }
-
-        auto value() const noexcept -> uint16_t
-        {
-            return ((m_hi << 8) | m_lo);
-        }
-
-        auto value(const uint16_t v) noexcept -> void
-        {
-            m_hi = v >> 8;
-            m_lo = v & 0x00FF;
-        }
-
-        // Conversion function to `uint16_t` for convenience.
-        operator uint16_t()
-        {
-            return value();
-        }
-
-        auto operator++() -> uint16_t
-        {
-            uint16_t v{ value() };
-            value(++v);
-            return v;
-        }
-
-        auto operator--() -> uint16_t
-        {
-            uint16_t v{ value() };
-            value(--v);
-            return v;
-        }
-
-        auto operator++(int) -> uint16_t
-        {
-            uint16_t v{ value() };
-            value(v + 1);
-            return v;
-        }
-
-        auto operator--(int) -> uint16_t
-        {
-            uint16_t v{ value() };
-            value(v - 1);
-
-            return v;
-        }
-
-        auto operator^(const RegisterPair& pair) -> uint16_t
-        {
-            return value() ^ pair.value();
-        }
-
-        auto operator=(const uint16_t v) -> void
-        {
-            value(v);
-        }
-
-        auto operator=(const RegisterPair& v) -> void
-        {
-            value(v.value());
-        }
-
-        auto operator+(const RegisterPair& v) -> int
-        {
-            const uint16_t v0{ value() };
-            const uint16_t v1{ v.value() };
-
-            return v0 + v1;
-        }
-
-        auto operator+=(const RegisterPair& rhs) -> RegisterPair&
-        {
-            uint16_t v{ value() };
-            v++;
-
-            return *this;
-        }
-        
-        uint8_t& m_hi;
-        uint8_t& m_lo;
-    };
-
     // Defines a Sharp SM83 CPU interpreter.
     class CPU
     {
@@ -134,21 +46,54 @@ namespace GameBoy
         // Executes the next instruction.
         auto step() noexcept -> void;
 
+        // Registers
         struct
         {
-            uint8_t b, c, d, e, h, l, a, f;
-            RegisterPair bc{ b, c };
-            RegisterPair de{ d, e };
-            RegisterPair hl{ h, l };
-            RegisterPair af{ a, f };
+            union
+            {
+                struct
+                {
+                    uint8_t c;
+                    uint8_t b;
+                };
+                uint16_t bc;
+            };
 
-            uint8_t pc_hi;
-            uint8_t pc_lo;
-            RegisterPair pc{ pc_hi, pc_lo };
+            union
+            {
+                struct
+                {
+                    uint8_t e;
+                    uint8_t d;
+                };
+                uint16_t de;
+            };
 
-            uint8_t sp_hi;
-            uint8_t sp_lo;
-            RegisterPair sp{ sp_hi, sp_lo };
+            union
+            {
+                struct
+                {
+                    uint8_t l;
+                    uint8_t h;
+                };
+                uint16_t hl;
+            };
+
+            union
+            {
+                struct
+                {
+                    uint8_t f;
+                    uint8_t a;
+                };
+                uint16_t af;
+            };
+
+            // Program counter
+            uint16_t pc;
+
+            // Stack pointer
+            uint16_t sp;
         } reg;
 
         // Flag register bits
@@ -160,9 +105,9 @@ namespace GameBoy
             Carry     = 1 << 4
         };
 
+        // Changes how certain functions operate.
         enum OpFlag : unsigned int
         {
-            PopAF,
             Normal,
             TrulyConditional,
             ExtraDelay
@@ -212,8 +157,7 @@ namespace GameBoy
                          const bool condition_met) noexcept -> void;
 
         // Sets the Zero flag to `true` if `value` is 0.
-        template<typename T>
-        auto set_zero_flag(const T value) noexcept -> void;
+        auto set_zero_flag(const uint8_t value) noexcept -> void;
 
         // Sets the Zero flag to `condition`.
         auto set_zero_flag(const bool condition) noexcept -> void;
@@ -248,7 +192,7 @@ namespace GameBoy
         auto dec(uint8_t r) noexcept -> uint8_t;
 
         // Handles the `ADD HL, xx` instruction.
-        auto add_hl(const RegisterPair& pair) noexcept -> void;
+        auto add_hl(const uint16_t pair) noexcept -> void;
 
         // Handles the `JR cond, $branch` instruction.
         auto jr(const bool condition_met) -> void;
@@ -273,7 +217,7 @@ namespace GameBoy
                  const OpFlag flag = OpFlag::Normal) -> void;
 
         // Pops the stack into register pair `pair`.
-        auto stack_pop(RegisterPair& pair, const OpFlag flag = OpFlag::Normal) noexcept -> void;
+        auto stack_pop() noexcept -> uint16_t;
 
         // Handles the `JP cond, $imm16` instruction.
         auto jp(const bool condition_met) noexcept -> void;
@@ -282,14 +226,14 @@ namespace GameBoy
         auto call(const bool condition_met) noexcept -> void;
 
         // Pushes the contents of register pair `pair` onto the stack.
-        auto stack_push(const RegisterPair& pair) noexcept -> void;
+        auto stack_push(const uint16_t pair) noexcept -> void;
 
         // Handles the `RST $vector` instruction.
         auto rst(const uint16_t vector) noexcept -> void;
 
         // Performs a special addition operation between the stack pointer (SP)
         // and an immediate byte, and stores the result in `pair`.
-        auto add_sp(RegisterPair& pair, const OpFlag flag = Normal) noexcept -> void;
+        auto add_sp(const OpFlag flag = Normal) noexcept -> uint16_t;
 
         // Handles the `RLC n` instruction.
         auto rlc(uint8_t n,

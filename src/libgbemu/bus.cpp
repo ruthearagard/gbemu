@@ -16,7 +16,7 @@
 #include "bus.h"
 
 // Required for the `GameBoy::Cartridge` class.
-#include "cart.h"
+#include "../cart/cart.h"
 
 using namespace GameBoy;
 
@@ -41,6 +41,7 @@ auto SystemBus::reset() noexcept -> void
     timer.reset();
     ppu.reset();
 
+    cycles = 0;
     boot_rom_disabled = false;
 }
 
@@ -56,10 +57,11 @@ auto SystemBus::step() noexcept -> void
 // Returns a byte from memory referenced by memory address `address`.
 // This function incurs 1 m-cycle (or 4 T-cycles).
 auto SystemBus::read(const uint16_t address,
-                     const AccessType access_type) noexcept -> uint8_t
+                     const AccessType type) noexcept -> uint8_t
 {
-    if (access_type == AccessType::Emulated)
+    if (type == AccessType::Emulated)
     {
+        // Each memory access takes 1 m-cycle.
         step();
     }
 
@@ -71,12 +73,22 @@ auto SystemBus::read(const uint16_t address,
                 !m_boot_rom.empty() &&
                 !boot_rom_disabled)
             {
+                // [$0000 - $0FFF] - Boot ROM (R)
                 return m_boot_rom[address];
             }
+
+            // [$0000 - $3FFF] - ROM Bank 00 (R)
             return m_cart->read(address);
         }
 
+        // [$4000 - $7FFF] - 16KB ROM Bank 01..N
+        // (in cartridge, switchable bank number)
         case 0x1 ... 0x7:
+            return m_cart->read(address);
+
+        // [$A000 - $BFFF] - 8KB External RAM 
+        // (in cartridge, switchable bank, if any)
+        case 0xA ... 0xB:
             return m_cart->read(address);
 
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
@@ -100,11 +112,11 @@ auto SystemBus::read(const uint16_t address,
 
                 // $FF0F - IF - Interrupt Flag (R/W)
                 case 0xF0F:
-                    return interrupt_flag;
+                    return interrupt_flag.byte;
 
                 // $FF40 - LCDC - LCD Control (R/W)
                 case 0xF40:
-                    return ppu.LCDC;
+                    return ppu.LCDC.byte;
 
                 // $FF42 - SCY - Scroll Y (R/W)
                 case 0xF42:
@@ -120,7 +132,7 @@ auto SystemBus::read(const uint16_t address,
 
                 // $FFFF - IE - Interrupt Enable (R/W)
                 case 0xFFF:
-                    return interrupt_enable;
+                    return interrupt_enable.byte;
 
                 default:
                     //__debugbreak();
@@ -139,18 +151,26 @@ auto SystemBus::read(const uint16_t address,
 auto SystemBus::write(const uint16_t address,
                       const uint8_t data) noexcept -> void
 {
+    // Each memory access takes 1 m-cycle.
     step();
 
     switch (address >> 12)
     {
-        case 0x0 ... 0x7: return;
+        // [$0000 - $7FFF]: Cartridge memory bank controller configuration area
+        case 0x0 ... 0x7:
+            m_cart->write(address, data);
+            return;
 
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
         case 0x8 ... 0x9:
             ppu.vram[address - 0x8000] = data;
             return;
 
-        case 0xA: printf("%c", data); return;
+        // [$A000 - $BFFF] - 8KB External RAM 
+        // (in cartridge, switchable bank, if any)
+        case 0xA ... 0xB:
+            m_cart->write(address, data);
+            return;
 
         // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
         case 0xC:
@@ -195,12 +215,12 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF07 - TAC - Timer Control (R/W)
                 case 0xF07:
-                    timer.TAC = data;
+                    timer.TAC.byte = data;
                     return;
 
                 // $FF0F - IF - Interrupt Flag (R/W)
                 case 0xF0F:
-                    interrupt_flag = data;
+                    interrupt_flag.byte = data;
                     return;
 
                 // $FF12 - NR12 - Channel 1 Volume Envelope (R/W)
@@ -241,7 +261,7 @@ auto SystemBus::write(const uint16_t address,
                 
                 // $FF41 - STAT - LCDC Status (R/W)
                 case 0xF41:
-                    ppu.STAT = data;
+                    ppu.STAT.byte = data;
                     return;
 
                 // $FF42 - SCY - Scroll Y (R/W)
@@ -256,7 +276,7 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF47 - BGP - BG Palette Data (R/W)
                 case 0xF47:
-                    ppu.BGP = data;
+                    ppu.BGP.byte = data;
                     return;
 
                 // $FF48 - OBP0 - Object Palette 0 Data (R/W)
@@ -289,7 +309,7 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FFFF - IE - Interrupt Enable (R/W)
                 case 0xFFF:
-                    interrupt_enable = data;
+                    interrupt_enable.byte = data;
                     return;
 
                 default:
@@ -306,5 +326,5 @@ auto SystemBus::write(const uint16_t address,
 // Signals an interrupt `interrupt`.
 auto SystemBus::signal_interrupt(const Interrupt interrupt) noexcept -> void
 {
-    interrupt_flag |= interrupt;
+    interrupt_flag.byte |= interrupt;
 }

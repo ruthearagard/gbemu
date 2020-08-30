@@ -30,7 +30,8 @@ auto Timer::reset() noexcept -> void
 {
     TIMA = 0x00;
     TMA  = 0x00;
-    TAC  = 0x00;
+
+    TAC.byte = 0x00;
 
     div_counter = 0;
     tima_counter = 0;
@@ -47,13 +48,13 @@ auto Timer::step() noexcept -> void
         div_counter = 0;
     }
 
-    if (TAC & (1 << 2))
+    if (TAC.active)
     {
         tima_counter += 4;
 
         unsigned int threshold{ 0 };
 
-        switch (TAC & 0x03)
+        switch (TAC.input_clock)
         {
             case 0: threshold = 1024; break;
             case 1: threshold = 16;   break;

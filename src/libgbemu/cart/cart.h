@@ -21,49 +21,28 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::SystemBus` class.
-#include "bus.h"
-
-// Required for the `GameBoy::MBC1Cartridge` class.
-#include "../cart/mbc1.h"
-
-// Required for the `GameBoy::MBC3Cartridge` class.
-#include "../cart/mbc3.h"
-
-// Required for the `GameBoy::MBC1Cartridge` class.
-#include "../cart/mbc1.h"
-
-// Required for the `GameBoy::ROMOnlyCartridge` class.
-#include "../cart/rom_only.h"
-
-// Required for the `GameBoy::CPU` class.
-#include "cpu.h"
+// Required for `std::vector<>`.
+#include <vector>
 
 namespace GameBoy
 {
-    // Defines a Game Boy system.
-    class System
+    class Cartridge
     {
     public:
-        System() noexcept;
+        // Returns data from the cartridge referenced by memory address
+        // `address`.
+        virtual auto read(const uint16_t address) -> uint8_t = 0;
 
-        // Resets the system to the startup state.
-        auto reset() noexcept -> void;
+        // Updates the memory bank controller configuration `address` to
+        // `value`.
+        virtual auto write(const uint16_t address,
+                           const uint8_t data) -> void = 0;
 
-        // Sets the current cartridge to `cart`.
-        auto cart(const std::vector<uint8_t>& cart_data) ->
-             std::shared_ptr<Cartridge>;
+    protected:
+        explicit Cartridge
+        (const std::vector<uint8_t>& data) noexcept : m_data(data)
+        { }
 
-        // Sets the current boot ROM data to `boot_rom`.
-        auto boot_rom(const std::vector<uint8_t>& data) noexcept -> void;
-
-        // Executes one full step and returns the number of cycles taken.
-        auto step() noexcept -> unsigned int;
-
-        // System bus instance
-        SystemBus bus;
-
-        // Sharp SM83 CPU interpreter instance
-        CPU cpu;
+        const std::vector<uint8_t>& m_data;
     };
 }

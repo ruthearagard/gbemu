@@ -25,16 +25,16 @@
 #include "../libgbemu/include/cpu.h"
 
 Disassembler::Disassembler(GameBoy::SystemBus& bus,
-                           const GameBoy::CPU& cpu) noexcept : m_bus(bus),
-                                                               m_cpu(cpu)
+    const GameBoy::CPU& cpu) noexcept : m_bus(bus),
+    m_cpu(cpu)
 { }
 
 // Disassembles the current instruction before execution.
 auto Disassembler::before() noexcept -> void
 {
-    disasm = fmt::sprintf("$%04X: ", m_cpu.reg.pc.value());
+    disasm = fmt::sprintf("$%04X: ", m_cpu.reg.pc);
 
-    auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc.value(), GameBoy::AccessType::Direct)] };
+    auto instruction{ opcodes[m_bus.read(m_cpu.reg.pc, GameBoy::AccessType::Direct)] };
 
     if (instruction.empty())
     {
@@ -42,7 +42,7 @@ auto Disassembler::before() noexcept -> void
     }
     else if (instruction == "CB_INSTR")
     {
-        instruction = cb_opcodes[m_bus.read(m_cpu.reg.pc.value() + 1)];
+        instruction = cb_opcodes[m_bus.read(m_cpu.reg.pc + 1)];
     }
 
     // Go through each character, one at a time.
@@ -58,46 +58,46 @@ auto Disassembler::before() noexcept -> void
 
         if (instruction.compare(index, 5, "$imm8") == 0)
         {
-            const uint8_t imm{ m_bus.read(m_cpu.reg.pc.value() + 1, GameBoy::AccessType::Direct) };
+            const uint8_t imm{ m_bus.read(m_cpu.reg.pc + 1, GameBoy::AccessType::Direct) };
 
             disasm += fmt::sprintf("$%02X", imm);
-            index  += 5;
+            index += 5;
         }
 
         if (instruction.compare(index, 6, "$simm8") == 0)
         {
             const int8_t imm
             {
-                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1,
+                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc + 1,
                                     GameBoy::AccessType::Direct))
             };
 
             disasm += fmt::sprintf("%s$%02X", (imm < 0) ? "-" : "", abs(imm));
-            index  += 6;
+            index += 6;
         }
 
         if (instruction.compare(index, 6, "$imm16") == 0)
         {
-            const uint8_t lo{ m_bus.read(m_cpu.reg.pc.value() + 1, GameBoy::AccessType::Direct) };
-            const uint8_t hi{ m_bus.read(m_cpu.reg.pc.value() + 2, GameBoy::AccessType::Direct) };
+            const uint8_t lo{ m_bus.read(m_cpu.reg.pc + 1, GameBoy::AccessType::Direct) };
+            const uint8_t hi{ m_bus.read(m_cpu.reg.pc + 2, GameBoy::AccessType::Direct) };
 
             const uint16_t imm = (hi << 8) | lo;
 
             disasm += fmt::sprintf("$%04X", imm);
-            index  += 6;
+            index += 6;
         }
 
         if (instruction.compare(index, 7, "$branch") == 0)
         {
             const int8_t imm
             {
-                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc.value() + 1, GameBoy::AccessType::Direct))
+                static_cast<int8_t>(m_bus.read(m_cpu.reg.pc + 1, GameBoy::AccessType::Direct))
             };
 
-            const uint16_t address = imm + m_cpu.reg.pc.value() + 2;
+            const uint16_t address = imm + m_cpu.reg.pc + 2;
 
             disasm += fmt::sprintf("$%04X", address);
-            index  += 7;
+            index += 7;
         }
     }
 }
@@ -111,12 +111,11 @@ auto Disassembler::after() noexcept -> std::string
     }
 
     disasm += fmt::sprintf("; [BC=0x%04X, DE=0x%04X, HL=0x%04X, AF=0x%04X, "
-                           "SP=0x%04X] (%d)",
-                           m_cpu.reg.bc.value(),
-                           m_cpu.reg.de.value(),
-                           m_cpu.reg.hl.value(),
-                           m_cpu.reg.af.value(),
-                           m_cpu.reg.sp.value(),
-                           m_bus.cycles);
+                           "SP=0x%04X]",
+                           m_cpu.reg.bc,
+                           m_cpu.reg.de,
+                           m_cpu.reg.hl,
+                           m_cpu.reg.af,
+                           m_cpu.reg.sp);
     return disasm;
 }
