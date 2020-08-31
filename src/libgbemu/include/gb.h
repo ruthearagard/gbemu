@@ -52,7 +52,7 @@ namespace GameBoy
 
         // Sets the current cartridge to `cart`.
         auto cart(const std::vector<uint8_t>& cart_data) ->
-             std::shared_ptr<Cartridge>;
+        std::shared_ptr<Cartridge>;
 
         // Sets the current boot ROM data to `boot_rom`.
         auto boot_rom(const std::vector<uint8_t>& data) noexcept -> void;

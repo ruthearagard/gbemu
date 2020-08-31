@@ -6,7 +6,7 @@
 //
 // THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 // WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS.IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+// MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
 // SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
 // WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
@@ -21,26 +21,38 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::Cartridge` class.
-#include "../include/cart.h"
+// Required for the `QMainWindow` class.
+#include <qmainwindow.h>
 
-namespace GameBoy
+// Forward declaration
+class QPlainTextEdit;
+
+class MessageLogger : public QMainWindow
 {
-    class MBC3Cartridge : public Cartridge
+    Q_OBJECT
+
+public:
+    explicit MessageLogger(QWidget* parent) noexcept;
+
+    auto append(const QString& data) -> void;
+    auto reset() -> void;
+
+private:
+    auto on_select_font() -> void;
+    auto on_save_log() -> void;
+
+    struct
     {
-    public:
-        explicit MBC3Cartridge(const std::vector<uint8_t>& data) noexcept;
+        QMenu* menu;
+        QAction* save;
+    } file;
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
-        auto read(const uint16_t address) noexcept -> uint8_t;
+    struct
+    {
+        QMenu* menu;
+        QAction* select_font;
+        QAction* clear_log;
+    } view;
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
-        auto write(const uint16_t address,
-                   const uint8_t value) noexcept -> void;
-
-    private:
-        uint8_t rom_bank;
-    };
-}
+    QPlainTextEdit* text_edit;
+};

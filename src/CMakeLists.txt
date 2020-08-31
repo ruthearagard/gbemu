@@ -16,4 +16,4 @@
 add_subdirectory(libgbemu)
 
 # ...before the frontend.
-add_subdirectory(debug)
+add_subdirectory(app)

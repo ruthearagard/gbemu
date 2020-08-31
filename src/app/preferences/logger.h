@@ -21,26 +21,26 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::Cartridge` class.
-#include "../include/cart.h"
+// Required for the `QWidget` class.
+#include <qwidget.h>
 
-namespace GameBoy
+// Forward declarations
+class QFormLayout;
+class QGroupBox;
+class QHBoxLayout;
+class QPushButton;
+
+class LoggerPreferences : public QWidget
 {
-    class MBC3Cartridge : public Cartridge
-    {
-    public:
-        explicit MBC3Cartridge(const std::vector<uint8_t>& data) noexcept;
+    Q_OBJECT
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
-        auto read(const uint16_t address) noexcept -> uint8_t;
+public:
+    LoggerPreferences();
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
-        auto write(const uint16_t address,
-                   const uint8_t value) noexcept -> void;
-
-    private:
-        uint8_t rom_bank;
-    };
-}
+private:
+    QFormLayout* visual_layout;
+    QGroupBox* visual;
+    QHBoxLayout* main_layout;
+    QPushButton* info;
+    QPushButton* warning;
+};

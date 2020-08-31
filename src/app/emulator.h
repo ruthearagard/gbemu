@@ -21,26 +21,33 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::Cartridge` class.
-#include "../include/cart.h"
+// Required for the `QObject` class.
+#include <qobject.h>
 
-namespace GameBoy
+#include "../libgbemu/include/gb.h"
+
+class Emulator : public QObject, public GameBoy::System
 {
-    class MBC3Cartridge : public Cartridge
-    {
-    public:
-        explicit MBC3Cartridge(const std::vector<uint8_t>& data) noexcept;
+    Q_OBJECT
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
-        auto read(const uint16_t address) noexcept -> uint8_t;
+public:
+    Emulator() noexcept;
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
-        auto write(const uint16_t address,
-                   const uint8_t value) noexcept -> void;
+    auto start() noexcept -> void;
+    auto stop() noexcept -> void;
+    auto pause() noexcept -> void;
+    auto reset() noexcept -> void;
 
-    private:
-        uint8_t rom_bank;
-    };
-}
+    // Verifies that cartridge `data` is accurate and will operate on libgbemu,
+    // and sets the current cartridge to this data.
+    auto cartridge(const std::vector<uint8_t>& data) -> void;
+
+private:
+    const unsigned int max_cycles{ 4194304 / 60 };
+    bool running{ false };
+
+    std::shared_ptr<GameBoy::Cartridge> m_cart;
+
+signals:
+    void render_frame(const GameBoy::ScreenData& screen_data) noexcept;
+};

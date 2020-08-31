@@ -21,26 +21,46 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::Cartridge` class.
-#include "../include/cart.h"
+// Required for the `QMainWindow` class.
+#include <qmainwindow.h>
 
-namespace GameBoy
+class MainWindow : public QMainWindow
 {
-    class MBC3Cartridge : public Cartridge
+    Q_OBJECT
+
+public:
+    MainWindow() noexcept;
+
+private:
+    struct
     {
-    public:
-        explicit MBC3Cartridge(const std::vector<uint8_t>& data) noexcept;
+        QMenu* menu;
+        QAction* open_rom;
+    } file;
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
-        auto read(const uint16_t address) noexcept -> uint8_t;
+    struct
+    {
+        QMenu* menu;
+        QAction* preferences;
+    } edit;
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
-        auto write(const uint16_t address,
-                   const uint8_t value) noexcept -> void;
+    struct
+    {
+        QMenu* menu;
+        QAction* display_log;
+        QAction* display_serial_output;
+    } debug;
 
-    private:
-        uint8_t rom_bank;
-    };
-}
+signals:
+    // Emitted when the user selects a ROM file to run.
+    void rom_opened(const QString& file_name) noexcept;
+
+    // Emitted when the user requests to change application preferences.
+    void preferences() noexcept;
+
+    // Emitted when the user requests to display the log.
+    void on_display_log() noexcept;
+
+    // Emitted when the user requests to display serial output.
+    void on_display_serial_output() noexcept;
+};

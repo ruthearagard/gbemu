@@ -75,7 +75,17 @@ auto MBC1Cartridge::write(const uint16_t address,
         // writing to this address space. Practically any value with $0A in the
         // lower 4 bits enables RAM, and any other value disables RAM.
         case 0x0 ... 0x1:
+        {
+            if ((value & 0x1F) == 0x0A)
+            {
+                ram_enabled = true;
+            }
+            else
+            {
+                ram_enabled = false;
+            }
             return;
+        }
 
         // [$2000 - $3FFF]: ROM bank number (W)
         //
@@ -121,7 +131,7 @@ auto MBC1Cartridge::write(const uint16_t address,
         // limitation is that only RAM bank $00 can be used during Mode 0, and
         // only ROM Banks $00-$1F can be used during Mode 1.
         case 0x6 ... 0x7:
-            mode = (value == 0x00) ? Mode::ROM : Mode::RAM;
+            mode = value == 0x00 ? Mode::ROM : Mode::RAM;
             return;
     }
 }

@@ -12,8 +12,13 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-find_package(fmt CONFIG REQUIRED)
-find_package(SDL2 REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Widgets REQUIRED)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
 # List of source files (*.cpp) and header files (*.h).
 #
@@ -28,27 +33,31 @@ find_package(SDL2 REQUIRED)
 # reliably, there is still a cost to perform the check on every rebuild."
 #
 # Source (heh): https://cmake.org/cmake/help/v3.13/command/file.html#filesystem
-set(SRCS disasm.cpp main.cpp)
-set(HDRS disasm.h)
+set(SRCS emulator.cpp gbemu.cpp main.cpp main_window.cpp opengl.cpp)
+set(HDRS emulator.h gbemu.h main_window.h opengl.h)
 
-# We don't pass WIN32_EXECUTABLE here since we want to enforce that this
-# application should be built as a console application and NOT a GUI
-# application.
-add_executable(gbemu_debugger ${SRCS} ${HDRS})
+set(DEBUG_SRCS debug/logger.cpp)
+set(DEBUG_HDRS debug/logger.h)
 
-set_target_properties(gbemu_debugger PROPERTIES
+set(PREFERENCES_SRCS preferences/logger.cpp preferences/preferences.cpp)
+set(PREFERENCES_HDRS preferences/logger.h preferences/preferences.h)
+
+add_executable(gbemu_main WIN32 ${SRCS}
+                                ${DEBUG_SRCS}
+                                ${PREFERENCES_SRCS}
+                                ${HDRS}
+                                ${DEBUG_HDRS}
+                                ${PREFERENCES_HDRS})
+
+set_target_properties(gbemu_main PROPERTIES
                       CXX_STANDARD 17
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS ON)
 
-target_link_libraries(gbemu_debugger PRIVATE gbemu
-                                             fmt::fmt
-                                             fmt::fmt-header-only
-                                             SDL2::SDL2
-                                             SDL2::SDL2main)
+target_link_libraries(gbemu_main PRIVATE gbemu Qt5::Core Qt5::Gui Qt5::Widgets)
 
-target_compile_options(gbemu_debugger PRIVATE -Wno-c++98-compat
-                                              -Wno-c++98-compat-pedantic
-                                              -Wno-gnu
-                                              -Wall
-                                              -Wextra)
+target_compile_options(gbemu_main PRIVATE -Wno-c++98-compat
+                                          -Wno-c++98-compat-pedantic
+                                          -Wno-gnu
+                                          -Wall
+                                          -Wextra)

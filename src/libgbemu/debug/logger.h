@@ -21,26 +21,16 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::Cartridge` class.
-#include "../include/cart.h"
+// Required for `std::string`.
+#include <string>
 
 namespace GameBoy
 {
-    class MBC3Cartridge : public Cartridge
+    class Logger
     {
     public:
-        explicit MBC3Cartridge(const std::vector<uint8_t>& data) noexcept;
+        static Logger& instance() noexcept;
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
-        auto read(const uint16_t address) noexcept -> uint8_t;
-
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
-        auto write(const uint16_t address,
-                   const uint8_t value) noexcept -> void;
-
-    private:
-        uint8_t rom_bank;
+        auto log(const std::string& msg) noexcept -> void;
     };
 }

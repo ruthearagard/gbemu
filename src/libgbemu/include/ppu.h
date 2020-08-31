@@ -32,6 +32,11 @@ namespace GameBoy
     // Forward declaration
     class SystemBus;
 
+    static constexpr auto ScreenX{ 160 };
+    static constexpr auto ScreenY{ 144 };
+
+    using ScreenData = std::array<uint32_t, ScreenX * ScreenY>;
+
     class PPU
     {
     public:
@@ -182,11 +187,8 @@ namespace GameBoy
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
         std::array<uint8_t, 8192> vram;
 
-        static constexpr auto ScreenX{ 160 };
-        static constexpr auto ScreenY{ 144 };
-
         // Screen data (BGRA32)
-        std::array<uint32_t, ScreenX * ScreenY> screen_data;
+        ScreenData screen_data;
 
         unsigned int ly_counter;
 

@@ -25,7 +25,7 @@
 #include <array>
 
 // Required for the `GameBoy::Cartridge` class.
-#include "cart.h"
+#include "../include/cart.h"
 
 namespace GameBoy
 {
@@ -62,6 +62,8 @@ namespace GameBoy
             };
             uint8_t byte;
         } rom_bank;
+
+        bool ram_enabled;
 
         uint8_t ram_bank;
 

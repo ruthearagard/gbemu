@@ -22,7 +22,7 @@
 #pragma once
 
 // Required for the `GameBoy::Cartridge` class.
-#include "cart.h"
+#include "../include/cart.h"
 
 namespace GameBoy
 {

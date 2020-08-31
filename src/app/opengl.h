@@ -21,26 +21,29 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::Cartridge` class.
-#include "../include/cart.h"
+// Required for the `QOpenGLWidget` class.
+#include <qopenglwidget.h>
 
-namespace GameBoy
+// Required for the `QOpenGLFunctions_3_2_Core` class.
+#include <QOpenGLFunctions_3_2_Core>
+
+#include "../libgbemu/include/ppu.h"
+
+class OpenGL : public QOpenGLWidget, protected QOpenGLFunctions_3_2_Core
 {
-    class MBC3Cartridge : public Cartridge
-    {
-    public:
-        explicit MBC3Cartridge(const std::vector<uint8_t>& data) noexcept;
+    Q_OBJECT
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
-        auto read(const uint16_t address) noexcept -> uint8_t;
+public:
+    auto render_frame(const GameBoy::ScreenData& screen_data) noexcept -> void;
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
-        auto write(const uint16_t address,
-                   const uint8_t value) noexcept -> void;
+private:
+    GLuint VBO;
+    GLuint VAO;
+    GLuint EBO;
 
-    private:
-        uint8_t rom_bank;
-    };
-}
+    GLuint texture;
+
+    auto initializeGL() -> void;
+    auto paintGL() -> void;
+    auto resizeGL(int w, int h) -> void;
+};

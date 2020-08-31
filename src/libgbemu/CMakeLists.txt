@@ -32,13 +32,14 @@ set(SRCS apu.cpp bus.cpp cpu.cpp gb.cpp ppu.cpp timer.cpp)
 
 set(HDRS include/apu.h
          include/bus.h
+         include/cart.h
          include/cpu.h
          include/gb.h
          include/ppu.h
          include/timer.h)
 
 set(CART_SRCS cart/mbc1.cpp cart/mbc3.cpp cart/rom_only.cpp)
-set(CART_HDRS cart/cart.h cart/mbc1.h cart/mbc3.h cart/rom_only.h)
+set(CART_HDRS cart/mbc1.h cart/mbc3.h cart/rom_only.h)
 
 add_library(gbemu STATIC ${SRCS} ${CART_SRCS} ${HDRS} ${CART_HDRS})
 

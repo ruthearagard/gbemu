@@ -16,7 +16,7 @@
 #include "bus.h"
 
 // Required for the `GameBoy::Cartridge` class.
-#include "../cart/cart.h"
+#include "cart.h"
 
 using namespace GameBoy;
 
