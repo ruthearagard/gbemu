@@ -25,7 +25,7 @@
 #include <qpointer.h>
 
 // Required for the `MessageLogger` class.
-#include "debug/logger.h"
+#include "logger.h"
 
 // Required for the `Emulator` class.
 #include "emulator.h"
@@ -60,6 +60,6 @@ private:
     // Message logger instance, if any.
     QPointer<MessageLogger> message_logger;
 
-    // Preference instance, if any.
+    // Preferences instance, if any.
     QPointer<Preferences> preferences;
 };

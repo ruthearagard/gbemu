@@ -87,12 +87,27 @@ MessageLogger::MessageLogger(QWidget* parent) : QMainWindow(parent)
     auto doc{ text_edit->document() };
     doc->setDefaultFont(font);
 
-    QPalette p = text_edit->palette();
-    p.setColor(QPalette::Base, Qt::red);
-    p.setColor(QPalette::Text, Qt::red);
+    setCentralWidget(text_edit);
+}
+
+auto MessageLogger::info(const QString& msg) noexcept -> void
+{
+    auto p{ text_edit->palette() };
+    p.setColor(QPalette::Base, Qt::white);
+    p.setColor(QPalette::Text, Qt::white);
     text_edit->setPalette(p);
 
-    setCentralWidget(text_edit);
+    append(msg);
+}
+
+auto MessageLogger::warning(const QString& msg) noexcept -> void
+{
+    auto p{ text_edit->palette() };
+    p.setColor(QPalette::Base, Qt::yellow);
+    p.setColor(QPalette::Text, Qt::yellow);
+    text_edit->setPalette(p);
+
+    append(msg);
 }
 
 auto MessageLogger::append(const QString& data) -> void

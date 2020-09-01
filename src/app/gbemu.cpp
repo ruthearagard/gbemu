@@ -60,6 +60,18 @@ GBEmu::GBEmu() noexcept
             };
             QMessageBox::critical(&main_window, tr("Error"), str);
         }
+
+        if (message_logger)
+        {
+            message_logger->info
+            (QString("Using cartridge file: %1\n").arg(file_name));
+        }
+
+        if (message_logger)
+        {
+            message_logger->warning
+            (QString("[ROM]: Attempted to write $2000<-$01 with no MBC\n"));
+        }
         emulator.start();
     });
 

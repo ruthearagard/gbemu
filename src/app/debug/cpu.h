@@ -24,8 +24,8 @@
 // Required for `std::array<>`.
 #include <array>
 
-// Required for `std::string`.
-#include <string>
+// Required for the `QWidget` class.
+#include <qmainwindow.h>
 
 // Forward declarations
 namespace GameBoy
@@ -34,21 +34,36 @@ namespace GameBoy
     class CPU;
 }
 
-// Defines the disassembler class.
-class Disassembler
+class QGroupBox;
+class QTreeWidget;
+
+// Defines the CPU debugger class.
+class CPUDebugger : public QMainWindow
 {
 public:
-    Disassembler(GameBoy::SystemBus& bus,
-                 const GameBoy::CPU& cpu) noexcept;
-
-    // Disassembles the current instruction before execution.
-    auto before() noexcept -> void;
-
-    // Disassembles the current instruction after execution.
-    auto after() noexcept -> std::string;
+    CPUDebugger(GameBoy::SystemBus& bus,
+                const GameBoy::CPU& cpu) noexcept;
 
 private:
-    const std::array<const std::string, 256> opcodes =
+    // "Registers" group box
+    QGroupBox* registers;
+
+    // "Disassembly" group box
+    QGroupBox* disassembly_group;
+
+    // Disassembly tree widget
+    QTreeWidget* disassembly;
+
+    // Main widget
+    QWidget* main_widget;
+
+    struct
+    {
+        HexSpinBox* b, *c, *d, *e, *h, *l, *a;
+        HexSpinBox* sp, *pc;
+    } reg;
+
+    const std::array<const QString, 256> opcodes =
     {
         "NOP",              // 0x00
         "LD BC, $imm16",    // 0x01

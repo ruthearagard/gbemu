@@ -11,20 +11,3 @@
 // WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-// Required for the `QApplication` class.
-#include <QApplication>
-
-// Required for the `GBEmu` class.
-#include "gbemu.h"
-
-auto main(int argc, char* argv[]) -> int
-{
-    QApplication qt(argc, argv);
-
-    qt.setApplicationName("gbemu");
-    qt.setApplicationVersion("1.0");
-
-    GBEmu gbemu;
-    return qt.exec();
-}

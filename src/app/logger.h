@@ -34,6 +34,9 @@ class MessageLogger : public QMainWindow
 public:
     explicit MessageLogger(QWidget* parent) noexcept;
 
+    auto info(const QString& msg) noexcept -> void;
+    auto warning(const QString& msg) noexcept -> void;
+
     auto append(const QString& data) -> void;
     auto reset() -> void;
 

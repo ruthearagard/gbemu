@@ -42,8 +42,15 @@ MainWindow::MainWindow() noexcept
     debug.display_serial_output =
     new QAction(tr("Display serial output..."), this);
 
+    debug.memory_viewer = new QAction("Memory Viewer", this);
+    debug.ppu           = new QAction("PPU", this);
+    debug.timer         = new QAction("Timer", this);
+
     debug.menu->addAction(debug.display_log);
     debug.menu->addAction(debug.display_serial_output);
+    debug.menu->addAction(debug.memory_viewer);
+    debug.menu->addAction(debug.ppu);
+    debug.menu->addAction(debug.timer);
 
     connect(file.open_rom, &QAction::triggered, [&]()
     {

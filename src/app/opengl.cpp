@@ -156,4 +156,5 @@ auto OpenGL::render_frame(const GameBoy::ScreenData& screen_data) noexcept -> vo
                     GL_RGBA,
                     GL_UNSIGNED_BYTE,
                     screen_data.data());
+    update();
 }

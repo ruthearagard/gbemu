@@ -21,49 +21,13 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `QMainWindow` class.
-#include <qmainwindow.h>
+// Required for the `QSpinBox` class.
+#include <qspinbox.h>
 
-class MainWindow : public QMainWindow
+class HexSpinBox : public QSpinBox
 {
     Q_OBJECT
 
 public:
-    MainWindow() noexcept;
-
-private:
-    struct
-    {
-        QMenu* menu;
-        QAction* open_rom;
-    } file;
-
-    struct
-    {
-        QMenu* menu;
-        QAction* preferences;
-    } edit;
-
-    struct
-    {
-        QMenu* menu;
-        QAction* display_log;
-        QAction* display_serial_output;
-        QAction* memory_viewer;
-        QAction* ppu;
-        QAction* timer;
-    } debug;
-
-signals:
-    // Emitted when the user selects a ROM file to run.
-    void rom_opened(const QString& file_name) noexcept;
-
-    // Emitted when the user requests to change application preferences.
-    void preferences() noexcept;
-
-    // Emitted when the user requests to display the log.
-    void on_display_log() noexcept;
-
-    // Emitted when the user requests to display serial output.
-    void on_display_serial_output() noexcept;
+    HexSpinBox();
 };
