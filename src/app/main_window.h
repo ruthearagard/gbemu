@@ -32,23 +32,27 @@ public:
     MainWindow() noexcept;
 
 private:
+    // "File" menu
     struct
     {
         QMenu* menu;
         QAction* open_rom;
     } file;
 
+    // "Edit" menu
     struct
     {
         QMenu* menu;
         QAction* preferences;
     } edit;
 
+    // "Debug" menu
     struct
     {
         QMenu* menu;
         QAction* display_log;
         QAction* display_serial_output;
+        QAction* cpu;
         QAction* memory_viewer;
         QAction* ppu;
         QAction* timer;
@@ -66,4 +70,7 @@ signals:
 
     // Emitted when the user requests to display serial output.
     void on_display_serial_output() noexcept;
+
+    // Emitted when the user requests to display the CPU debugger.
+    void on_cpu_debugger() noexcept;
 };

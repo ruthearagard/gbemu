@@ -94,6 +94,18 @@ GBEmu::GBEmu() noexcept
         message_logger->show();
     });
 
+    connect(&main_window, &MainWindow::on_cpu_debugger, [&]()
+    {
+        if (!cpu_debugger)
+        {
+            cpu_debugger = new CPUDebugger(emulator.bus, emulator.cpu);
+            cpu_debugger->setAttribute(Qt::WA_DeleteOnClose);
+        }
+
+        cpu_debugger->setFocus();
+        cpu_debugger->show();
+    });
+
     connect(&emulator, &Emulator::render_frame,
     [&](const GameBoy::ScreenData& screen_data)
     {

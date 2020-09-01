@@ -25,6 +25,11 @@ auto main(int argc, char* argv[]) -> int
     qt.setApplicationName("gbemu");
     qt.setApplicationVersion("1.0");
 
+    QSurfaceFormat fmt;
+    fmt.setVersion(3, 2);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
+    QSurfaceFormat::setDefaultFormat(fmt);
+
     GBEmu gbemu;
     return qt.exec();
 }

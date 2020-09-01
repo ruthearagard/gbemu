@@ -47,6 +47,7 @@ auto Emulator::start() noexcept -> void
 
             QApplication::processEvents(QEventLoop::AllEvents);
             cycles -= max_cycles;
+
             emit render_frame(bus.ppu.screen_data);
         const auto end{ std::chrono::steady_clock::now() };
 
@@ -63,13 +64,10 @@ auto Emulator::start() noexcept -> void
     }
 }
 
-auto Emulator::stop() noexcept -> void
+auto Emulator::pause() noexcept -> void
 {
 
 }
-
-auto Emulator::pause() noexcept -> void
-{ }
 
 auto Emulator::reset() noexcept -> void
 { }

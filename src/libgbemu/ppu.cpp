@@ -30,7 +30,8 @@ auto PPU::set_LCDC(const uint8_t data) noexcept -> void
 {
     LCDC.byte = data;
 
-    bg_tile_map = LCDC.bg_tile_map ? 0x9C00 : 0x9800;
+    bg_tile_map     = LCDC.bg_tile_map     ? 0x9C00 : 0x9800;
+    window_tile_map = LCDC.window_tile_map ? 0x9C00 : 0x9800;
 
     if (LCDC.bg_win_tile_data)
     {
@@ -46,35 +47,60 @@ auto PPU::set_LCDC(const uint8_t data) noexcept -> void
 
 auto PPU::draw_scanline() noexcept -> void
 {
-    // Is the background enabled?
+    unsigned int offset_x;
+    unsigned int offset_y;
+    uint16_t tile_map;
+    uint16_t tile_data = bg_win_tile_data;
+
+    bool will_draw{ false };
+
     if (LCDC.bg_enabled)
     {
-        const unsigned int offset_x{ SCX + screen_x };
-        const unsigned int offset_y = SCY + LY;
+        offset_x = (SCX + screen_x) & 0xFF;
+        offset_y = (SCY + LY) & 0xFF;
+        tile_map = bg_tile_map;
 
+        will_draw = true;
+    }
+
+    if (LCDC.window_enabled)
+    {
+        const unsigned int m_WX = WX - 7;
+
+        if ((WY <= LY) && (screen_x >= m_WX))
+        {
+            offset_x = screen_x - m_WX;
+            offset_y = LY - WY;
+            tile_map = window_tile_map;
+
+            will_draw = true;
+        }
+    }
+
+    if (will_draw)
+    {
         const unsigned int row{ (offset_y / 8) * 32 };
         const unsigned int col{ offset_x / 8 };
 
-        const unsigned int index{ bg_tile_map + row + col };
-
-        uint16_t data{ bg_win_tile_data };
-        uint8_t tile_id{ vram_access(index) };
-
+        const unsigned int index{ tile_map + row + col };
+            
         if (!signed_tile_id)
         {
-            data += tile_id * 16;
+            const uint8_t tile_id{ vram_access(index) };
+            tile_data += tile_id * 16;
         }
         else
         {
-            data += (tile_id + 128) * 16;
+            const int8_t tile_id{ static_cast<int8_t>(vram_access(index)) };
+            tile_data += (tile_id + 128) * 16;
         }
 
         const unsigned int line{ (offset_y % 8) * 2 };
+            
+        const uint8_t lo{ vram_access(tile_data + line)     };
+        const uint8_t hi{ vram_access(tile_data + line + 1) };
 
-        const uint8_t lo{ vram_access(data + line)     };
-        const uint8_t hi{ vram_access(data + line + 1) };
-
-        pixel(lo, hi, ((offset_x % 8) - 7) * -1);
+        pixel(lo, hi, 7 - (offset_x & 7));
     }
 }
 

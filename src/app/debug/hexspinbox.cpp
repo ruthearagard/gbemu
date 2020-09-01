@@ -11,3 +11,14 @@
 // WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+// Required for the `HexSpinBox` class.
+#include "hexspinbox.h"
+
+HexSpinBox::HexSpinBox(QWidget* parent,
+                       const int max) noexcept : QSpinBox(parent)
+{
+    setPrefix("$");
+    setDisplayIntegerBase(16);
+    setRange(0, max);
+}

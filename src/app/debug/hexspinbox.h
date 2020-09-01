@@ -24,10 +24,24 @@
 // Required for the `QSpinBox` class.
 #include <qspinbox.h>
 
+// Forward declaration
+class QWidget;
+
 class HexSpinBox : public QSpinBox
 {
     Q_OBJECT
 
 public:
-    HexSpinBox();
+    HexSpinBox(QWidget* parent, const int max) noexcept;
+
+protected:
+    QString textFromValue(int value) const
+    {
+        return QString::number(value, 16).toUpper().rightJustified(4, '0');
+    }
+
+    int valueFromText(const QString& text) const
+    {
+        return 0;
+    }
 };

@@ -34,8 +34,14 @@ namespace GameBoy
     class CPU;
 }
 
+class HexSpinBox;
+class QAction;
+class QCheckBox;
+class QFormLayout;
+class QGridLayout;
 class QGroupBox;
 class QTreeWidget;
+class QVBoxLayout;
 
 // Defines the CPU debugger class.
 class CPUDebugger : public QMainWindow
@@ -44,24 +50,52 @@ public:
     CPUDebugger(GameBoy::SystemBus& bus,
                 const GameBoy::CPU& cpu) noexcept;
 
+protected:
+    void focusInEvent(QFocusEvent* e);
+    void focusOutEvent(QFocusEvent* e);
+
 private:
-    // "Registers" group box
-    QGroupBox* registers;
+    // Disables the interface if `condition` is true, or `false` otherwise.
+    auto disable(const bool condition) noexcept;
 
-    // "Disassembly" group box
-    QGroupBox* disassembly_group;
+    // "Run" menu
+    struct
+    {
+        QMenu* menu;
+        QAction* step;
+    } run;
 
-    // Disassembly tree widget
-    QTreeWidget* disassembly;
+    // "Registers" area
+    struct
+    {
+        QGroupBox* group;
+        QFormLayout* layout;
+
+        HexSpinBox* bc, *de, *hl, *af;
+        HexSpinBox* sp, *pc;
+
+        // "Flag" area
+        struct
+        {
+            QGroupBox* group;
+            QVBoxLayout* layout;
+            QCheckBox* z, * n, * h, * c;
+        } f;
+    } reg;
+
+    // "Disassembly" area
+    struct
+    {
+        QGroupBox* group;
+        QVBoxLayout* layout;
+        QTreeWidget* list;
+    } disassembly;
+
+    // Main widget layout
+    QGridLayout* main_layout;
 
     // Main widget
     QWidget* main_widget;
-
-    struct
-    {
-        HexSpinBox* b, *c, *d, *e, *h, *l, *a;
-        HexSpinBox* sp, *pc;
-    } reg;
 
     const std::array<const QString, 256> opcodes =
     {

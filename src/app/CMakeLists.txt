@@ -49,12 +49,12 @@ set(DEBUG_HDRS debug/cpu.h
 set(PREFERENCES_SRCS preferences/logger.cpp preferences/preferences.cpp)
 set(PREFERENCES_HDRS preferences/logger.h preferences/preferences.h)
 
-add_executable(gbemu_main WIN32 ${SRCS}
-                                ${DEBUG_SRCS}
-                                ${PREFERENCES_SRCS}
-                                ${HDRS}
-                                ${DEBUG_HDRS}
-                                ${PREFERENCES_HDRS})
+add_executable(gbemu_main ${SRCS}
+                          ${DEBUG_SRCS}
+                          ${PREFERENCES_SRCS}
+                          ${HDRS}
+                          ${DEBUG_HDRS}
+                          ${PREFERENCES_HDRS})
 
 set_target_properties(gbemu_main PROPERTIES
                       CXX_STANDARD 17

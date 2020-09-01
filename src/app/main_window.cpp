@@ -42,6 +42,8 @@ MainWindow::MainWindow() noexcept
     debug.display_serial_output =
     new QAction(tr("Display serial output..."), this);
 
+    debug.cpu = new QAction(tr("CPU"), this);
+
     debug.memory_viewer = new QAction("Memory Viewer", this);
     debug.ppu           = new QAction("PPU", this);
     debug.timer         = new QAction("Timer", this);
@@ -49,6 +51,7 @@ MainWindow::MainWindow() noexcept
     debug.menu->addAction(debug.display_log);
     debug.menu->addAction(debug.display_serial_output);
     debug.menu->addAction(debug.memory_viewer);
+    debug.menu->addAction(debug.cpu);
     debug.menu->addAction(debug.ppu);
     debug.menu->addAction(debug.timer);
 
@@ -81,5 +84,10 @@ MainWindow::MainWindow() noexcept
     connect(debug.display_serial_output, &QAction::triggered, [&]()
     {
         emit on_display_serial_output();
+    });
+
+    connect(debug.cpu, &QAction::triggered, [&]()
+    {
+        emit on_cpu_debugger();
     });
 }

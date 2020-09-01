@@ -24,6 +24,7 @@
 // Required for the `QObject` class.
 #include <qobject.h>
 
+// Required for the `GameBoy::System` class.
 #include "../libgbemu/include/gb.h"
 
 class Emulator : public QObject, public GameBoy::System
@@ -34,20 +35,25 @@ public:
     Emulator() noexcept;
 
     auto start() noexcept -> void;
-    auto stop() noexcept -> void;
     auto pause() noexcept -> void;
     auto reset() noexcept -> void;
 
     // Verifies that cartridge `data` is accurate and will operate on libgbemu,
-    // and sets the current cartridge to this data.
+    // and sets the current cartridge to this data. Throws `std::runtime_error`
+    // if an error was encountered.
     auto cartridge(const std::vector<uint8_t>& data) -> void;
 
 private:
+    // The maximum number of cycles per execution step.
     const unsigned int max_cycles{ 4194304 / 60 };
+
+    // Is the emulator running?
     bool running{ false };
 
+    // Current cartridge
     std::shared_ptr<GameBoy::Cartridge> m_cart;
 
 signals:
+    // Emitted when it is time to render a frame.
     void render_frame(const GameBoy::ScreenData& screen_data) noexcept;
 };

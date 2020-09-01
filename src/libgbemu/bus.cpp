@@ -106,6 +106,10 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF00:
                     return 0xFF;
 
+                // $FF04 - DIV - Divider Register (R/W)
+                case 0xF04:
+                    return timer.DIV;
+
                 // $FF05 - TIMA - Timer counter (R/W)
                 case 0xF05:
                     return timer.TIMA;

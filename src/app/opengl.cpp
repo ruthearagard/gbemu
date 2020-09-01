@@ -17,12 +17,6 @@
 
 auto OpenGL::initializeGL() -> void
 {
-    QSurfaceFormat fmt;
-    fmt.setVersion(3, 2);
-    fmt.setProfile(QSurfaceFormat::CoreProfile);
-    setFormat(fmt);
-    QSurfaceFormat::setDefaultFormat(fmt);
-
     initializeOpenGLFunctions();
 
     const auto vertex_shader_src

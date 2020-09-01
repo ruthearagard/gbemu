@@ -227,6 +227,9 @@ namespace GameBoy
         // Beginning address of background tile map (must be $9800 or $9C00).
         uint16_t bg_tile_map;
 
+        // Beginning address of window tile map (must be $9800 or $9C00).
+        uint16_t window_tile_map;
+
         // Beginning address of tile data for both the window and background
         // (must be $8000 or $8800). In the latter case, the tile IDs are
         // signed.

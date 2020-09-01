@@ -24,14 +24,17 @@
 // Required for the `QPointer` class.
 #include <qpointer.h>
 
-// Required for the `MessageLogger` class.
-#include "logger.h"
+// Required for the `CPUDebugger` class.
+#include "debug/cpu.h"
 
 // Required for the `Emulator` class.
 #include "emulator.h"
 
 // Required for the `MainWindow` class.
 #include "main_window.h"
+
+// Required for the `MessageLogger` class.
+#include "logger.h"
 
 // Required for the `OpenGL` class.
 #include "opengl.h"
@@ -56,6 +59,9 @@ private:
 
     // OpenGL instance
     OpenGL opengl;
+
+    // CPU debugger instance, if any.
+    QPointer<CPUDebugger> cpu_debugger;
 
     // Message logger instance, if any.
     QPointer<MessageLogger> message_logger;
