@@ -159,7 +159,7 @@ namespace GameBoy
         // 1 - Light gray
         // 2 - Dark gray
         // 3 - Black
-        union
+        union Palette
         {
             struct
             {
@@ -176,7 +176,7 @@ namespace GameBoy
                 unsigned int c3 : 2;
             };
             uint8_t byte;
-        } BGP;
+        } BGP, OBP0, OBP1;
 
         // $FF4A - WY - Window Y Position (R/W)
         uint8_t WY;
@@ -186,6 +186,9 @@ namespace GameBoy
 
         // [$8000 - $9FFF] - 8KB Video RAM (VRAM)
         std::array<uint8_t, 8192> vram;
+
+        // [$FE00 - $FE9F]: Sprite Attribute Table (OAM)
+        std::array<uint8_t, 160> oam;
 
         // Screen data (BGRA32)
         ScreenData screen_data;
@@ -197,7 +200,9 @@ namespace GameBoy
 
         auto pixel(const uint8_t lo,
                    const uint8_t hi,
-                   const unsigned int bit) noexcept -> void;
+                   const unsigned int bit,
+                   const Palette palette,
+                   const bool sprite) noexcept -> void;
 
         // Current X position of the current scanline being drawn
         unsigned int screen_x;
@@ -224,6 +229,11 @@ namespace GameBoy
             return vram[index - 0x8000];
         }
 
+        inline auto oam_access(const unsigned int index) noexcept -> uint8_t
+        {
+            return oam[index - 0xFE00];
+        }
+
         // Beginning address of background tile map (must be $9800 or $9C00).
         uint16_t bg_tile_map;
 
@@ -234,6 +244,9 @@ namespace GameBoy
         // (must be $8000 or $8800). In the latter case, the tile IDs are
         // signed.
         uint16_t bg_win_tile_data;
+
+        // Sizes of sprites (must be 8 or 16).
+        unsigned int sprite_size;
 
         // Will the tile IDs in background/window tile data area be signed?
         bool signed_tile_id;

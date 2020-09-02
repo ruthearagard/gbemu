@@ -33,6 +33,8 @@ auto PPU::set_LCDC(const uint8_t data) noexcept -> void
     bg_tile_map     = LCDC.bg_tile_map     ? 0x9C00 : 0x9800;
     window_tile_map = LCDC.window_tile_map ? 0x9C00 : 0x9800;
 
+    sprite_size = LCDC.sprite_size ? 16 : 8;
+
     if (LCDC.bg_win_tile_data)
     {
         bg_win_tile_data = 0x8000;
@@ -100,13 +102,53 @@ auto PPU::draw_scanline() noexcept -> void
         const uint8_t lo{ vram_access(tile_data + line)     };
         const uint8_t hi{ vram_access(tile_data + line + 1) };
 
-        pixel(lo, hi, 7 - (offset_x & 7));
+        pixel(lo, hi, 7 - (offset_x & 7), BGP, false);
+    }
+
+    if (LCDC.sprites_enabled)
+    {
+        for (unsigned int index{ 0xFE00 }; index < 0xFE9F; index += 4)
+        {
+            const uint8_t y = oam_access(index + 0) - 16;
+            const uint8_t x = oam_access(index + 1) - 8;
+
+            if ((LY >= y) && (LY < (y + sprite_size)))
+            {
+                if ((screen_x >= x) && (screen_x < (x + 8)))
+                {
+                    const unsigned int x_pos = screen_x - x;
+                    const unsigned int line = (LY - y) * 2;
+
+                    const uint8_t tile  = oam_access(index + 2);
+                    const uint8_t flags = oam_access(index + 3);
+
+                    const unsigned int address = 0x8000 + (tile * 16) + line;
+
+                    const uint8_t lo{ vram_access(address)     };
+                    const uint8_t hi{ vram_access(address + 1) };
+
+                    Palette p;
+
+                    if (flags & (1 << 4))
+                    {
+                        p = OBP1;
+                    }
+                    else
+                    {
+                        p = OBP0;
+                    }
+                    pixel(lo, hi, 7 - (x_pos & 7), p, true);
+                }
+            }
+        }
     }
 }
 
 auto PPU::pixel(const uint8_t lo,
                 const uint8_t hi,
-                const unsigned int bit) noexcept -> void
+                const unsigned int bit,
+                const Palette palette,
+                const bool sprite) noexcept -> void
 {
     const unsigned int p0{ (lo & (1 << bit)) != 0 };
     const unsigned int p1{ (hi & (1 << bit)) != 0 };
@@ -126,19 +168,22 @@ auto PPU::pixel(const uint8_t lo,
     switch (pixel)
     {
         case 0:
-            screen_data[index] = colors[BGP.c0];
+            if (!sprite)
+            {
+                screen_data[index] = colors[palette.c0];
+            }
             return;
 
         case 1:
-            screen_data[index] = colors[BGP.c1];
+            screen_data[index] = colors[palette.c1];
             return;
 
         case 2:
-            screen_data[index] = colors[BGP.c2];
+            screen_data[index] = colors[palette.c2];
             return;
 
         case 3:
-            screen_data[index] = colors[BGP.c3];
+            screen_data[index] = colors[palette.c3];
             return;
     }
 }

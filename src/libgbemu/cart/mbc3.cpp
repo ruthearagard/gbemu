@@ -45,7 +45,7 @@ auto MBC3Cartridge::read(const uint16_t address) noexcept -> uint8_t
         // memory space is used to access an 8KB external RAM bank, or a single
         // RTC register.
         case 0xA ... 0xB:
-            return 0xFF;
+            return ram[(address - 0xA000) + (ram_bank * 0x2000)];
 
         default:
             return address;
@@ -81,13 +81,14 @@ auto MBC3Cartridge::write(const uint16_t address,
         //
         // As for the MBC1s RAM banking mode, writing a value in range for
         // $00-$03 maps the corresponding external RAM Bank if any into memory
-        // at [$A000 - BFFF].
+        // at [$A000 - $BFFF].
         //
         // When writing a value of $08-$0C, this will map the corresponding RTC
         // register into memory at [$A000 - $BFFF]. That register could then be
         // read/written by accessing any address in that area, typically that
         // is done by using address A000.
         case 0x4 ... 0x5:
+            ram_bank = value;
             return;
 
         // [$6000 - $7FFF]: Latch Clock Data (W)
@@ -110,6 +111,7 @@ auto MBC3Cartridge::write(const uint16_t address,
         // memory space is used to access an 8KB external RAM bank, or a single
         // RTC register.
         case 0xA ... 0xB:
+            ram[(address - 0xA000) + (ram_bank * 0x2000)] = value;
             return;
     }
 }

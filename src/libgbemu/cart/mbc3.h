@@ -21,6 +21,9 @@
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
+// Required for `std::array<>`.
+#include <array>
+
 // Required for the `GameBoy::Cartridge` class.
 #include "../include/cart.h"
 
@@ -41,6 +44,9 @@ namespace GameBoy
                    const uint8_t value) noexcept -> void;
 
     private:
+        std::array<uint8_t, 32768> ram;
+
         uint8_t rom_bank;
+        uint8_t ram_bank;
     };
 }

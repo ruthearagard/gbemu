@@ -56,7 +56,7 @@ auto MBC1Cartridge::read(const uint16_t address) noexcept -> uint8_t
         // positions or high score tables, even if the GameBoy is turned off,
         // or if the cartridge is removed from the GameBoy.
         case 0xA ... 0xB:
-            return 0x00;
+            return ram[(address - 0xA000) + (ram_bank * 0x2000)];
 
         default:
             return 0;

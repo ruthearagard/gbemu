@@ -278,6 +278,18 @@ auto SystemBus::write(const uint16_t address,
                     ppu.SCX = data;
                     return;
 
+                // $FF46 - DMA - DMA Transfer and Start Address(W)
+                case 0xF46:
+                {
+                    const unsigned int address = data * 0x100;
+
+                    for (unsigned int index{ 0 }; index < 160; ++index)
+                    {
+                        ppu.oam[index] = read(address + index);
+                    }
+                    return;
+                }
+
                 // $FF47 - BGP - BG Palette Data (R/W)
                 case 0xF47:
                     ppu.BGP.byte = data;
@@ -285,10 +297,12 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF48 - OBP0 - Object Palette 0 Data (R/W)
                 case 0xF48:
+                    ppu.OBP0.byte = data;
                     return;
 
                 // $FF49 - OBP1 - Object Palette 1 Data (R/W)
                 case 0xF49:
+                    ppu.OBP1.byte = data;
                     return;
 
                 // $FF4A - WY - Window Y Position (R/W)
