@@ -33,28 +33,10 @@ set(CMAKE_AUTORCC ON)
 # reliably, there is still a cost to perform the check on every rebuild."
 #
 # Source (heh): https://cmake.org/cmake/help/v3.13/command/file.html#filesystem
-set(SRCS emulator.cpp gbemu.cpp logger.cpp main.cpp main_window.cpp opengl.cpp)
-set(HDRS emulator.h gbemu.h logger.h main_window.h opengl.h)
+set(SRCS emulator.cpp gbemu.cpp main.cpp main_window.cpp opengl.cpp)
+set(HDRS emulator.h gbemu.h main_window.h opengl.h)
 
-set(DEBUG_SRCS debug/cpu.cpp
-               debug/hexspinbox.cpp
-               debug/memory_viewer.cpp
-               debug/timer.cpp)
-
-set(DEBUG_HDRS debug/cpu.h
-               debug/hexspinbox.h
-               debug/memory_viewer.h
-               debug/timer.h)
-
-set(PREFERENCES_SRCS preferences/logger.cpp preferences/preferences.cpp)
-set(PREFERENCES_HDRS preferences/logger.h preferences/preferences.h)
-
-add_executable(gbemu_main ${SRCS}
-                          ${DEBUG_SRCS}
-                          ${PREFERENCES_SRCS}
-                          ${HDRS}
-                          ${DEBUG_HDRS}
-                          ${PREFERENCES_HDRS})
+add_executable(gbemu_main ${SRCS} ${HDRS})
 
 set_target_properties(gbemu_main PROPERTIES
                       CXX_STANDARD 17

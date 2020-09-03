@@ -31,6 +31,10 @@ class MainWindow : public QMainWindow
 public:
     MainWindow() noexcept;
 
+protected:
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
+
 private:
     // "File" menu
     struct
@@ -39,38 +43,13 @@ private:
         QAction* open_rom;
     } file;
 
-    // "Edit" menu
-    struct
-    {
-        QMenu* menu;
-        QAction* preferences;
-    } edit;
-
-    // "Debug" menu
-    struct
-    {
-        QMenu* menu;
-        QAction* display_log;
-        QAction* display_serial_output;
-        QAction* cpu;
-        QAction* memory_viewer;
-        QAction* ppu;
-        QAction* timer;
-    } debug;
-
 signals:
     // Emitted when the user selects a ROM file to run.
     void rom_opened(const QString& file_name) noexcept;
 
-    // Emitted when the user requests to change application preferences.
-    void preferences() noexcept;
+    // Emitted when a key has been pressed.
+    void key_pressed(const int key) noexcept;
 
-    // Emitted when the user requests to display the log.
-    void on_display_log() noexcept;
-
-    // Emitted when the user requests to display serial output.
-    void on_display_serial_output() noexcept;
-
-    // Emitted when the user requests to display the CPU debugger.
-    void on_cpu_debugger() noexcept;
+    // Emitted when a key has been released.
+    void key_released(const int key) noexcept;
 };

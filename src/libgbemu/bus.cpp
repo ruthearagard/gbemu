@@ -41,6 +41,8 @@ auto SystemBus::reset() noexcept -> void
     timer.reset();
     ppu.reset();
 
+    joypad_state = 0xFF;
+
     cycles = 0;
     boot_rom_disabled = false;
 }
@@ -104,7 +106,17 @@ auto SystemBus::read(const uint16_t address,
             {
                 // $FF00 - P1/JOYP - Joypad (R/W)
                 case 0xF00:
+                {
+                    if (joypad.dpad)
+                    {
+                        return joypad_state >> 4;
+                    }
+                    else if (joypad.button)
+                    {
+                        return joypad_state & 0x0F;
+                    }
                     return 0xFF;
+                }
 
                 // $FF04 - DIV - Divider Register (R/W)
                 case 0xF04:
@@ -191,6 +203,7 @@ auto SystemBus::write(const uint16_t address,
             {
                 // $FF00 - P1 / JOYP - Joypad (R/W)
                 case 0xF00:
+                    joypad.byte = (joypad.byte & ~0x30) | (data & 0x30);
                     return;
 
                 // $FF01 - SB - Serial transfer data (R/W)

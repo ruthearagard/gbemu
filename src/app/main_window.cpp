@@ -12,13 +12,9 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `QFileDialog` class.
 #include <qfiledialog.h>
-
-// Required for the `QMenuBar` class.
+#include <QKeyEvent>
 #include <qmenubar.h>
-
-// Required for the `MainWindow` class.
 #include "main_window.h"
 
 MainWindow::MainWindow() noexcept
@@ -30,30 +26,6 @@ MainWindow::MainWindow() noexcept
     file.open_rom = new QAction(tr("Open ROM..."), this);
 
     file.menu->addAction(file.open_rom);
-
-    edit.menu = menuBar()->addMenu(tr("&Edit"));
-    edit.preferences = new QAction(tr("Preferences..."), this);
-
-    edit.menu->addAction(edit.preferences);
-
-    debug.menu = menuBar()->addMenu(tr("&Debug"));
-    debug.display_log = new QAction(tr("Display log..."), this);
-
-    debug.display_serial_output =
-    new QAction(tr("Display serial output..."), this);
-
-    debug.cpu = new QAction(tr("CPU"), this);
-
-    debug.memory_viewer = new QAction("Memory Viewer", this);
-    debug.ppu           = new QAction("PPU", this);
-    debug.timer         = new QAction("Timer", this);
-
-    debug.menu->addAction(debug.display_log);
-    debug.menu->addAction(debug.display_serial_output);
-    debug.menu->addAction(debug.memory_viewer);
-    debug.menu->addAction(debug.cpu);
-    debug.menu->addAction(debug.ppu);
-    debug.menu->addAction(debug.timer);
 
     connect(file.open_rom, &QAction::triggered, [&]()
     {
@@ -70,24 +42,14 @@ MainWindow::MainWindow() noexcept
             emit rom_opened(file_name);
         }
     });
+}
 
-    connect(edit.preferences, &QAction::triggered, [&]()
-    {
-        emit preferences();
-    });
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+    emit key_pressed(event->key());
+}
 
-    connect(debug.display_log, &QAction::triggered, [&]()
-    {
-        emit on_display_log();
-    });
-
-    connect(debug.display_serial_output, &QAction::triggered, [&]()
-    {
-        emit on_display_serial_output();
-    });
-
-    connect(debug.cpu, &QAction::triggered, [&]()
-    {
-        emit on_cpu_debugger();
-    });
+void MainWindow::keyReleaseEvent(QKeyEvent* event)
+{
+    emit key_released(event->key());
 }

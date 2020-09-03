@@ -53,6 +53,18 @@ namespace GameBoy
         TimerInterrupt  = 1 << 2
     };
 
+    enum JoypadButton : unsigned int
+    {
+        Down   = 1 << 7,
+        Up     = 1 << 6,
+        Left   = 1 << 5,
+        Right  = 1 << 4,
+        Start  = 1 << 3,
+        Select = 1 << 2,
+        B      = 1 << 1,
+        A      = 1 << 0
+    };
+
     enum class AccessType
     {
         Emulated,
@@ -97,6 +109,21 @@ namespace GameBoy
 
         // [$D000 - $DFFF] - 4KB Work RAM Bank 1 (WRAM)
         std::array<uint8_t, 4096> wram1;
+
+        union
+        {
+            struct
+            {
+                unsigned int        : 4;
+                unsigned int dpad   : 1;
+                unsigned int button : 1;
+                unsigned int        : 1;
+            };
+            uint8_t byte;
+        } joypad;
+
+        // The current state of the joypad.
+        uint8_t joypad_state;
 
         // $FF0F - IF - Interrupt Flag (R/W)
         // $FFFF - IE - Interrupt Enable (R/W)

@@ -35,6 +35,18 @@ auto System::reset() noexcept -> void
     cpu.reset();
 }
 
+// Presses a button.
+auto System::press_button(const JoypadButton button) noexcept -> void
+{
+    bus.joypad_state &= ~button;
+}
+
+// Releases a button.
+auto System::release_button(const JoypadButton button) noexcept -> void
+{
+    bus.joypad_state |= button;
+}
+
 // Sets the current cartridge to `cart`.
 auto System::cart(const std::vector<uint8_t>& cart_data) ->
 std::shared_ptr<Cartridge>

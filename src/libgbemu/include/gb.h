@@ -50,6 +50,12 @@ namespace GameBoy
         // Resets the system to the startup state.
         auto reset() noexcept -> void;
 
+        // Presses a button.
+        auto press_button(const JoypadButton button) noexcept -> void;
+
+        // Releases a button.
+        auto release_button(const JoypadButton button) noexcept -> void;
+
         // Sets the current cartridge to `cart`.
         auto cart(const std::vector<uint8_t>& cart_data) ->
         std::shared_ptr<Cartridge>;

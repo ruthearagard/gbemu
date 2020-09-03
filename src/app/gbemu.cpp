@@ -60,50 +60,83 @@ GBEmu::GBEmu() noexcept
             };
             QMessageBox::critical(&main_window, tr("Error"), str);
         }
-
-        if (message_logger)
-        {
-            message_logger->info
-            (QString("Using cartridge file: %1\n").arg(file_name));
-        }
-
-        if (message_logger)
-        {
-            message_logger->warning
-            (QString("[ROM]: Attempted to write $2000<-$01 with no MBC\n"));
-        }
         emulator.start();
     });
 
-    connect(&main_window, &MainWindow::preferences, [&]()
+    connect(&main_window, &MainWindow::key_pressed, [&](const int key)
     {
-        preferences = new Preferences();
-        preferences->setAttribute(Qt::WA_DeleteOnClose);
-        preferences->setWindowModality(Qt::ApplicationModal);
+        switch (key)
+        {
+            case Qt::Key::Key_Down:
+                emulator.press_button(GameBoy::JoypadButton::Down);
+                return;
 
-        preferences->show();
+            case Qt::Key::Key_Up:
+                emulator.press_button(GameBoy::JoypadButton::Up);
+                return;
+
+            case Qt::Key::Key_Left:
+                emulator.press_button(GameBoy::JoypadButton::Left);
+                return;
+
+            case Qt::Key::Key_Right:
+                emulator.press_button(GameBoy::JoypadButton::Right);
+                return;
+
+            case Qt::Key::Key_Enter:
+                emulator.press_button(GameBoy::JoypadButton::Start);
+                return;
+
+            case Qt::Key::Key_Space:
+                emulator.press_button(GameBoy::JoypadButton::Select);
+                return;
+
+            case Qt::Key::Key_A:
+                emulator.press_button(GameBoy::JoypadButton::A);
+                return;
+
+            case Qt::Key::Key_B:
+                emulator.press_button(GameBoy::JoypadButton::B);
+                return;
+        }
     });
 
-    connect(&main_window, &MainWindow::on_display_log, [&]()
+    connect(&main_window, &MainWindow::key_released, [&](const int key)
     {
-        if (!message_logger)
+        switch (key)
         {
-            message_logger = new MessageLogger(&main_window);
-            message_logger->setAttribute(Qt::WA_DeleteOnClose);
-        }
-        message_logger->show();
-    });
+            case Qt::Key::Key_Down:
+                emulator.release_button(GameBoy::JoypadButton::Down);
+                return;
 
-    connect(&main_window, &MainWindow::on_cpu_debugger, [&]()
-    {
-        if (!cpu_debugger)
-        {
-            cpu_debugger = new CPUDebugger(emulator.bus, emulator.cpu);
-            cpu_debugger->setAttribute(Qt::WA_DeleteOnClose);
-        }
+            case Qt::Key::Key_Up:
+                emulator.release_button(GameBoy::JoypadButton::Up);
+                return;
 
-        cpu_debugger->setFocus();
-        cpu_debugger->show();
+            case Qt::Key::Key_Left:
+                emulator.release_button(GameBoy::JoypadButton::Left);
+                return;
+
+            case Qt::Key::Key_Right:
+                emulator.release_button(GameBoy::JoypadButton::Right);
+                return;
+
+            case Qt::Key::Key_Enter:
+                emulator.release_button(GameBoy::JoypadButton::Start);
+                return;
+
+            case Qt::Key::Key_Space:
+                emulator.release_button(GameBoy::JoypadButton::Select);
+                return;
+
+            case Qt::Key::Key_A:
+                emulator.release_button(GameBoy::JoypadButton::A);
+                return;
+
+            case Qt::Key::Key_B:
+                emulator.release_button(GameBoy::JoypadButton::B);
+                return;
+        }
     });
 
     connect(&emulator, &Emulator::render_frame,
