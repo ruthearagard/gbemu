@@ -30,6 +30,8 @@ auto main(int argc, char* argv[]) -> int
     fmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(fmt);
 
+    qRegisterMetaType<GameBoy::ScreenData>("GameBoy::ScreenData");
+
     GBEmu gbemu;
     return qt.exec();
 }

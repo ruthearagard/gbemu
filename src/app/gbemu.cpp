@@ -139,7 +139,7 @@ GBEmu::GBEmu() noexcept
         }
     });
 
-    connect(&emulator, &Emulator::render_frame,
+    connect(&emulator, &Emulator::render_frame, this,
     [&](const GameBoy::ScreenData& screen_data)
     {
         opengl.render_frame(screen_data);

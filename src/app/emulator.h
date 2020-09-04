@@ -22,7 +22,7 @@
 #pragma once
 
 // Required for the `QObject` class.
-#include <qthread.h>
+#include <QThread>
 
 // Required for the `GameBoy::System` class.
 #include "../libgbemu/include/gb.h"
