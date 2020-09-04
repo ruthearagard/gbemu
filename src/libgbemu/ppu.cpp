@@ -163,7 +163,7 @@ auto PPU::pixel(const uint8_t lo,
         Colors::Black
     };
 
-    const unsigned int index{ (LY * ScreenX) + screen_x };
+    const unsigned int index{ (LY * SCREEN_X) + screen_x };
 
     switch (pixel)
     {
@@ -270,7 +270,7 @@ auto PPU::step() noexcept -> void
         case Mode::Drawing:
             if (ly_counter == 172)
             {
-                for (; screen_x < ScreenX; ++screen_x)
+                for (; screen_x < SCREEN_X; ++screen_x)
                 {
                     draw_scanline();
                 }

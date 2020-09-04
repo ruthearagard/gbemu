@@ -60,7 +60,7 @@ GBEmu::GBEmu() noexcept
             };
             QMessageBox::critical(&main_window, tr("Error"), str);
         }
-        emulator.start();
+        emulator.start_run_loop();
     });
 
     connect(&main_window, &MainWindow::key_pressed, [&](const int key)

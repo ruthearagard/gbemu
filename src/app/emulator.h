@@ -22,19 +22,19 @@
 #pragma once
 
 // Required for the `QObject` class.
-#include <qobject.h>
+#include <qthread.h>
 
 // Required for the `GameBoy::System` class.
 #include "../libgbemu/include/gb.h"
 
-class Emulator : public QObject, public GameBoy::System
+class Emulator : public QThread, public GameBoy::System
 {
     Q_OBJECT
 
 public:
     Emulator() noexcept;
 
-    auto start() noexcept -> void;
+    auto start_run_loop() noexcept -> void;
     auto pause() noexcept -> void;
     auto reset() noexcept -> void;
 
@@ -43,9 +43,14 @@ public:
     // if an error was encountered.
     auto cartridge(const std::vector<uint8_t>& data) -> void;
 
+protected:
+    void run() override;
+
 private:
     // The maximum number of cycles per execution step.
     const unsigned int max_cycles{ 4194304 / 60 };
+
+    unsigned int cycles{ 0 };
 
     // Is the emulator running?
     bool running{ false };

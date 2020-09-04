@@ -113,8 +113,8 @@ auto OpenGL::initializeGL() -> void
     glTexImage2D(GL_TEXTURE_2D,
                  0,
                  GL_RGBA,
-                 GameBoy::ScreenX,
-                 GameBoy::ScreenY,
+                 GameBoy::SCREEN_X,
+                 GameBoy::SCREEN_Y,
                  0,
                  GL_BGRA,
                  GL_UNSIGNED_BYTE,
@@ -145,9 +145,9 @@ auto OpenGL::render_frame(const GameBoy::ScreenData& screen_data) noexcept -> vo
                     0,
                     0,
                     0,
-                    GameBoy::ScreenX,
-                    GameBoy::ScreenY,
-                    GL_RGBA,
+                    GameBoy::SCREEN_X,
+                    GameBoy::SCREEN_Y,
+                    GL_BGRA,
                     GL_UNSIGNED_BYTE,
                     screen_data.data());
     update();

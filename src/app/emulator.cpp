@@ -27,9 +27,18 @@
 Emulator::Emulator() noexcept
 { }
 
-auto Emulator::start() noexcept -> void
+auto Emulator::start_run_loop() noexcept -> void
 {
-    static auto cycles{ 0 };
+    if (!running)
+    {
+        running = true;
+        start();
+    }
+}
+
+auto Emulator::run() noexcept -> void
+{
+    cycles = 0;
 
     if (!running)
     {

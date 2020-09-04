@@ -134,9 +134,11 @@ namespace GameBoy
 
     protected:
         explicit Cartridge
-        (const std::vector<uint8_t>& data) noexcept : m_data(data)
-        { }
+        (const std::vector<uint8_t>& data) noexcept
+        {
+            m_data = data;
+        }
 
-        const std::vector<uint8_t>& m_data;
+        std::vector<uint8_t> m_data;
     };
 }

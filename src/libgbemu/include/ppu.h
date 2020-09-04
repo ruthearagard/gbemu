@@ -32,10 +32,10 @@ namespace GameBoy
     // Forward declaration
     class SystemBus;
 
-    static constexpr auto ScreenX{ 160 };
-    static constexpr auto ScreenY{ 144 };
+    static constexpr auto SCREEN_X{ 160 };
+    static constexpr auto SCREEN_Y{ 144 };
 
-    using ScreenData = std::array<uint32_t, ScreenX * ScreenY>;
+    using ScreenData = std::array<uint32_t, SCREEN_X * SCREEN_Y>;
 
     class PPU
     {
