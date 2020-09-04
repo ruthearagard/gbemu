@@ -16,34 +16,33 @@
 //
 // "If #pragma once is seen when scanning a header file, that file will never
 // be read again, no matter what. It is a less-portable alternative to using
-// ‘#ifndef’ to guard the contents of header files against multiple inclusions."
+// `#ifndef` to guard the contents of header files against multiple
+// inclusions."
 //
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for fixed-width integer types (e.g. `uint8_t`).
 #include <cstdint>
-
-// Required for `std::function<>`.
 #include <functional>
 
 namespace GameBoy
 {
-    // Forward declaration
     class SystemBus;
 
     using ALUFunc = std::function<uint8_t(uint8_t)>;
 
-    // Defines a Sharp SM83 CPU interpreter.
+    /// @brief Defines a Sharp SM83 CPU interpreter.
     class CPU
     {
     public:
+        /// @brief Initializes the CPU.
+        /// @param bus The current system bus instance.
         explicit CPU(SystemBus& bus) noexcept;
 
-        // Resets the CPU to the startup state.
+        /// @brief Resets the CPU to the startup state.
         auto reset() noexcept -> void;
 
-        // Executes the next instruction.
+        /// @brief Executes the next instruction.
         auto step() noexcept -> void;
 
         // Registers
@@ -96,8 +95,8 @@ namespace GameBoy
             uint16_t sp;
         } reg;
 
-        // Flag register bits
-        enum Flag : unsigned int
+        /// @brief Bits of the Flag (F) register.
+        enum FlagBit : unsigned int
         {
             Zero      = 1 << 7,
             Subtract  = 1 << 6,
@@ -105,175 +104,266 @@ namespace GameBoy
             Carry     = 1 << 4
         };
 
-        // Changes how certain functions operate.
+        /// @brief Changes how certain instructions operate.
         enum OpFlag : unsigned int
         {
+            /// @brief Standard use of the instruction function as written.
             Normal,
+
+            /// @brief The call to the `ret()` method is truly a conditional
+            /// operation.
             TrulyConditional,
+
+            /// @brief Take an extra 1 m-cycle delay.
             ExtraDelay
         };
 
-        // ALU function flags
+        /// @brief Flags that apply to certain ALU functions.
         enum class ALUFlag
         {
-            // The operation does not take the carry flag into account.
-            // This is the default behavior for all ALU operations.
+            /// @brief The operation does not take the carry flag into account.
+            // This is the default behavior.
             WithoutCarry,
 
-            // The operation takes the carry flag into account.
+            /// @brief The operation takes the carry flag into account.
             WithCarry,
 
-            // The flag register is updated, but the result is not stored into
-            // the Accumulator (register A).
+            /// @brief The flag register is updated, but the result is not
+            /// stored into the Accumulator (register A).
             DiscardResult,
 
-            // Force the Zero flag to be set to zero.
+            /// @brief Force the Zero flag bit to be set to zero.
             ClearZeroFlag,
 
             Normal
         };
 
-        // IME - Interrupt Master Enable Flag (Write Only)
+        /// @brief Interrupt Master Enable Flag
         bool ime;
 
         bool halted;
 
     private:
-        // Returns a byte from memory referenced by the program counter and
-        // increments the program counter.
-        inline auto read_next_byte() noexcept -> uint8_t;
+        /// @brief Returns a byte from memory using the program counter as a
+        /// memory address, then increments the program counter.
+        /// @return The byte from memory.
+        auto read_next_byte() noexcept -> uint8_t;
 
-        // Returns the next two bytes from memory referenced by the program
-        // counter, incrementing the program counter twice.
-        inline auto read_next_word() noexcept -> uint16_t;
+        /// @brief Reads two bytes from memory using the program counter as a
+        /// memory address, then increments the program counter twice.
+        /// @return The two bytes from memory as a 16-bit integer.
+        auto read_next_word() noexcept -> uint16_t;
 
-        inline auto interrupt_check(const Interrupt intr,
-                                    const uint8_t ie,
-                                    uint8_t& m_if) noexcept -> void;
+        auto interrupt_check(const Interrupt intr,
+                             const uint8_t ie,
+                             uint8_t& m_if) noexcept -> void;
 
-        // If `condition_met` is true, sets bit `flag` of the Flag Register
-        // (F), otherwise unsets it.
-        auto update_flag(const enum Flag flag,
-                         const bool condition_met) noexcept -> void;
+        /// @brief Conditionally sets or resets a bit in the Flag (F) register.
+        /// @param bit The bit in question.
+        /// @param condition_met If the result of an expression returns `true`,
+        /// the bit is set. Otherwise, it is unset.
+        auto update_flag_bit(const enum FlagBit bit,
+                             const bool condition_met) noexcept -> void;
 
-        // Sets the Zero flag to `true` if `value` is 0.
+        /// @brief Updates the Zero flag bit of the Flag register (F) if
+        /// `value` is zero, otherwise it is reset.
+        /// @param value The value to check against.
         auto set_zero_flag(const uint8_t value) noexcept -> void;
 
-        // Sets the Zero flag to `condition`.
+        /// @brief Updates the Zero flag bit of the Flag register (F) based on
+        /// `condition`.
+        /// @param condition Must be `true` or `false`.
         auto set_zero_flag(const bool condition) noexcept -> void;
 
-        // Sets the Subtract flag to `condition`.
+        /// @brief Updates the Subtract flag bit of the Flag register (F) based
+        /// on `condition`.
+        /// @param condition The result of an expression.
         auto set_subtract_flag(const bool condition) noexcept -> void;
 
-        // Sets the Half Carry flag to `condition`.
+        /// @brief Updates the Half Carry flag bit of the Flag register (F)
+        /// based on `condition`.
+        /// @param condition The result of an expression.
         auto set_half_carry_flag(const bool condition) noexcept -> void;
 
-        // Sets the Carry flag to `condition`.
+        /// @brief Updates the Carry flag bit of the Flag register (F) based on
+        /// `condition`.
+        /// @param condition The result of an expression.
         auto set_carry_flag(const bool condition) noexcept -> void;
 
-        // Reads the byte stored in memory referenced by register pair HL,
-        // calls ALU function `f`, and then stores the result of the ALU
-        // operation back into memory referenced by register pair HL.
+        /// @brief Reads a byte from memory using register pair HL as a memory
+        /// address, calls an ALU function and stores the result of the ALU
+        /// operation back into memory using register pair HL as a memory
+        /// address.
+        /// @param f The function to call.
         auto rw_hl(const ALUFunc& f) noexcept -> void;
 
-        // Performs bitwise operation `op` between the Accumulator (register A)
-        // and `n`, and sets the Flag register (F) to `flags_if_zero` if the
-        // result is zero, or `flags_if_nonzero` otherwise.
+        /// @brief Performs a bitwise operation between the Accumulator
+        /// (register A) and a value, sets the Flag register (F) based on
+        /// the result of the operation, and stores the the result in the
+        /// Accumulator.
+        /// @param op The bitwise operation class to use.
+        /// @param n The value to use as a parameter to `op`.
+        /// @param flags_if_zero The value to set the Flag register to if the
+        /// Accumulator is zero.
+        /// @param flags_if_nonzero The value to set the Flag register to if
+        /// the Accumulator is not zero.
         template<class Operator>
         auto bit_op(const Operator op,
                     const uint8_t n,
                     const unsigned int flags_if_zero,
                     const unsigned int flags_if_nonzero) noexcept -> void;
 
-        // Handles the `INC r` instruction.
+        /// @brief Handles the INC instruction.
+        /// @param r The value to increment.
+        /// @return The incremented value.
         auto inc(uint8_t r) noexcept -> uint8_t;
 
-        // Handles the `DEC r` instruction.
+        /// @brief Handles the DEC instruction.
+        /// @param r The value to decrement.
+        /// @return The decremented value.
         auto dec(uint8_t r) noexcept -> uint8_t;
 
-        // Handles the `ADD HL, xx` instruction.
+        /// @brief Handles the ADD HL instruction.
+        /// @param pair The register pair to use as an addend.
         auto add_hl(const uint16_t pair) noexcept -> void;
 
-        // Handles the `JR cond, $branch` instruction.
+        /// @brief Handles the JR instruction.
+        /// @param condition_met The result of an expression.
         auto jr(const bool condition_met) -> void;
 
-        // Handles an addition instruction, based on `flag`:
-        //
-        // ADD A, `addend` (default): `ALUFlag::WithoutCarry`
-        // ADC A, `addend`:           `ALUFlag::WithCarry`
+        /// @brief Handles an addition instruction.
+        /// @param addend The value to use as an addend.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `ALUFlag::WithoutCarry`: ADD instruction (default)
+        /// `ALUFlag::WithCarry`: ADC instruction
         auto add(const uint8_t addend,
                  const ALUFlag flag = ALUFlag::WithoutCarry) noexcept -> void;
 
-        // Handles a subtraction instruction, based on `flag`:
-        //
-        // SUB `subtrahend` (default): `ALUFlag::WithoutCarry`
-        // SBC A, `subtrahend`:        `ALUFlag::WithCarry`
-        // CP `subtrahend`:            `ALUFlag::DiscardResult`
+        /// @brief Handles a subtraction operation.
+        /// @param subtrahend The value to use as a subtrahend.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `ALUFlag::WithoutCarry`: SUB instruction (default)
+        /// `ALUFlag::WithCarry`: SBC instruction
+        /// `ALUFlag::DiscardResult`: CP instruction
         auto sub(const uint8_t subtrahend,
                  const ALUFlag flag = ALUFlag::WithoutCarry) noexcept -> void;
 
-        // Handles the `RET cond` instruction.
+        /// @brief Handles a return from subroutine.
+        /// @param condition_met The result of an expression.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `OpFlag::Normal`: RET instruction (default)
+        /// `OpFlag::TrulyConditional`: `RET cond` instruction
         auto ret(const bool condition_met,
                  const OpFlag flag = OpFlag::Normal) -> void;
 
-        // Pops the stack into register pair `pair`.
+        /// @brief Handles the POP instruction.
+        /// @return The result of the stack popping.
         auto stack_pop() noexcept -> uint16_t;
 
-        // Handles the `JP cond, $imm16` instruction.
+        /// @brief Handles the JP instruction.
+        /// @param condition_met The result of an expression.
         auto jp(const bool condition_met) noexcept -> void;
 
-        // Handles the `CALL cond, $imm16` instruction.
+        /// @brief Handles the CALL instruction.
+        /// @param condition_met The result of an expression.
         auto call(const bool condition_met) noexcept -> void;
 
-        // Pushes the contents of register pair `pair` onto the stack.
+        /// @brief Handles the PUSH instruction.
+        /// @param pair The register pair to push onto the stack.
         auto stack_push(const uint16_t pair) noexcept -> void;
 
-        // Handles the `RST $vector` instruction.
+        /// @brief Handles the RST instruction.
+        /// @param vector The program counter to jump to.
         auto rst(const uint16_t vector) noexcept -> void;
 
-        // Performs a special addition operation between the stack pointer (SP)
-        // and an immediate byte, and stores the result in `pair`.
+        /// @brief Handles an addition between the stack pointer (SP) and an
+        /// immediate byte.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `OpFlag::Normal`: LD HL, SP+$simm8 instruction (default)
+        /// `OpFlag::ExtraDelay`: ADD SP, $imm8 instruction
+        /// @return The sum of the addition.
         auto add_sp(const OpFlag flag = Normal) noexcept -> uint16_t;
 
-        // Handles the `RLC n` instruction.
+        /// @brief Handles the RLC instruction.
+        /// @param n The value to rotate.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `ALUFlag::Normal`: RLC instruction (default)
+        /// `ALUFlag::ClearZeroFlag`: RLCA instruction
+        /// @return The rotated value.
         auto rlc(uint8_t n,
                  const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
-        // Handles the `RRC n` instruction.
+        /// @brief Handles the RRC instruction.
+        /// @param n The value to rotate.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `ALUFlag::Normal`: RRC instruction (default)
+        /// `ALUFlag::ClearZeroFlag`: RRCA instruction
+        /// @return The rotated value.
         auto rrc(uint8_t n,
                  const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
-        // Handles the `RL n` instruction.
+        /// @brief Handles the RL instruction.
+        /// @param n The value to rotate.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `ALUFlag::Normal`: RL instruction (default)
+        /// `ALUFlag::ClearZeroFlag`: RLA instruction
+        /// @return The rotated value.
         auto rl(uint8_t n,
                 const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
-        // Handles the `RR n` instruction.
+        /// @brief Handles the RR instruction.
+        /// @param n The value to rotate.
+        /// @param flag Must be one of the following:
+        /// 
+        /// `ALUFlag::Normal`: RR instruction (default)
+        /// `ALUFlag::ClearZeroFlag`: RRA instruction
+        /// @return The rotated value.
         auto rr(uint8_t n,
                 const ALUFlag flag = ALUFlag::Normal) noexcept -> uint8_t;
 
-        // Handles the `SLA n` instruction.
+        /// @brief Handles the SLA instruction.
+        /// @param n The value to shift.
+        /// @return The shifted value.
         auto sla(uint8_t n) noexcept -> uint8_t;
 
-        // Handles the `SRA n` instruction.
+        /// @brief Handles the SRA instruction.
+        /// @param n The value to shift.
+        /// @return The shifted value.
         auto sra(uint8_t n) noexcept -> uint8_t;
 
-        // Handles the `SWAP n` instruction.
+        /// @brief Handles the SWAP instruction.
+        /// @param n The value to swap.
+        /// @return The swapped value.
         auto swap(uint8_t n) noexcept -> uint8_t;
 
-        // Handles the `SRL n` instruction.
+        /// @brief Handles the SRL instruction.
+        /// @param n The value to shift.
+        /// @return The shifted value.
         auto srl(uint8_t n) noexcept -> uint8_t;
 
-        // Handles the `BIT b, n` instruction.
+        /// @brief Handles the BIT instruction.
+        /// @param b The bit to test.
+        /// @param n The value to test `b` against.
         auto bit(const unsigned int b, const uint8_t n) -> void;
 
-        // Reads the value from memory referenced by register pair HL, performs
-        // a bitwise operation `op` against bit `bit`, and stores the result
-        // back into memory referenced by register pair `HL`.
+        /// @brief Reads the value from memory using register pair HL as a
+        /// memory address, performs a bitwise operation against a bit, and
+        /// stores the result back into memory using register pair HL as a
+        /// memory address.
+        /// @param op The bitwise operator to use.
+        /// @param bit The bit to perform the operation on.
         template<class Operator>
         auto bit_hl(const Operator op,
                     const unsigned int bit) noexcept -> void;
 
-        // System bus instance
+        /// @brief System bus instance
         SystemBus& m_bus;
     };
 }

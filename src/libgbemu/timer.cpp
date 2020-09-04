@@ -66,7 +66,7 @@ auto Timer::step() noexcept -> void
         {
             if (TIMA == 0xFF)
             {
-                bus.signal_interrupt(Interrupt::TimerInterrupt);
+                bus.irq(Interrupt::TimerInterrupt);
                 TIMA = TMA;
             }
             TIMA++;

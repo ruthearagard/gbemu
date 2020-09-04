@@ -16,60 +16,62 @@
 //
 // "If #pragma once is seen when scanning a header file, that file will never
 // be read again, no matter what. It is a less-portable alternative to using
-// ‘#ifndef’ to guard the contents of header files against multiple inclusions."
+// `#ifndef` to guard the contents of header files against multiple
+// inclusions."
 //
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `GameBoy::SystemBus` class.
 #include "bus.h"
-
-// Required for the `GameBoy::MBC1Cartridge` class.
-#include "../cart/mbc1.h"
-
-// Required for the `GameBoy::MBC3Cartridge` class.
-#include "../cart/mbc3.h"
-
-// Required for the `GameBoy::MBC1Cartridge` class.
-#include "../cart/mbc1.h"
-
-// Required for the `GameBoy::ROMOnlyCartridge` class.
-#include "../cart/rom_only.h"
-
-// Required for the `GameBoy::CPU` class.
 #include "cpu.h"
 
 namespace GameBoy
 {
-    // Defines a Game Boy system.
+    /// @brief Defines a Game Boy system.
     class System
     {
     public:
+        /// @brief Initializes a Game Boy system.
         System() noexcept;
 
-        // Resets the system to the startup state.
+        /// @brief Resets the system to the startup state.
         auto reset() noexcept -> void;
 
-        // Presses a button.
+        /// @brief Presses a button on the virtual joypad.
+        /// @param button The button to press.
         auto press_button(const JoypadButton button) noexcept -> void;
 
-        // Releases a button.
+        /// @brief Releases a button on the virtual joypad.
+        /// @param button The button to release.
         auto release_button(const JoypadButton button) noexcept -> void;
 
-        // Sets the current cartridge to `cart`.
+        /// @brief Generates a cartridge.
+        /// 
+        /// This function will throw an `std::runtime_error` under the
+        /// following circumstances:
+        /// 
+        /// * The header checksum verification failed, or;
+        /// * The ROM requires a memory bank controller we don't support.
+        /// 
+        /// @param cart_data The data to use to generate the Cartridge
+        /// instance.
+        /// @return The generated cartridge.
         auto cart(const std::vector<uint8_t>& cart_data) ->
         std::shared_ptr<Cartridge>;
 
-        // Sets the current boot ROM data to `boot_rom`.
+        /// @brief Sets the boot ROM data.
+        /// @param data If `data` is not empty, a boot ROM is considered to be
+        /// present. Otherwise, boot ROM functionality will be disabled.
         auto boot_rom(const std::vector<uint8_t>& data) noexcept -> void;
 
-        // Executes one full step and returns the number of cycles taken.
+        /// @brief Executes one full system step.
+        /// @return The number of T-cycles taken by the current step.
         auto step() noexcept -> unsigned int;
 
-        // System bus instance
+        /// @brief System bus instance
         SystemBus bus;
 
-        // Sharp SM83 CPU interpreter instance
+        /// @brief Sharp SM83 CPU interpreter instance
         CPU cpu;
     };
 }

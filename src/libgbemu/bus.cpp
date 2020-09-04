@@ -12,10 +12,7 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `GameBoy::SystemBus` class.
 #include "bus.h"
-
-// Required for the `GameBoy::Cartridge` class.
 #include "cart.h"
 
 using namespace GameBoy;
@@ -23,19 +20,22 @@ using namespace GameBoy;
 SystemBus::SystemBus() noexcept : timer(*this), ppu(*this)
 { }
 
-// Sets the current cartridge to `cart`.
+/// @brief Sets the current cartridge.
+/// @param cart The cartridge to set.
 auto SystemBus::cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void
 {
     m_cart = cart;
 }
 
-// Sets the current boot ROM to `data`.
+/// @brief Sets the current boot ROM.
+/// @param data The boot ROM data. If this is empty, then the boot ROM will be
+/// disabled, if previously enabled.
 auto SystemBus::boot_rom(const std::vector<uint8_t>& data) noexcept -> void
 {
     m_boot_rom = data;
 }
 
-// Resets the hardware to the startup state.
+/// @brief Resets the devices to their startup state and clears all memory.
 auto SystemBus::reset() noexcept -> void
 {
     timer.reset();
@@ -47,7 +47,7 @@ auto SystemBus::reset() noexcept -> void
     boot_rom_disabled = false;
 }
 
-// Advances the hardware by 1 m-cycle.
+/// @brief Advances the devices by 1 m-cycle.
 auto SystemBus::step() noexcept -> void
 {
     cycles += 4;
@@ -56,8 +56,20 @@ auto SystemBus::step() noexcept -> void
     ppu.step();
 }
 
-// Returns a byte from memory referenced by memory address `address`.
-// This function incurs 1 m-cycle (or 4 T-cycles).
+/// @brief Request an interrupt.
+/// @param interrupt The interrupt to request.
+auto SystemBus::irq(const Interrupt interrupt) noexcept -> void
+{
+    interrupt_flag.byte |= interrupt;
+}
+
+/// @brief Returns a byte from memory.
+/// @param address The address to read from.
+/// @param type
+/// 
+/// `AccessType::Emulated` (default): Steps the devices by 1 m-cycle.
+/// `AccessType::Direct`: Does not step the devices.
+/// @return The byte from memory.
 auto SystemBus::read(const uint16_t address,
                      const AccessType type) noexcept -> uint8_t
 {
@@ -161,9 +173,9 @@ auto SystemBus::read(const uint16_t address,
     }
 }
 
-// Stores a byte `data` into memory referenced by memory address `address`.
-//
-// This function incurs 1 m-cycle (or 4 T-cycles).
+/// @brief Stores a byte into memory.
+/// @param address The address to write to.
+/// @param data The data to store at the address.
 auto SystemBus::write(const uint16_t address,
                       const uint8_t data) noexcept -> void
 {
@@ -294,11 +306,11 @@ auto SystemBus::write(const uint16_t address,
                 // $FF46 - DMA - DMA Transfer and Start Address(W)
                 case 0xF46:
                 {
-                    const unsigned int address = data * 0x100;
+                    const auto addr{ data * 0x100 };
 
                     for (unsigned int index{ 0 }; index < 160; ++index)
                     {
-                        ppu.oam[index] = read(address + index);
+                        ppu.oam[index] = read(addr + index);
                     }
                     return;
                 }
@@ -352,10 +364,4 @@ auto SystemBus::write(const uint16_t address,
             //__debugbreak();
             return;
     }
-}
-
-// Signals an interrupt `interrupt`.
-auto SystemBus::signal_interrupt(const Interrupt interrupt) noexcept -> void
-{
-    interrupt_flag.byte |= interrupt;
 }

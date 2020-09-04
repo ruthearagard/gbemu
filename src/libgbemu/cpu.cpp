@@ -21,21 +21,25 @@
 using namespace GameBoy;
 using namespace std::placeholders;
 
+/// @brief Initializes the CPU.
+/// @param bus The current system bus instance.
 CPU::CPU(SystemBus& bus) noexcept : m_bus(bus)
 {
     reset();
 }
 
-// Returns a byte from memory referenced by the program counter and
-// increments the program counter.
-inline auto CPU::read_next_byte() noexcept -> uint8_t
+/// @brief Returns a byte from memory using the program counter as a memory
+/// address, then increments the program counter.
+/// @return The byte from memory.
+auto CPU::read_next_byte() noexcept -> uint8_t
 {
     return m_bus.read(reg.pc++);
 }
 
-// Returns the next two bytes from memory referenced by the program counter,
-// incrementing the program counter twice.
-inline auto CPU::read_next_word() noexcept -> uint16_t
+/// @brief Reads two bytes from memory using the program counter as a memory
+/// address, then increments the program counter twice.
+/// @return The two bytes from memory as a 16-bit integer.
+auto CPU::read_next_word() noexcept -> uint16_t
 {
     const uint8_t lo{ read_next_byte() };
     const uint8_t hi{ read_next_byte() };
@@ -61,62 +65,81 @@ inline auto CPU::interrupt_check(const Interrupt intr,
     }
 }
 
-// If `condition_met` is true, sets bit `flag` of the Flag Register (F),
-// otherwise unsets it.
-auto CPU::update_flag(const enum Flag flag,
-                      const bool condition_met) noexcept -> void
+/// @brief Conditionally sets or resets a bit in the Flag (F) register.
+/// @param bit The bit in question.
+/// @param condition_met If the result of an expression returns `true`,
+/// the bit is set. Otherwise, it is unset.
+auto CPU::update_flag_bit(const enum FlagBit bit,
+                          const bool condition_met) noexcept -> void
 {
     if (condition_met)
     {
-        reg.f |= flag;
+        reg.f |= bit;
     }
     else
     {
-        reg.f &= ~flag;
+        reg.f &= ~bit;
     }
 }
 
-// Sets the Zero flag to `true` if `value` is 0.
+/// @brief Updates the Zero flag bit of the Flag register (F) if `value` is
+/// zero, otherwise it is reset.
+/// @param value The value to check against.
 auto CPU::set_zero_flag(const uint8_t value) noexcept -> void
 {
-    update_flag(Flag::Zero, value == 0);
+    update_flag_bit(FlagBit::Zero, value == 0);
 }
 
-// Sets the Zero flag to `condition`.
+/// @brief Updates the Zero flag bit of the Flag register (F) based on
+/// `condition`.
+/// @param condition Must be `true` or `false`.
 auto CPU::set_zero_flag(const bool condition) noexcept -> void
 {
-    update_flag(Flag::Zero, condition);
+    update_flag_bit(FlagBit::Zero, condition);
 }
 
-// Sets the Subtract flag.
+/// @brief Updates the Subtract flag bit of the Flag register (F) based on
+/// `condition`.
+/// @param condition The result of an expression.
 auto CPU::set_subtract_flag(const bool condition) noexcept -> void
 {
-    update_flag(Flag::Subtract, condition);
+    update_flag_bit(FlagBit::Subtract, condition);
 }
 
-// Sets the Half Carry flag to `condition`.
+/// @brief Updates the Half Carry flag bit of the Flag register (F) based on
+/// `condition`.
+/// @param condition The result of an expression.
 auto CPU::set_half_carry_flag(const bool condition) noexcept -> void
 {
-    update_flag(Flag::HalfCarry, condition);
+    update_flag_bit(FlagBit::HalfCarry, condition);
 }
 
-// Sets the Carry flag to `condition`.
+/// @brief Updates the Carry flag bit of the Flag register (F) based on
+/// `condition`.
+/// @param condition The result of an expression.
 auto CPU::set_carry_flag(const bool condition) noexcept -> void
 {
-    update_flag(Flag::Carry, condition);
+    update_flag_bit(FlagBit::Carry, condition);
 }
 
-// Reads the byte stored in memory referenced by register pair HL, calls ALU
-// function `f`, and then stores the result of the ALU operation back into
-// memory referenced by register pair HL.
+/// @brief Reads a byte from memory using register pair HL as a memory address,
+/// calls an ALU function and stores the result of the ALU operation back into
+/// memory using register pair HL as a memory address.
+/// @param f The function to call.
 auto CPU::rw_hl(const ALUFunc& f) noexcept -> void
 {
     m_bus.write(reg.hl, f(m_bus.read(reg.hl)));
 }
 
-// Performs bitwise operation `op` between the Accumulator (register A) and
-// `n`, and sets the Flag register (F) to `flags_if_zero` if the result is
-// zero, or `flags_if_nonzero` otherwise.
+/// @brief Performs a bitwise operation between the Accumulator (register A)
+/// and a value, sets the Flag register (F) based on the result of the
+/// operation, and stores the the result in the Accumulator.
+/// @param op The bitwise operation class to use.
+/// @param n The value to use as a parameter to `op`.
+/// @param flags_if_zero The value to set the Flag register to if the
+/// Accumulator is zero.
+/// @param flags_if_nonzero The value to set the Flag register to if
+/// the Accumulator is not zero.
 template<class Operator>
 auto CPU::bit_op(const Operator op,
                  const uint8_t n,
@@ -127,7 +150,9 @@ auto CPU::bit_op(const Operator op,
     reg.f = (reg.a == 0) ? flags_if_zero : flags_if_nonzero;
 }
 
-// Handles the `INC r` instruction.
+/// @brief Handles the INC instruction.
+/// @param r The value to increment.
+/// @return The incremented value.
 auto CPU::inc(uint8_t r) noexcept -> uint8_t
 {
     set_subtract_flag(false);
@@ -137,7 +162,9 @@ auto CPU::inc(uint8_t r) noexcept -> uint8_t
     return r;
 }
 
-// Handles the `DEC r` instruction.
+/// @brief Handles the DEC instruction.
+/// @param r The value to decrement.
+/// @return The decremented value.
 auto CPU::dec(uint8_t r) noexcept -> uint8_t
 {
     set_subtract_flag(true);
@@ -147,7 +174,8 @@ auto CPU::dec(uint8_t r) noexcept -> uint8_t
     return r;
 }
 
-// Handles the `ADD HL, xx` instruction.
+/// @brief Handles the ADD HL instruction.
+/// @param pair The register pair to use as an addend.
 auto CPU::add_hl(const uint16_t pair) noexcept -> void
 {
     set_subtract_flag(false);
@@ -161,7 +189,8 @@ auto CPU::add_hl(const uint16_t pair) noexcept -> void
     m_bus.step();
 }
 
-// Handles the `JR cond, $branch` instruction.
+/// @brief Handles the JR instruction.
+/// @param condition_met The result of an expression.
 auto CPU::jr(const bool condition_met) -> void
 {
     const int8_t offset{ static_cast<int8_t>(read_next_byte()) };
@@ -173,10 +202,12 @@ auto CPU::jr(const bool condition_met) -> void
     }
 }
 
-// Handles an addition instruction, based on `flag`:
-//
-// ADD A, `addend` (default): `ALUFlag::WithoutCarry`
-// ADC A, `addend`:           `ALUFlag::WithCarry`
+/// @brief Handles an addition instruction.
+/// @param addend The value to use as an addend.
+/// @param flag Must be one of the following:
+/// 
+/// `ALUFlag::WithoutCarry`: ADD instruction (default)
+/// `ALUFlag::WithCarry`: ADC instruction
 auto CPU::add(const uint8_t addend, const ALUFlag flag) noexcept -> void
 {
     set_subtract_flag(false);
@@ -185,7 +216,7 @@ auto CPU::add(const uint8_t addend, const ALUFlag flag) noexcept -> void
 
     if (flag == ALUFlag::WithCarry)
     {
-        result += (reg.f & Flag::Carry) != 0;
+        result += (reg.f & FlagBit::Carry) != 0;
     }
 
     const uint8_t sum{ static_cast<uint8_t>(result) };
@@ -197,11 +228,13 @@ auto CPU::add(const uint8_t addend, const ALUFlag flag) noexcept -> void
     reg.a = sum;
 }
 
-// Handles a subtraction instruction, based on `flag`:
-//
-// SUB `subtrahend` (default): `ALUFlag::WithoutCarry`
-// SBC A, `subtrahend`:        `ALUFlag::WithCarry`
-// CP `subtrahend`:            `ALUFlag::DiscardResult`
+/// @brief Handles a subtraction operation.
+/// @param subtrahend The value to use as a subtrahend.
+/// @param flag Must be one of the following:
+/// 
+/// `ALUFlag::WithoutCarry`: SUB instruction (default)
+/// `ALUFlag::WithCarry`: SBC instruction
+/// `ALUFlag::DiscardResult`: CP instruction
 auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
 {
     set_subtract_flag(true);
@@ -210,7 +243,7 @@ auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
 
     if (flag == ALUFlag::WithCarry)
     {
-        result -= (reg.f & Flag::Carry) != 0;
+        result -= (reg.f & FlagBit::Carry) != 0;
     }
 
     const uint8_t diff{ static_cast<uint8_t>(result) };
@@ -225,7 +258,12 @@ auto CPU::sub(const uint8_t subtrahend, const ALUFlag flag) noexcept -> void
     }
 }
 
-// Handles the `RET cond` instruction.
+/// @brief Handles a return from subroutine.
+/// @param condition_met The result of an expression.
+/// @param flag Must be one of the following:
+/// 
+/// `OpFlag::Normal`: RET instruction (default)
+/// `OpFlag::TrulyConditional`: `RET cond` instruction
 auto CPU::ret(const bool condition_met, const OpFlag flag) -> void
 {
     if (condition_met)
@@ -244,7 +282,8 @@ auto CPU::ret(const bool condition_met, const OpFlag flag) -> void
     }
 }
 
-// Pops the stack into register pair `pair`.
+/// @brief Handles the POP instruction.
+/// @return The result of the stack popping.
 auto CPU::stack_pop() noexcept -> uint16_t
 {
     const uint8_t lo{ m_bus.read(reg.sp++) };
@@ -253,7 +292,8 @@ auto CPU::stack_pop() noexcept -> uint16_t
     return (hi << 8) | lo;
 }
 
-// Handles the `JP cond, $imm16` instruction.
+/// @brief Handles the JP instruction.
+/// @param condition_met The result of an expression.
 auto CPU::jp(const bool condition_met) noexcept -> void
 {
     const uint16_t address{ read_next_word() };
@@ -265,7 +305,8 @@ auto CPU::jp(const bool condition_met) noexcept -> void
     }
 }
 
-// Handles the `CALL cond, $imm16` instruction.
+/// @brief Handles the CALL instruction.
+/// @param condition_met The result of an expression.
 auto CPU::call(const bool condition_met) noexcept -> void
 {
     const uint16_t address{ read_next_word() };
@@ -277,7 +318,8 @@ auto CPU::call(const bool condition_met) noexcept -> void
     }
 }
 
-// Pushes the contents of register pair `pair` onto the stack.
+/// @brief Handles the PUSH instruction.
+/// @param pair The register pair to push onto the stack.
 auto CPU::stack_push(const uint16_t pair) noexcept -> void
 {
     m_bus.step();
@@ -286,15 +328,21 @@ auto CPU::stack_push(const uint16_t pair) noexcept -> void
     m_bus.write(--reg.sp, pair & 0x00FF);
 }
 
-// Handles the `RST $vector` instruction.
+/// @brief Handles the RST instruction.
+/// @param vector The program counter to jump to.
 auto CPU::rst(const uint16_t vector) noexcept -> void
 {
     stack_push(reg.pc);
     reg.pc = vector;
 }
 
-// Performs a special addition operation between the stack pointer (SP) and
-// an immediate byte, and stores the result in `pair`.
+/// @brief Handles an addition between the stack pointer (SP) and an immediate
+/// byte.
+/// @param flag Must be one of the following:
+/// 
+/// `OpFlag::Normal`: LD HL, SP+$simm8 instruction (default)
+/// `OpFlag::ExtraDelay`: ADD SP, $imm8 instruction
+/// @return The sum of the addition.
 auto CPU::add_sp(const OpFlag flag) noexcept -> uint16_t
 {
     set_zero_flag(false);
@@ -317,7 +365,13 @@ auto CPU::add_sp(const OpFlag flag) noexcept -> uint16_t
     return static_cast<uint16_t>(sum);
 }
 
-// Handles the `RLC n` instruction.
+/// @brief Handles the RLC instruction.
+/// @param n The value to rotate.
+/// @param flag Must be one of the following:
+/// 
+/// `ALUFlag::Normal`: RLC instruction (default)
+/// `ALUFlag::ClearZeroFlag`: RLCA instruction
+/// @return The rotated value.
 auto CPU::rlc(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 {
     set_subtract_flag(false);
@@ -338,7 +392,13 @@ auto CPU::rlc(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `RRC n` instruction.
+/// @brief Handles the RRC instruction.
+/// @param n The value to rotate.
+/// @param flag Must be one of the following:
+/// 
+/// `ALUFlag::Normal`: RRC instruction (default)
+/// `ALUFlag::ClearZeroFlag`: RRCA instruction
+/// @return The rotated value.
 auto CPU::rrc(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 {
     set_subtract_flag(false);
@@ -359,13 +419,19 @@ auto CPU::rrc(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `RL n` instruction.
+/// @brief Handles the RL instruction.
+/// @param n The value to rotate.
+/// @param flag Must be one of the following:
+/// 
+/// `ALUFlag::Normal`: RL instruction (default)
+/// `ALUFlag::ClearZeroFlag`: RLA instruction
+/// @return The rotated value.
 auto CPU::rl(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 {
     set_subtract_flag(false);
     set_half_carry_flag(false);
 
-    const bool carry{ (reg.f & Flag::Carry) != 0 };
+    const bool carry{ (reg.f & FlagBit::Carry) != 0 };
 
     set_carry_flag(n & 0x80);
 
@@ -382,14 +448,20 @@ auto CPU::rl(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `RR n` instruction.
+/// @brief Handles the RR instruction.
+/// @param n The value to rotate.
+/// @param flag Must be one of the following:
+/// 
+/// `ALUFlag::Normal`: RR instruction (default)
+/// `ALUFlag::ClearZeroFlag`: RRA instruction
+/// @return The rotated value.
 auto CPU::rr(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
 {
     set_subtract_flag(false);
     set_half_carry_flag(false);
 
     const bool old_carry{ (n & 1) != 0 };
-    const bool carry{ (reg.f & Flag::Carry) != 0 };
+    const bool carry{ (reg.f & FlagBit::Carry) != 0 };
 
     n = (n >> 1) | (carry << 7);
 
@@ -406,7 +478,9 @@ auto CPU::rr(uint8_t n, const ALUFlag flag) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `SLA n` instruction.
+/// @brief Handles the SLA instruction.
+/// @param n The value to shift.
+/// @return The shifted value.
 auto CPU::sla(uint8_t n) noexcept -> uint8_t
 {
     set_subtract_flag(false);
@@ -420,7 +494,9 @@ auto CPU::sla(uint8_t n) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `SRA n` instruction.
+/// @brief Handles the SRA instruction.
+/// @param n The value to shift.
+/// @return The shifted value.
 auto CPU::sra(uint8_t n) noexcept -> uint8_t
 {
     set_subtract_flag(false);
@@ -434,7 +510,9 @@ auto CPU::sra(uint8_t n) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `SWAP n` instruction.
+/// @brief Handles the SWAP instruction.
+/// @param n The value to swap.
+/// @return The swapped value.
 auto CPU::swap(uint8_t n) noexcept -> uint8_t
 {
     n = ((n & 0x0F) << 4) | (n >> 4);
@@ -443,7 +521,9 @@ auto CPU::swap(uint8_t n) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `SRL n` instruction.
+/// @brief Handles the SRL instruction.
+/// @param n The value to shift.
+/// @return The shifted value.
 auto CPU::srl(uint8_t n) noexcept -> uint8_t
 {
     set_subtract_flag(false);
@@ -459,7 +539,9 @@ auto CPU::srl(uint8_t n) noexcept -> uint8_t
     return n;
 }
 
-// Handles the `BIT b, n` instruction.
+/// @brief Handles the BIT instruction.
+/// @param b The bit to test.
+/// @param n The value to test `b` against.
 auto CPU::bit(const unsigned int b, const uint8_t n) -> void
 {
     set_subtract_flag(false);
@@ -467,9 +549,11 @@ auto CPU::bit(const unsigned int b, const uint8_t n) -> void
     set_zero_flag(!(n & (1 << b)));
 }
 
-// Reads the value from memory referenced by register pair HL, performs a
-// bitwise operation `op` against bit `bit`, and stores the result back into
-// memory referenced by register pair `HL`.
+/// @brief Reads the value from memory using register pair HL as a memory
+/// address, performs a bitwise operation against a bit, and stores the result
+/// back into memory using register pair HL as a memory address.
+/// @param op The bitwise operator to use.
+/// @param bit The bit to perform the operation on.
 template<class Operator>
 auto CPU::bit_hl(const Operator op,
                  const unsigned int bit) noexcept -> void
@@ -477,7 +561,7 @@ auto CPU::bit_hl(const Operator op,
     m_bus.write(reg.hl, op(m_bus.read(reg.hl), bit));
 }
 
-// Resets the CPU to the startup state.
+/// @brief Resets the CPU to the startup state.
 auto CPU::reset() noexcept -> void
 {
     reg.bc = 0x0013;
@@ -492,7 +576,7 @@ auto CPU::reset() noexcept -> void
     halted = false;
 }
 
-// Executes the next instruction.
+/// @brief Executes the next instruction.
 auto CPU::step() noexcept -> void
 {
     const uint8_t ie{ m_bus.interrupt_enable.byte };
@@ -563,7 +647,7 @@ auto CPU::step() noexcept -> void
         case 0x1D: reg.e = dec(reg.e);                         return; // DEC E
         case 0x1E: reg.e = read_next_byte();                   return; // LD E, $imm8
         case 0x1F: reg.a = rr(reg.a, ALUFlag::ClearZeroFlag);  return; // RRA
-        case 0x20: jr(!(reg.f & Flag::Zero));                  return; // JR NZ, $branch
+        case 0x20: jr(!(reg.f & FlagBit::Zero));               return; // JR NZ, $branch
         case 0x21: reg.hl = read_next_word();                  return; // LD HL, $imm16
         case 0x22: m_bus.write(reg.hl++, reg.a);               return; // LD (HL+), A
         case 0x23: reg.hl++; m_bus.step();                     return; // INC HL
@@ -581,7 +665,7 @@ auto CPU::step() noexcept -> void
 
             // See if we had a carry/borrow for the low nibble in the last
             // operation.
-            if (reg.f & Flag::HalfCarry)
+            if (reg.f & FlagBit::HalfCarry)
             {
                 // Yes, we have to adjust it.
                 adjust |= 0x06;
@@ -589,13 +673,13 @@ auto CPU::step() noexcept -> void
 
             // See if we had a carry/borrow for the high nibble in the last
             // operation.
-            if (reg.f & Flag::Carry)
+            if (reg.f & FlagBit::Carry)
             {
                 // Yes, we have to adjust it.
                 adjust |= 0x60;
             }
 
-            if (reg.f & Flag::Subtract)
+            if (reg.f & FlagBit::Subtract)
             {
                 // If the operation was a subtraction we're done since we
                 // can never end up in the A-F range by substracting
@@ -626,7 +710,7 @@ auto CPU::step() noexcept -> void
             return;
         }
 
-        case 0x28: jr(reg.f & Flag::Zero);       return; // JR Z, $branch
+        case 0x28: jr(reg.f & FlagBit::Zero);    return; // JR Z, $branch
         case 0x29: add_hl(reg.hl);               return; // ADD HL, HL
         case 0x2A: reg.a = m_bus.read(reg.hl++); return; // LD A, (HL+)
         case 0x2B: reg.hl--; m_bus.step();       return; // DEC HL
@@ -643,7 +727,7 @@ auto CPU::step() noexcept -> void
 
             return;
 
-        case 0x30: jr(!(reg.f & Flag::Carry));            return; // JR NC, $branch
+        case 0x30: jr(!(reg.f & FlagBit::Carry));         return; // JR NC, $branch
         case 0x31: reg.sp = read_next_word();             return; // LD SP, $imm16
         case 0x32: m_bus.write(reg.hl--, reg.a);          return; // LD (HL-), A
         case 0x33: reg.sp++; m_bus.step();                return; // INC SP
@@ -659,7 +743,7 @@ auto CPU::step() noexcept -> void
 
             return;
 
-        case 0x38: jr(reg.f & Flag::Carry);      return;
+        case 0x38: jr(reg.f & FlagBit::Carry);   return;
         case 0x39: add_hl(reg.sp);               return;
         case 0x3A: reg.a = m_bus.read(reg.hl--); return;
         case 0x3B: reg.sp--; m_bus.step();       return;
@@ -671,7 +755,7 @@ auto CPU::step() noexcept -> void
         case 0x3F:
             set_subtract_flag(false);
             set_half_carry_flag(false);
-            set_carry_flag(!(reg.f & Flag::Carry));
+            set_carry_flag(!(reg.f & FlagBit::Carry));
 
             return;
 
@@ -803,17 +887,17 @@ auto CPU::step() noexcept -> void
         case 0xBD: sub(reg.l,              ALUFlag::DiscardResult);                 return; // CP L
         case 0xBE: sub(m_bus.read(reg.hl), ALUFlag::DiscardResult);                 return; // CP (HL)
         case 0xBF: sub(reg.a,              ALUFlag::DiscardResult);                 return; // CP A
-        case 0xC0: ret(!(reg.f & Flag::Zero), OpFlag::TrulyConditional);            return; // RET NZ
+        case 0xC0: ret(!(reg.f & FlagBit::Zero), OpFlag::TrulyConditional);         return; // RET NZ
         case 0xC1: reg.bc = stack_pop();                                            return; // POP BC
-        case 0xC2: jp(!(reg.f & Flag::Zero));                                       return; // JP NZ, $imm16
+        case 0xC2: jp(!(reg.f & FlagBit::Zero));                                    return; // JP NZ, $imm16
         case 0xC3: jp(true);                                                        return; // JP $imm16
-        case 0xC4: call(!(reg.f & Flag::Zero));                                     return; // CALL NZ, $imm16
+        case 0xC4: call(!(reg.f & FlagBit::Zero));                                  return; // CALL NZ, $imm16
         case 0xC5: stack_push(reg.bc);                                              return; // PUSH BC
         case 0xC6: add(read_next_byte());                                           return; // ADD A, $imm8
         case 0xC7: rst(0x0000);                                                     return; // RST $0000
-        case 0xC8: ret(reg.f & Flag::Zero, OpFlag::TrulyConditional);               return; // RET Z
+        case 0xC8: ret(reg.f & FlagBit::Zero, OpFlag::TrulyConditional);            return; // RET Z
         case 0xC9: ret(true);                                                       return; // RET
-        case 0xCA: jp(reg.f & Flag::Zero);                                          return; // JP Z, $imm16
+        case 0xCA: jp(reg.f & FlagBit::Zero);                                       return; // JP Z, $imm16
 
         // CB-prefixed instruction
         case 0xCB:
@@ -1077,21 +1161,21 @@ auto CPU::step() noexcept -> void
                 case 0xFF: reg.a |= (1 << 7);                                      return; // SET 7, A
             }
 
-        case 0xCC: call(reg.f & Flag::Zero);                                      return; // CALL Z, $imm16
+        case 0xCC: call(reg.f & FlagBit::Zero);                                   return; // CALL Z, $imm16
         case 0xCD: call(true);                                                    return; // CALL $imm16
         case 0xCE: add(read_next_byte(), ALUFlag::WithCarry);                     return; // ADC A, $imm8
         case 0xCF: rst(0x0008);                                                   return; // RST $08
-        case 0xD0: ret(!(reg.f & Flag::Carry), OpFlag::TrulyConditional);         return; // RET NC
+        case 0xD0: ret(!(reg.f & FlagBit::Carry), OpFlag::TrulyConditional);      return; // RET NC
         case 0xD1: reg.de = stack_pop();                                          return; // POP DE
-        case 0xD2: jp(!(reg.f & Flag::Carry));                                    return; // JP NC, $imm16
-        case 0xD4: call(!(reg.f & Flag::Carry));                                  return; // CALL NC, $imm16
+        case 0xD2: jp(!(reg.f & FlagBit::Carry));                                 return; // JP NC, $imm16
+        case 0xD4: call(!(reg.f & FlagBit::Carry));                               return; // CALL NC, $imm16
         case 0xD5: stack_push(reg.de);                                            return; // PUSH DE
         case 0xD6: sub(read_next_byte());                                         return; // SUB $imm8
         case 0xD7: rst(0x0010);                                                   return; // RST $0010
-        case 0xD8: ret(reg.f & Flag::Carry, OpFlag::TrulyConditional);            return; // RET C
+        case 0xD8: ret(reg.f & FlagBit::Carry, OpFlag::TrulyConditional);         return; // RET C
         case 0xD9: ret(true); ime = true;                                         return; // RETI
-        case 0xDA: jp(reg.f & Flag::Carry);                                       return; // JP C, $imm16
-        case 0xDC: call(reg.f & Flag::Carry);                                     return; // CALL C, $imm16
+        case 0xDA: jp(reg.f & FlagBit::Carry);                                    return; // JP C, $imm16
+        case 0xDC: call(reg.f & FlagBit::Carry);                                  return; // CALL C, $imm16
         case 0xDE: sub(read_next_byte(), ALUFlag::WithCarry);                     return; // SBC A, $imm8
         case 0xDF: rst(0x0018);                                                   return; // RST $0018
         case 0xE0: m_bus.write(0xFF00 + read_next_byte(), reg.a);                 return; // LDH ($imm8), A

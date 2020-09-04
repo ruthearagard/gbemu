@@ -12,42 +12,53 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for built-in exceptions.
 #include <stdexcept>
-
-// Required for `fmt::sprintf()`.
 #include <fmt/printf.h>
-
-// Required for the `GameBoy::System` class.
+#include "../cart/mbc1.h"
+#include "../cart/mbc3.h"
+#include "../cart/mbc1.h"
+#include "../cart/rom_only.h"
 #include "gb.h"
 
 using namespace GameBoy;
 
+/// @brief Initializes a Game Boy system.
 System::System() noexcept : cpu(bus)
 {
     reset();
 }
 
-// Resets the system to the startup state.
+/// @brief Resets the system to the startup state.
 auto System::reset() noexcept -> void
 {
     bus.reset();
     cpu.reset();
 }
 
-// Presses a button.
+/// @brief Presses a button on the virtual joypad.
+/// @param button The button to press.
 auto System::press_button(const JoypadButton button) noexcept -> void
 {
     bus.joypad_state &= ~button;
 }
 
-// Releases a button.
+/// @brief Releases a button on the virtual joypad.
+/// @param button The button to release.
 auto System::release_button(const JoypadButton button) noexcept -> void
 {
     bus.joypad_state |= button;
 }
 
-// Sets the current cartridge to `cart`.
+/// @brief Generates a cartridge.
+/// 
+/// This function will throw an `std::runtime_error` under the following
+/// circumstances:
+/// 
+/// * The header checksum verification failed, or;
+/// * The ROM requires a memory bank controller we don't support.
+/// 
+/// @param cart_data The data to use to generate the Cartridge instance.
+/// @return The generated cartridge.
 auto System::cart(const std::vector<uint8_t>& cart_data) ->
 std::shared_ptr<Cartridge>
 {
@@ -128,7 +139,9 @@ std::shared_ptr<Cartridge>
     (fmt::sprintf("Unsupported memory bank controller (%s)", mbc));
 }
 
-// Sets the current boot ROM data to `boot_rom`.
+/// @brief Sets the boot ROM data.
+/// @param data If `data` is not empty, a boot ROM is considered to be present.
+/// Otherwise, boot ROM functionality will be disabled.
 auto System::boot_rom(const std::vector<uint8_t>& data) noexcept -> void
 {
     bus.boot_rom(data);
@@ -142,7 +155,8 @@ auto System::boot_rom(const std::vector<uint8_t>& data) noexcept -> void
     cpu.reg.pc = 0x0000;
 }
 
-// Executes one full step and returns the number of cycles taken.
+/// @brief Executes one full system step.
+/// @return The number of T-cycles taken by the current step.
 auto System::step() noexcept -> unsigned int
 {
     cpu.step();

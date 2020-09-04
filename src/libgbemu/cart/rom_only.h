@@ -16,7 +16,8 @@
 //
 // "If #pragma once is seen when scanning a header file, that file will never
 // be read again, no matter what. It is a less-portable alternative to using
-// ‘#ifndef’ to guard the contents of header files against multiple inclusions."
+// `#ifndef` to guard the contents of header files against multiple
+// inclusions."
 //
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
@@ -26,17 +27,24 @@
 
 namespace GameBoy
 {
-    class ROMOnlyCartridge : public Cartridge
+    /// @brief Defines the structure of a cartridge without an MBC.
+    class ROMOnlyCartridge final : public Cartridge
     {
     public:
         explicit ROMOnlyCartridge(const std::vector<uint8_t>& data) noexcept;
 
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
+        /// @brief Returns a byte from the cartridge.
+        /// @param address The memory address to read from.
+        /// @return The byte from the cartridge.
         auto read(const uint16_t address) noexcept -> uint8_t;
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
+        /// @brief Updates the memory bank controller configuration.
+        /// 
+        /// This should never happen here as a memory bank controller is not
+        /// present. Such writes will be logged.
+        /// 
+        /// @param address The configuration area to update.
+        /// @param value The value to update the area with.
         auto write(const uint16_t address,
                    const uint8_t value) noexcept -> void;
     };

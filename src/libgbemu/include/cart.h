@@ -16,35 +16,35 @@
 //
 // "If #pragma once is seen when scanning a header file, that file will never
 // be read again, no matter what. It is a less-portable alternative to using
-// ‘#ifndef’ to guard the contents of header files against multiple inclusions."
+// `#ifndef` to guard the contents of header files against multiple
+// inclusions."
 //
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for `std::map<>`.
 #include <map>
-
-// Required for `std::string`.
 #include <string>
-
-// Required for `std::vector<>`.
 #include <vector>
 
 namespace GameBoy
 {
+    /// @brief Defines a game cartridge.
     class Cartridge
     {
     public:
-        // Returns data from the cartridge referenced by memory address
-        // `address`.
+        /// @brief Returns a byte from the cartridge.
+        /// @param address The memory address to read from.
+        /// @return The byte from the cartridge.
         virtual auto read(const uint16_t address) -> uint8_t = 0;
 
-        // Updates the memory bank controller configuration `address` to
-        // `value`.
+        /// @brief Updates the memory bank controller configuration.
+        /// @param address The configuration area to update.
+        /// @param value The value to update the area with.
         virtual auto write(const uint16_t address,
                            const uint8_t data) -> void = 0;
 
-        // Returns the title of the cartridge.
+        /// @brief Gets the title of the cartridge as specicfied in the data.
+        /// @return The cartridge title.
         auto title() noexcept -> std::string
         {
             std::string result;
@@ -56,19 +56,22 @@ namespace GameBoy
             return result;
         }
 
-        // Returns the type of cartridge.
+        /// @brief Gets the type of cartridge as specified in the data.
+        /// @return The cartridge type.
         auto type() noexcept -> std::string
         {
             return types.at(m_data[0x0147]);
         }
 
-        // Returns the ROM size of the cartridge.
+        /// @brief Gets the size of the ROM as specified in the data.
+        /// @return The cartridge ROM size.
         auto rom_size() noexcept -> std::string
         {
             return rom_sizes.at(m_data[0x0148]);
         }
 
-        // Returns the RAM size of the cartridge.
+        /// @brief Gets the size of the RAM as specified in the data.
+        /// @return The cartridge RAM size.
         auto ram_size() noexcept -> std::string
         {
             return ram_sizes.at(m_data[0x0149]);
@@ -139,6 +142,7 @@ namespace GameBoy
             m_data = data;
         }
 
+        /// @brief The cartridge data.
         std::vector<uint8_t> m_data;
     };
 }

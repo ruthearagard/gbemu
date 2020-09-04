@@ -16,43 +16,32 @@
 //
 // "If #pragma once is seen when scanning a header file, that file will never
 // be read again, no matter what. It is a less-portable alternative to using
-// ‘#ifndef’ to guard the contents of header files against multiple inclusions."
+// `#ifndef` to guard the contents of header files against multiple
+// inclusions."
 //
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for `std::array<>`.
 #include <array>
-
-// Required for fixed-width integer types (e.g. `uint8_t`).
 #include <cstdint>
-
-// Required for `std::unique_ptr<>`.
 #include <memory>
-
-// Required for `std::vector<>`.
 #include <vector>
-
-// Required for the `GameBoy::APU` class.
 #include "apu.h"
-
-// Required for the `GameBoy::PPU` class.
 #include "ppu.h"
-
-// Required for the `GameBoy::Timer` class.
 #include "timer.h"
 
 namespace GameBoy
 {
-    // Forward declaration
     class Cartridge;
 
+    /// @brief Types of interrupts possible.
     enum Interrupt : unsigned int
     {
         VBlankInterrupt = 1 << 0,
         TimerInterrupt  = 1 << 2
     };
 
+    /// @brief List of joypad bits.
     enum JoypadButton : unsigned int
     {
         Down   = 1 << 7,
@@ -65,49 +54,64 @@ namespace GameBoy
         A      = 1 << 0
     };
 
+    /// @brief Memory access types.
     enum class AccessType
     {
+        /// @brief The memory function will step the hardware by 1 m-cycle.
         Emulated,
+
+        /// @brief The memory function will NOT step the hardware by 1 m-cycle.
+        /// 
+        /// This is useful for memory inspection.
         Direct
     };
 
-    // Interconnect between the CPU and devices.
+    /// @brief Defines the interconnect between the CPU, memory, and devices.
     class SystemBus
     {
     public:
         SystemBus() noexcept;
 
-        // Sets the current cartridge to `cart`.
+        /// @brief Sets the current cartridge.
+        /// @param cart The cartridge to set.
         auto cart(const std::shared_ptr<Cartridge>& cart) noexcept -> void;
 
-        // Sets the current boot ROM to `data`.
+        /// @brief Sets the current boot ROM.
+        /// @param data The boot ROM data. If this is empty, then the boot ROM
+        /// will be disabled, if previously enabled.
         auto boot_rom(const std::vector<uint8_t>& data) noexcept -> void;
 
-        // Resets the hardware to the startup state.
+        /// @brief Resets the devices to their startup state and clears all
+        /// memory.
         auto reset() noexcept -> void;
 
-        // Advances the hardware by 1 m-cycle.
+        /// @brief Advances the devices by 1 m-cycle.
         auto step() noexcept -> void;
 
-        // Returns a byte from memory referenced by memory address `address`.
-        // This function incurs 1 m-cycle (or 4 T-cycles).
+        /// @brief Request an interrupt.
+        /// @param interrupt The interrupt to request.
+        auto irq(const Interrupt interrupt) noexcept -> void;
+
+        /// @brief Returns a byte from memory.
+        /// @param address The address to read from.
+        /// @param type
+        /// 
+        /// `AccessType::Emulated` (default): Steps the devices by 1 m-cycle.
+        /// `AccessType::Direct`: Does not step the devices.
+        /// @return The byte from memory.
         auto read(const uint16_t address,
                   const AccessType type = AccessType::Emulated) noexcept -> uint8_t;
 
-        // Stores a byte `data` into memory referenced by memory address
-        // `address`.
-        //
-        // This function incurs 1 m-cycle (or 4 T-cycles).
+        /// @brief Stores a byte into memory.
+        /// @param address The address to write to.
+        /// @param data The data to store at the address.
         auto write(const uint16_t address,
                    const uint8_t data) noexcept -> void;
 
-        // Signals an interrupt `interrupt`.
-        auto signal_interrupt(const Interrupt interrupt) noexcept -> void;
-
-        // [$C000 - $CFFF] - 4KB Work RAM Bank 0 (WRAM)
+        /// @brief [$C000 - $CFFF]: 4KB Work RAM Bank 0 (WRAM)
         std::array<uint8_t, 4096> wram;
 
-        // [$D000 - $DFFF] - 4KB Work RAM Bank 1 (WRAM)
+        // @brief [$D000 - $DFFF]: 4KB Work RAM Bank 1 (WRAM)
         std::array<uint8_t, 4096> wram1;
 
         union
@@ -141,31 +145,34 @@ namespace GameBoy
             uint8_t byte;
         } interrupt_enable, interrupt_flag;
 
-        // [$FF80 - $FFFE] - High RAM (HRAM)
+        /// @brief [$FF80 - $FFFE]: High RAM (HRAM)
         std::array<uint8_t, 127> hram;
 
-        // APU (audio processing unit) hardware instance
+        /// @brief APU (audio processing unit) device instance
         APU apu;
 
-        // PPU (picture processing unit) hardware instance
+        /// @brief PPU (picture processing unit) device instance
         PPU ppu;
 
-        // Timer hardware instance
+        /// @brief Timer device instance
         Timer timer;
 
         // The number of cycles taken by the current step.
         unsigned int cycles;
 
     private:
-        // If, and only if the boot ROM is present, this boolean determines
-        // whether or not memory reads from addresses <0x100 will be from the
-        // boot ROM (false) or the cartridge (true).
+        /// @brief Is the boot ROM disabled?
+        /// 
+        /// This only matters if the user has requested to use a boot ROM. It
+        /// governs whether or not reads from memory addresses <$0100 will
+        /// return data from the boot ROM (false) or from the game cartridge
+        /// (true).
         bool boot_rom_disabled;
 
-        // Boot ROM data
+        /// @brief Boot ROM data, if any.
         std::vector<uint8_t> m_boot_rom;
 
-        // Game Boy cartridge
+        /// @brief The current Game Boy cartridge.
         std::shared_ptr<Cartridge> m_cart;
     };
 }

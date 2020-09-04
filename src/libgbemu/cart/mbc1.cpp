@@ -12,7 +12,6 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `GameBoy::MBC1` class.
 #include "mbc1.h"
 
 using namespace GameBoy;
@@ -20,7 +19,7 @@ using namespace GameBoy;
 MBC1Cartridge::MBC1Cartridge(const std::vector<uint8_t>& data) noexcept :
 Cartridge(data)
 {
-    mode = Mode::ROM;
+    banking_mode = BankingMode::ROM;
 
     rom_bank.byte = 0x01;
     ram_bank      = 0x00;
@@ -28,8 +27,9 @@ Cartridge(data)
     ram = { };
 }
 
-// Returns data from the cartridge referenced by memory address
-// `address`.
+/// @brief Returns a byte from the cartridge.
+/// @param address The memory address to read from.
+/// @return The byte from the cartridge.
 auto MBC1Cartridge::read(const uint16_t address) noexcept -> uint8_t
 {
     switch (address >> 12)
@@ -63,7 +63,9 @@ auto MBC1Cartridge::read(const uint16_t address) noexcept -> uint8_t
     }
 }
 
-// Updates the memory bank controller configuration `address` to `value`.
+/// @brief Updates the memory bank controller configuration.
+/// @param address The configuration area to update.
+/// @param value The value to update the area with.
 auto MBC1Cartridge::write(const uint16_t address,
                           const uint8_t value) noexcept -> void
 {
@@ -75,17 +77,8 @@ auto MBC1Cartridge::write(const uint16_t address,
         // writing to this address space. Practically any value with $0A in the
         // lower 4 bits enables RAM, and any other value disables RAM.
         case 0x0 ... 0x1:
-        {
-            if ((value & 0x1F) == 0x0A)
-            {
-                ram_enabled = true;
-            }
-            else
-            {
-                ram_enabled = false;
-            }
+            ram_enabled = (value & 0x0F) == 0x0A;
             return;
-        }
 
         // [$2000 - $3FFF]: ROM bank number (W)
         //
@@ -108,7 +101,7 @@ auto MBC1Cartridge::write(const uint16_t address,
         // $00-$03, or to specify the upper two bits (Bit 5-6) of the ROM bank
         // number, depending on the current ROM/RAM Mode.
         case 0x4 ... 0x5:
-            if (mode == Mode::RAM)
+            if (banking_mode == BankingMode::RAM)
             {
                 ram_bank = value;
             }
@@ -131,7 +124,7 @@ auto MBC1Cartridge::write(const uint16_t address,
         // limitation is that only RAM bank $00 can be used during Mode 0, and
         // only ROM Banks $00-$1F can be used during Mode 1.
         case 0x6 ... 0x7:
-            mode = value == 0x00 ? Mode::ROM : Mode::RAM;
+            banking_mode = value == 0x00 ? BankingMode::ROM : BankingMode::RAM;
             return;
     }
 }

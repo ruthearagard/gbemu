@@ -12,47 +12,64 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `GameBoy::SystemBus` class.
 #include "bus.h"
-
-// Required for the `GameBoy::PPU` class.
 #include "ppu.h"
 
 using namespace GameBoy;
 
+/// @brief Initializes the picture processing unit (PPU).
+/// @param bus The system bus instance.
 PPU::PPU(SystemBus& bus) noexcept : m_bus(bus)
 {
     reset();
 }
 
-// Updates LCDC and changes the internal state of the scanline renderer.
+/// @brief Updates LCDC and changes the state of the scanline renderer.
+/// @param data The new LCDC value.
 auto PPU::set_LCDC(const uint8_t data) noexcept -> void
 {
     LCDC.byte = data;
 
-    bg_tile_map     = LCDC.bg_tile_map     ? 0x9C00 : 0x9800;
-    window_tile_map = LCDC.window_tile_map ? 0x9C00 : 0x9800;
+    render_state.bg_tile_map     = LCDC.bg_tile_map ? 0x9C00 : 0x9800;
+    render_state.window_tile_map = LCDC.window_tile_map ? 0x9C00 : 0x9800;
 
-    sprite_size = LCDC.sprite_size ? 16 : 8;
+    render_state.sprite_size = LCDC.sprite_size ? 16 : 8;
 
     if (LCDC.bg_win_tile_data)
     {
-        bg_win_tile_data = 0x8000;
-        signed_tile_id = false;
+        render_state.bg_win_tile_data = 0x8000;
+        render_state.signed_tile_id = false;
     }
     else
     {
-        bg_win_tile_data = 0x8800;
-        signed_tile_id = true;
+        render_state.bg_win_tile_data = 0x8800;
+        render_state.signed_tile_id = true;
     }
 }
 
+/// @brief Returns a byte from VRAM using an absolute memory address.
+/// @param index The absolute memory address.
+/// @return The byte from VRAM.
+auto PPU::vram_access(const unsigned int index) noexcept -> uint8_t
+{
+    return vram[index - 0x8000];
+}
+
+/// @brief Returns a byte from OAM using an absolute memory address.
+/// @param index The absolute memory address.
+/// @return The byte from OAM.
+auto PPU::oam_access(const unsigned int index) noexcept -> uint8_t
+{
+    return oam[index - 0xFE00];
+}
+
+/// @brief Renders the current scanline.
 auto PPU::draw_scanline() noexcept -> void
 {
     unsigned int offset_x;
     unsigned int offset_y;
     uint16_t tile_map;
-    uint16_t tile_data = bg_win_tile_data;
+    uint16_t tile_data = render_state.bg_win_tile_data;
 
     bool will_draw{ false };
 
@@ -60,7 +77,7 @@ auto PPU::draw_scanline() noexcept -> void
     {
         offset_x = (SCX + screen_x) & 0xFF;
         offset_y = (SCY + LY) & 0xFF;
-        tile_map = bg_tile_map;
+        tile_map = render_state.bg_tile_map;
 
         will_draw = true;
     }
@@ -73,7 +90,7 @@ auto PPU::draw_scanline() noexcept -> void
         {
             offset_x = screen_x - m_WX;
             offset_y = LY - WY;
-            tile_map = window_tile_map;
+            tile_map = render_state.window_tile_map;
 
             will_draw = true;
         }
@@ -86,7 +103,7 @@ auto PPU::draw_scanline() noexcept -> void
 
         const unsigned int index{ tile_map + row + col };
             
-        if (!signed_tile_id)
+        if (!render_state.signed_tile_id)
         {
             const uint8_t tile_id{ vram_access(index) };
             tile_data += tile_id * 16;
@@ -112,7 +129,7 @@ auto PPU::draw_scanline() noexcept -> void
             const uint8_t y = oam_access(index + 0) - 16;
             const uint8_t x = oam_access(index + 1) - 8;
 
-            if ((LY >= y) && (LY < (y + sprite_size)))
+            if ((LY >= y) && (LY < (y + render_state.sprite_size)))
             {
                 if ((screen_x >= x) && (screen_x < (x + 8)))
                 {
@@ -188,7 +205,7 @@ auto PPU::pixel(const uint8_t lo,
     }
 }
 
-// Resets the PPU to the startup state.
+/// @brief Resets the PPU to the startup state.
 auto PPU::reset() noexcept -> void
 {
     set_LCDC(0x91);
@@ -208,7 +225,7 @@ auto PPU::reset() noexcept -> void
     screen_data = { };
 }
 
-// Advances the PPU by 1 m-cycle.
+/// @brief Advances the PPU by 1 m-cycle.
 auto PPU::step() noexcept -> void
 {
     // We do nothing if the PPU isn't enabled.
@@ -234,7 +251,7 @@ auto PPU::step() noexcept -> void
 
                 if (LY == 144)
                 {
-                    m_bus.signal_interrupt(Interrupt::VBlankInterrupt);
+                    m_bus.irq(Interrupt::VBlankInterrupt);
                     STAT.mode = Mode::VBlankOrDisabled;
                 }
                 else

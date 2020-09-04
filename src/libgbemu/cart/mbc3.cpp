@@ -21,8 +21,9 @@ MBC3Cartridge::MBC3Cartridge(const std::vector<uint8_t>& data) noexcept :
 Cartridge(data)
 { }
 
-// Returns data from the cartridge referenced by memory address
-// `address`.
+/// @brief Returns a byte from the cartridge.
+/// @param address The memory address to read from.
+/// @return The byte from the cartridge.
 auto MBC3Cartridge::read(const uint16_t address) noexcept -> uint8_t
 {
     switch (address >> 12)
@@ -52,8 +53,9 @@ auto MBC3Cartridge::read(const uint16_t address) noexcept -> uint8_t
     }
 }
 
-// Updates the memory bank controller configuration `address` to
-// `value`.
+/// @brief Updates the memory bank controller configuration.
+/// @param address The configuration area to update.
+/// @param value The value to update the area with.
 auto MBC3Cartridge::write(const uint16_t address,
                           const uint8_t value) noexcept -> void
 {

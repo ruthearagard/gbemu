@@ -21,14 +21,21 @@ ROMOnlyCartridge::ROMOnlyCartridge(const std::vector<uint8_t>& data) noexcept :
 Cartridge(data)
 { }
 
-// Returns data from the cartridge referenced by memory address `address`.
+/// @brief Returns a byte from the cartridge.
+/// @param address The memory address to read from.
+/// @return The byte from the cartridge.
 auto ROMOnlyCartridge::read(const uint16_t address) noexcept -> uint8_t
 {
     return m_data[address];
 }
 
-// Updates the memory bank controller configuration `address` to
-// `value`.
+/// @brief Updates the memory bank controller configuration.
+/// 
+/// This should never happen here as a memory bank controller is not present.
+/// Such writes will be logged.
+/// 
+/// @param address The configuration area to update.
+/// @param value The value to update the area with.
 auto ROMOnlyCartridge::write(const uint16_t address,
                              const uint8_t value) noexcept -> void
 {
