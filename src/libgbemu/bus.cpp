@@ -144,7 +144,7 @@ auto SystemBus::read(const uint16_t address,
 
                 // $FF40 - LCDC - LCD Control (R/W)
                 case 0xF40:
-                    return ppu.LCDC.byte;
+                    return ppu.get_LCDC();
 
                 // $FF42 - SCY - Scroll Y (R/W)
                 case 0xF42:

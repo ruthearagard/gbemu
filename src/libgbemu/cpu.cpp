@@ -12,10 +12,7 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `GameBoy::SystemBus` class.
 #include "bus.h"
-
-// Required for the `GameBoy::CPU` class.
 #include "cpu.h"
 
 using namespace GameBoy;

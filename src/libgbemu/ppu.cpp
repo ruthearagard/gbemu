@@ -24,6 +24,13 @@ PPU::PPU(SystemBus& bus) noexcept : m_bus(bus)
     reset();
 }
 
+/// @brief Returns the value of the LCDC register.
+/// @return The LCDC register.
+auto PPU::get_LCDC() noexcept -> uint8_t
+{
+    return LCDC.byte;
+}
+
 /// @brief Updates LCDC and changes the state of the scanline renderer.
 /// @param data The new LCDC value.
 auto PPU::set_LCDC(const uint8_t data) noexcept -> void
@@ -71,7 +78,7 @@ auto PPU::draw_scanline() noexcept -> void
     uint16_t tile_map;
     uint16_t tile_data = render_state.bg_win_tile_data;
 
-    bool will_draw{ false };
+    auto will_draw{ false };
 
     if (LCDC.bg_enabled)
     {
@@ -154,23 +161,29 @@ auto PPU::draw_scanline() noexcept -> void
                     {
                         p = OBP0;
                     }
-                    pixel(lo, hi, 7 - (x_pos & 7), p, true);
+                    pixel(hi, lo, 7 - (x_pos & 7), p, true);
                 }
             }
         }
     }
 }
 
-auto PPU::pixel(const uint8_t lo,
-                const uint8_t hi,
+/// @brief Puts a pixel on the screen data.
+/// @param lo The low byte of the tile data.
+/// @param hi The high byte of the tile data.
+/// @param bit The pixel bit to use.
+/// @param palette The palette to use for color translation.
+/// @param sprite Ignore color 0 if `true`.
+auto PPU::pixel(const uint8_t hi,
+                const uint8_t lo,
                 const unsigned int bit,
                 const Palette palette,
                 const bool sprite) noexcept -> void
 {
-    const unsigned int p0{ (lo & (1 << bit)) != 0 };
-    const unsigned int p1{ (hi & (1 << bit)) != 0 };
+    const unsigned int p0{ (hi & (1 << bit)) != 0 };
+    const unsigned int p1{ (lo & (1 << bit)) != 0 };
 
-    const unsigned int pixel{ (p1 << 1) | p0 };
+    const unsigned int pixel{ (p0 << 1) | p1 };
 
     constexpr std::array<enum Colors, 4> colors =
     {
@@ -232,6 +245,7 @@ auto PPU::step() noexcept -> void
     if (!LCDC.enabled)
     {
         LY = 0x00;
+
         STAT.mode = Mode::VBlankOrDisabled;
 
         screen_data = { };
