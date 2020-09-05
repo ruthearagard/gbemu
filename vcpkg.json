@@ -1,0 +1,12 @@
+{
+    "name": "gbemu",
+    "version-string": "1.0.0-dev",
+    "homepage": "https://github.com/ruthearagard/gbemu",
+    "description": "Game Boy emulator",
+    
+    "dependencies":
+    [
+        "qt5",
+        "fmt"
+    ]
+}
