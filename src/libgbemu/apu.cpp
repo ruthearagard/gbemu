@@ -13,3 +13,13 @@
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "apu.h"
+
+using namespace GameBoy;
+
+/// @brief Resets the APU to the startup state.
+auto APU::reset() noexcept -> void
+{ }
+
+/// @brief Steps the APU by 1 m-cycle.
+auto APU::step() noexcept -> void
+{ }

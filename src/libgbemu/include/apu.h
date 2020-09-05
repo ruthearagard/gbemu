@@ -12,25 +12,20 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// XXX: NONSTANDARD
-//
-// "If #pragma once is seen when scanning a header file, that file will never
-// be read again, no matter what. It is a less-portable alternative to using
-// `#ifndef` to guard the contents of header files against multiple
-// inclusions."
-//
-// Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
 #include <cstdint>
 
 namespace GameBoy
 {
+    /// @brief Defines the audio processing unit (APU).
     class APU
     {
     public:
-        uint8_t NR50;
-        uint8_t NR51;
-        uint8_t NR52;
+        /// @brief Resets the APU to the startup state.
+        auto reset() noexcept -> void;
+
+        /// @brief Steps the APU by 1 m-cycle.
+        auto step() noexcept -> void;
     };
 }
