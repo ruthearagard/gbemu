@@ -12,21 +12,16 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for C++ exceptions.
 #include <stdexcept>
-
-// Required for the `QApplication` class.
 #include <qapplication.h>
-
-// Required for the `QThread` class.
 #include <qthread.h>
-
-// Required for the `Emulator` class.
 #include "emulator.h"
 
+/// @brief Initializes the Game Boy system execution interface.
 Emulator::Emulator() noexcept
 { }
 
+/// @brief Starts the run loop. Does nothing if the loop is already running.
 auto Emulator::start_run_loop() noexcept -> void
 {
     if (!running)
@@ -36,16 +31,47 @@ auto Emulator::start_run_loop() noexcept -> void
     }
 }
 
+/// @brief Pauses the run loop, preserving the current state. Does nothing if
+/// the emulator is not running.
+auto Emulator::pause_run_loop() noexcept -> void
+{
+    if (running)
+    {
+        running = false;
+        quit();
+    }
+}
+
+/// @brief Generates a cartridge and sets it up to be executed.
+/// @param The data to use to generate the cartridge.
+auto Emulator::cartridge(const std::vector<uint8_t>& data) -> void
+{
+    // We want to stop the run loop if it is running, since the current
+    // `m_cart` will be going away if this is successful.
+    const auto was_running{ running };
+    pause_run_loop();
+
+    try
+    {
+        m_cart = cart(data);
+        reset();
+        start_run_loop();
+    }
+    catch (std::runtime_error& err)
+    {
+        // `m_cart` unchanged, so it's okay to continue with the current
+        // execution if there was one prior.
+        if (was_running)
+        {
+            start_run_loop();
+        }
+        throw;
+    }
+}
+
+/// @brief The starting point for the thread.
 auto Emulator::run() noexcept -> void
 {
-    cycles = 0;
-
-    if (!running)
-    {
-        running = true;
-        cycles = 0;
-    }
-
     while (running)
     {
         const auto start{ std::chrono::steady_clock::now() };
@@ -68,37 +94,5 @@ auto Emulator::run() noexcept -> void
         {
             QThread::msleep((1000 / 60) - diff);
         }
-    }
-}
-
-auto Emulator::pause() noexcept -> void
-{
-
-}
-
-auto Emulator::reset() noexcept -> void
-{ }
-
-// Verifies that cartridge `data` is accurate and will operate on libgbemu, and
-// sets the current cartridge to this data.
-auto Emulator::cartridge(const std::vector<uint8_t>& data) -> void
-{
-    if (running)
-    {
-        pause();
-    }
-
-    try
-    {
-        m_cart = cart(data);
-    }
-    catch (std::runtime_error& err)
-    {
-        throw;
-    }
-
-    if (running)
-    {
-        reset();
     }
 }

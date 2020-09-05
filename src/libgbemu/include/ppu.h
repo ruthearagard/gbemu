@@ -39,7 +39,7 @@ namespace GameBoy
     using ScreenData = std::array<uint32_t, SCREEN_X * SCREEN_Y>;
 
     /// @brief Defines the picture processing unit (PPU).
-    class PPU
+    class PPU final
     {
     public:
         /// @brief Initializes the picture processing unit (PPU).

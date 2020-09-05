@@ -12,18 +12,12 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for C++ exceptions.
 #include <stdexcept>
-
-// Required for the `QFile` class.
 #include <qfile.h>
-
-// Required for the `QMessageBox` class.
 #include <qmessagebox.h>
-
-// Required for the `GBEmu` class.
 #include "gbemu.h"
 
+/// @brief Initializes the main controller.
 GBEmu::GBEmu() noexcept
 {
     connect(&main_window, &MainWindow::rom_opened,
@@ -60,7 +54,6 @@ GBEmu::GBEmu() noexcept
             };
             QMessageBox::critical(&main_window, tr("Error"), str);
         }
-        emulator.start_run_loop();
     });
 
     connect(&main_window, &MainWindow::key_pressed, [&](const int key)

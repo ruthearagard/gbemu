@@ -172,7 +172,7 @@ auto PPU::pixel(const uint8_t lo,
 
     const unsigned int pixel{ (p1 << 1) | p0 };
 
-    static constexpr std::array<enum Colors, 4> colors =
+    constexpr std::array<enum Colors, 4> colors =
     {
         Colors::White,
         Colors::LightGray,

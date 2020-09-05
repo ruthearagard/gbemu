@@ -16,35 +16,31 @@
 //
 // "If #pragma once is seen when scanning a header file, that file will never
 // be read again, no matter what. It is a less-portable alternative to using
-// ‘#ifndef’ to guard the contents of header files against multiple inclusions."
+// `#ifndef` to guard the contents of header files against multiple inclusions."
 //
 // Source: https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
 #pragma once
 
-// Required for the `Emulator` class.
 #include "emulator.h"
-
-// Required for the `MainWindow` class.
 #include "main_window.h"
-
-// Required for the `OpenGL` class.
 #include "opengl.h"
 
-// GBEmu main controller
+/// @brief Application main controller
 class GBEmu : public QObject
 {
     Q_OBJECT
 
 public:
+    /// @brief Initializes the main controller.
     GBEmu() noexcept;
 
 private:
-    // Emulator instance
+    /// @brief Emulator instance
     Emulator emulator;
 
-    // Main window instance
+    /// @brief Main window instance
     MainWindow main_window;
 
-    // OpenGL instance
+    /// @brief OpenGL instance
     OpenGL opengl;
 };

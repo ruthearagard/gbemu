@@ -29,7 +29,7 @@ namespace GameBoy
     // Forward declaration
     class SystemBus;
 
-    class Timer
+    class Timer final
     {
     public:
         explicit Timer(SystemBus& m_bus) noexcept;

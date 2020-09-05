@@ -39,5 +39,5 @@ auto ROMOnlyCartridge::read(const uint16_t address) noexcept -> uint8_t
 auto ROMOnlyCartridge::write(const uint16_t address,
                              const uint8_t value) noexcept -> void
 {
-    __debugbreak();
+    //__debugbreak();
 }

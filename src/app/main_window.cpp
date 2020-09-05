@@ -17,6 +17,7 @@
 #include <qmenubar.h>
 #include "main_window.h"
 
+/// @brief Initializes the main window.
 MainWindow::MainWindow() noexcept
 {
     setWindowTitle("gbemu");
@@ -44,11 +45,15 @@ MainWindow::MainWindow() noexcept
     });
 }
 
+/// @brief Called when the user presses a key on the keyboard.
+/// @param event The key event data.
 void MainWindow::keyPressEvent(QKeyEvent* event)
 {
     emit key_pressed(event->key());
 }
 
+/// @brief Called when the user releases key on the keyboard.
+/// @param event The key event data.
 void MainWindow::keyReleaseEvent(QKeyEvent* event)
 {
     emit key_released(event->key());

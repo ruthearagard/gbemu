@@ -12,10 +12,7 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `QApplication` class.
 #include <QApplication>
-
-// Required for the `GBEmu` class.
 #include "gbemu.h"
 
 auto main(int argc, char* argv[]) -> int
@@ -25,6 +22,8 @@ auto main(int argc, char* argv[]) -> int
     qt.setApplicationName("gbemu");
     qt.setApplicationVersion("1.0");
 
+    // Required to ensure that we are able to acquire an OpenGL 3.2 Core
+    // profile.
     QSurfaceFormat fmt;
     fmt.setVersion(3, 2);
     fmt.setProfile(QSurfaceFormat::CoreProfile);

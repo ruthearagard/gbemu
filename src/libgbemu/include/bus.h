@@ -67,7 +67,7 @@ namespace GameBoy
     };
 
     /// @brief Defines the interconnect between the CPU, memory, and devices.
-    class SystemBus
+    class SystemBus final
     {
     public:
         SystemBus() noexcept;

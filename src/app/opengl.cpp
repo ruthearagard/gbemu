@@ -12,9 +12,29 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-// Required for the `OpenGL` class.
 #include "opengl.h"
 
+/// @brief Renders screen data to the OpenGL context.
+/// @param screen_data The RGBA32 screen data to render.
+auto OpenGL::render_frame
+(const GameBoy::ScreenData& screen_data) noexcept -> void
+{
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexSubImage2D(GL_TEXTURE_2D,
+                    0,
+                    0,
+                    0,
+                    GameBoy::SCREEN_X,
+                    GameBoy::SCREEN_Y,
+                    GL_BGRA,
+                    GL_UNSIGNED_BYTE,
+                    screen_data.data());
+    update();
+}
+
+/// @brief Sets up the OpenGL resources and state. Gets called once before the
+/// first time `resizeGL()` or `paintGL()` is called.
 auto OpenGL::initializeGL() -> void
 {
     initializeOpenGLFunctions();
@@ -124,6 +144,8 @@ auto OpenGL::initializeGL() -> void
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
+/// @brief Renders the OpenGL scene. Gets called whenever the widget needs to
+/// be updated.
 auto OpenGL::paintGL() -> void
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -132,23 +154,12 @@ auto OpenGL::paintGL() -> void
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
+/// @brief Sets up the OpenGL viewport, projection, etc. Gets called whenever
+/// the widget has been resized (and also when it is shown for the first time
+/// because all newly created widgets get a resize event automatically).
+/// @param w The width of the viewport.
+/// @param h The height of the viewport.
 auto OpenGL::resizeGL(int w, int h) -> void
 {
     glViewport(0, 0, w, h);
-}
-
-auto OpenGL::render_frame(const GameBoy::ScreenData& screen_data) noexcept -> void
-{
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexSubImage2D(GL_TEXTURE_2D,
-                    0,
-                    0,
-                    0,
-                    GameBoy::SCREEN_X,
-                    GameBoy::SCREEN_Y,
-                    GL_BGRA,
-                    GL_UNSIGNED_BYTE,
-                    screen_data.data());
-    update();
 }

@@ -32,7 +32,7 @@ namespace GameBoy
     using ALUFunc = std::function<uint8_t(uint8_t)>;
 
     /// @brief Defines a Sharp SM83 CPU interpreter.
-    class CPU
+    class CPU final
     {
     public:
         /// @brief Initializes the CPU.
