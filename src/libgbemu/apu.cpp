@@ -16,73 +16,85 @@
 
 using namespace GameBoy;
 
-/// @brief Updates channel 1 state.
-auto APU::update_ch1_state(const uint8_t data) noexcept -> void
+/// @brief
+/// @param data
+/// @return 0 if sound is disabled, or `data` otherwise.
+auto APU::set_register_check(const uint8_t data) noexcept -> uint8_t
 {
-    if (data & 0x80)
+    if (NR52.enabled)
     {
-        // Writing a value with bit 7 set causes the following things to occur:
+        return data;
+    }
+    return 0x00;
+}
 
-        // 1. Channel is enabled (see length counter).
-        // 2. If length counter is zero, it is set to 63.
-        if (CH1.length_duty.length == 0)
-        {
-            CH1.length_duty.length = 63;
-        }
-
-        // 3. Frequency timer is reloaded with period.
-        // 4. Volume envelope timer is reloaded with period.
-        // 4. Volume envelope timer is reloaded with period.
-        // 5. Channel volume is reloaded from NR12.
-        // 6. Square 1's sweep does several things (see frequency sweep).
+/// @brief Sets wave RAM data.
+/// @param address The index of the wave RAM data.
+/// @param data The data to place in the wave RAM index.
+auto APU::set_wave_ram(const uint16_t address,
+                       const uint8_t data) noexcept -> void
+{
+    if (NR52.enabled)
+    {
+        CH3.ram[address - 0xFF30] = data;
     }
 }
 
-/// @brief Updates channel 2 state.
-auto APU::update_ch2_state(const uint8_t data) noexcept -> void
+/// @brief Sets the $FF14 - NR14 - Channel 1 Frequency hi (R/W) register. Does
+/// nothing if sound is disabled.
+/// @param data The data to set the register to.
+auto APU::set_NR14(const uint8_t data) noexcept -> void
 {
     if (data & 0x80)
     {
-        // Writing a value with bit 7 set causes the following things to occur:
-
-        // 1. Channel is enabled(see length counter).
-        // 2. If length counter is zero, it is set to 63.
-        if (CH2.length_duty.length == 0)
-        {
-            CH2.length_duty.length = 63;
-        }
-
-        // 3. Frequency timer is reloaded with period.
-        // 4. Volume envelope timer is reloaded with period.
-        // 5. Channel volume is reloaded from NR22.
+        NR52.ch1_on = true;
     }
 }
 
-/// @brief Updates channel 3 state.
-auto APU::update_ch3_state(const uint8_t data) noexcept -> void
-{
-
-}
-
-/// @brief Updates channel 4 state.
-auto APU::update_ch4_state(const uint8_t data) noexcept -> void
+/// @brief Sets the $FF19 - NR24 - Channel 2 Frequency hi data (R/W) register.
+/// Does nothing if sound is disabled.
+/// @param data The data to set the register to.
+auto APU::set_NR24(const uint8_t data) noexcept -> void
 {
     if (data & 0x80)
     {
-        // Writing a value with bit 7 set causes the following things to occur:
-        //
-        // 1. Channel is enabled(see length counter).
-        // 2. If length counter is zero, it is set to 63.
-        if (CH4.length.length == 0)
-        {
-            CH4.length.length = 63;
-        }
-
-        // 3. Frequency timer is reloaded with period.
-        // 4. Volume envelope timer is reloaded with period.
-        // 5. Channel volume is reloaded from NR32.
-        // 6. Noise channel's LFSR bits are all set to 1.
+        NR52.ch2_on = true;
     }
+}
+
+/// @brief Sets the $FF1E - NR34 - Channel 3 Frequency's higher data (R/W)
+/// register. Does nothing if sound is disabled.
+/// @param data The data to set the register to.
+auto APU::set_NR34(const uint8_t data) noexcept -> void
+{
+    if (data & 0x80)
+    {
+        NR52.ch3_on = true;
+    }
+}
+
+/// @brief Sets the $FF23 - NR44 - Channel 4 Counter/consecutive; Inital (R/W)
+/// register. Does nothing if sound is disabled.
+/// @param data The data to set the register to.
+auto APU::set_NR44(const uint8_t data) noexcept -> void
+{
+    if (data & 0x80)
+    {
+        NR52.ch4_on = true;
+    }
+}
+
+/// @brief Sets the $FF26 - NR52 - Sound on/off register.
+/// @param data The data to set the register to.
+auto APU::set_NR52(const uint8_t data) noexcept -> void
+{
+    const auto msb{ (data & 0x80) != 0 };
+
+    if (!msb)
+    {
+        reset();
+    }
+    NR52.enabled = msb;
 }
 
 /// @brief Resets the APU to the startup state.
@@ -93,9 +105,9 @@ auto APU::reset() noexcept -> void
     CH3 = { };
     CH4 = { };
 
-    output_terminal = { };
-    sound_control   = { };
-    channel_control = { };
+    NR50 = { };
+    NR51 = { };
+    NR52 = { };
 
     frame_sequencer = 0;
     frame_sequencer_step = 0;
@@ -104,27 +116,29 @@ auto APU::reset() noexcept -> void
 /// @brief Steps the APU by 1 m-cycle.
 auto APU::step() noexcept -> void
 {
-    frame_sequencer += 4;
-
-    if (frame_sequencer == 8192)
+    if (NR52.enabled)
     {
-        switch (frame_sequencer_step)
+        frame_sequencer += 4;
+
+        if (frame_sequencer == 8192)
         {
-            // Decrement length counters
-            case 0:
-            case 4:
-                break;
+            switch (frame_sequencer_step)
+            {
+                // Decrement length counters
+                case 0:
+                case 4:
+                    break;
 
-            // Decrement length counters and calculate sweep frequency
-            case 2:
-            case 6:
-                break;
+                // Decrement length counters and calculate sweep frequency
+                case 2:
+                case 6:
+                    break;
 
-            // Calculate new volume
-            case 7:
-                break;
+                // Calculate new volume
+                case 7:
+                    break;
+            }
         }
-
         frame_sequencer = 0;
         frame_sequencer_step++;
 

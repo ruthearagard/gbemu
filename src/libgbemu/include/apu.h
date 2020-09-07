@@ -97,19 +97,19 @@ namespace GameBoy
                     unsigned int time : 3;
                 };
                 uint8_t byte;
-            } sweep;
+            } NR10;
 
             /// @brief $FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
-            union length_duty_data length_duty;
+            union length_duty_data NR11;
 
             /// @brief $FF12 - NR12 - Channel 1 Volume Envelope (R/W)
-            union volume_envelope_data volume_envelope;
+            union volume_envelope_data NR12;
 
             /// @brief $FF13 - NR13 - Channel 1 Frequency lo (W)
-            uint8_t freq_lo;
+            uint8_t NR13;
 
             /// @brief $FF14 - NR14 - Channel 1 Frequency hi (R/W)
-            union freq_hi_data freq_hi;
+            union freq_hi_data NR14;
         } CH1;
 
         /// @brief Sound Channel 2 - Tone
@@ -120,16 +120,16 @@ namespace GameBoy
         {
             /// @brief $FF16 - NR21 - Channel 2 Sound Length/
             /// Wave Pattern Duty (R/W)
-            union length_duty_data length_duty;
+            union length_duty_data NR21;
 
             /// @brief $FF17 - NR22 - Channel 2 Volume Envelope (R/W)
-            union volume_envelope_data volume_envelope;
+            union volume_envelope_data NR22;
 
             /// @brief $FF18 - NR23 - Channel 2 Frequency lo data (W)
-            uint8_t freq_lo;
+            uint8_t NR23;
 
             /// @brief $FF19 - NR24 - Channel 2 Frequency hi data (R/W)
-            union freq_hi_data freq_hi;
+            union freq_hi_data NR24;
         } CH2;
 
         /// @brief Sound Channel 3 - Wave Output
@@ -152,10 +152,10 @@ namespace GameBoy
                     unsigned int enabled : 1;
                 };
                 uint8_t byte;
-            } state;
+            } NR30;
 
             /// @brief $FF1B - NR31 - Channel 3 Sound Length
-            uint8_t length;
+            uint8_t NR31;
 
             // @brief $FF1C - NR32 - Channel 3 Select output level (R/W)
             union
@@ -172,18 +172,18 @@ namespace GameBoy
                     /// 1: 100% Volume (Wave Pattern RAM Data >> 0)
                     /// 2: 50% Volume (Wave Pattern RAM data >> 1)
                     /// 3: 25% Volume (Wave Pattern RAM data >> 2)
-                    unsigned int level : 2;
+                    unsigned int output_level : 2;
 
                     unsigned int : 1;
                 };
                 uint8_t byte;
-            } output_level;
+            } NR32;
 
             /// @brief $FF1D - NR33 - Channel 3 Frequency's lower data (W)
-            uint8_t freq_lo;
+            uint8_t NR33;
 
             /// @brief $FF1E - NR34 - Channel 3 Frequency's higher data (R/W)
-            union freq_hi_data freq_hi;
+            union freq_hi_data NR34;
 
             /// @brief [$FF30 - $FF3F]: Wave Pattern RAM
             ///
@@ -215,10 +215,10 @@ namespace GameBoy
                     unsigned int : 2;
                 };
                 uint8_t byte;
-            } length;
+            } NR41;
 
             /// @brief $FF21 - NR42 - Channel 4 Volume Envelope (R/W)
-            union volume_envelope_data volume_envelope;
+            union volume_envelope_data NR42;
 
             /// @brief $FF22 - NR43 - Channel 4 Polynomial Counter (R/W)
             /// 
@@ -242,7 +242,7 @@ namespace GameBoy
                     unsigned int clock_freq : 4;
                 };
                 uint8_t byte;
-            } poly;
+            } NR43;
 
             /// @brief $FF23 - NR44 - Channel 4 Counter/consecutive; Inital (R/W)
             union
@@ -259,33 +259,8 @@ namespace GameBoy
                     unsigned int trigger : 1;
                 };
                 uint8_t byte;
-            } config;
+            } NR44;
         } CH4;
-
-        /// @brief $FF26 - NR52 - Sound on/off
-        union
-        {
-            struct
-            {
-                /// @brief Bit 0 - Sound 1 ON flag (R)
-                unsigned int ch1_on : 1;
-
-                /// @brief Bit 1 - Sound 2 ON flag (R)
-                unsigned int ch2_on : 1;
-
-                /// @brief Bit 2 - Sound 3 ON flag (R)
-                unsigned int ch3_on : 1;
-
-                /// @brief Bit 3 - Sound 4 ON flag (R)
-                unsigned int ch4_on : 1;
-
-                unsigned int : 3;
-
-                /// @brief Bit 7 - All sound on/off (R/W)
-                unsigned int enabled : 1;
-            };
-            uint8_t byte;
-        } sound_control;
 
         /// @brief $FF24 - NR50 - Channel control/ON-OFF/Volume (R/W)
         union
@@ -305,7 +280,7 @@ namespace GameBoy
                 unsigned int output_vin_to_so2 : 1;
             };
             uint8_t byte;
-        } channel_control;
+        } NR50;
 
         /// @brief $FF25 - NR51 - Selection of Sound output terminal (R/W)
         union
@@ -337,22 +312,70 @@ namespace GameBoy
                 unsigned int output_ch4_to_so2 : 1;
             };
             uint8_t byte;
-        } output_terminal;
+        } NR51;
+
+        /// @brief $FF26 - NR52 - Sound on/off
+        union
+        {
+            struct
+            {
+                /// @brief Bit 0 - Sound 1 ON flag (R)
+                unsigned int ch1_on : 1;
+
+                /// @brief Bit 1 - Sound 2 ON flag (R)
+                unsigned int ch2_on : 1;
+
+                /// @brief Bit 2 - Sound 3 ON flag (R)
+                unsigned int ch3_on : 1;
+
+                /// @brief Bit 3 - Sound 4 ON flag (R)
+                unsigned int ch4_on : 1;
+
+                unsigned int : 3;
+
+                /// @brief Bit 7 - All sound on/off (R/W)
+                unsigned int enabled : 1;
+            };
+            uint8_t byte;
+        } NR52;
 
         unsigned int frame_sequencer;
         unsigned int frame_sequencer_step;
 
-        /// @brief Updates channel 1 state.
-        auto update_ch1_state(const uint8_t data) noexcept -> void;
+        /// @brief Sets a register.
+        /// @param data
+        /// @return the data
+        auto set_register_check(const uint8_t data) noexcept -> uint8_t;
 
-        /// @brief Updates channel 2 state.
-        auto update_ch2_state(const uint8_t data) noexcept -> void;
+        /// @brief Sets wave RAM data.
+        /// @param address The index of the wave RAM data.
+        /// @param data The data to place in the wave RAM index.
+        auto set_wave_ram(const uint16_t address,
+                          const uint8_t data) noexcept -> void;
 
-        /// @brief Updates channel 3 state.
-        auto update_ch3_state(const uint8_t data) noexcept -> void;
+        /// @brief Sets the $FF14 - NR14 - Channel 1 Frequency hi (R/W)
+        /// register.
+        /// @param data The data to set the register to.
+        auto set_NR14(const uint8_t data) noexcept -> void;
 
-        /// @brief Updates channel 4 state.
-        auto update_ch4_state(const uint8_t data) noexcept -> void;
+        /// @brief Sets the $FF19 - NR24 - Channel 2 Frequency hi data (R/W)
+        /// register.
+        /// @param data The data to set the register to.
+        auto set_NR24(const uint8_t data) noexcept -> void;
+
+        /// @brief Sets the $FF1E - NR34 - Channel 3 Frequency's higher data
+        /// (R/W) register.
+        /// @param data The data to set the register to.
+        auto set_NR34(const uint8_t data) noexcept -> void;
+
+        /// @brief Sets the $FF23 - NR44 - Channel 4 Counter/consecutive;
+        /// Inital (R/W).
+        /// @param data The data to set the register to.
+        auto set_NR44(const uint8_t data) noexcept -> void;
+
+        /// @brief Sets the $FF26 - NR52 - Sound on/off register.
+        /// @param data The data to set the register to.
+        auto set_NR52(const uint8_t data) noexcept -> void;
 
         /// @brief Resets the APU to the startup state.
         auto reset() noexcept -> void;
