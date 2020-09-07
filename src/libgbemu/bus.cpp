@@ -38,8 +38,9 @@ auto SystemBus::boot_rom(const std::vector<uint8_t>& data) noexcept -> void
 /// @brief Resets the devices to their startup state and clears all memory.
 auto SystemBus::reset() noexcept -> void
 {
-    timer.reset();
+    apu.reset();
     ppu.reset();
+    timer.reset();
 
     joypad_state = 0xFF;
 
@@ -52,8 +53,9 @@ auto SystemBus::step() noexcept -> void
 {
     cycles += 4;
 
-    timer.step();
+    apu.step();
     ppu.step();
+    timer.step();
 }
 
 /// @brief Request an interrupt.
@@ -142,6 +144,14 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF0F:
                     return interrupt_flag.byte;
 
+                // $FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
+                case 0xF11:
+                    return apu.CH1.length_duty.byte;
+
+                // $FF25 - NR51 - Selection of Sound output terminal (R/W)
+                case 0xF25:
+                    return apu.output_terminal.byte;
+
                 // $FF40 - LCDC - LCD Control (R/W)
                 case 0xF40:
                     return ppu.get_LCDC();
@@ -154,6 +164,14 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF44:
                     return ppu.LY;
 
+                // $FF48 - OBP0 - Object Palette 0 Data (R/W)
+                case 0xF48:
+                    return ppu.OBP0.byte;
+
+                // $FF49 - OBP1 - Object Palette 1 Data (R/W)
+                case 0xF49:
+                    return ppu.OBP1.byte;
+
                 // [$FF80 - $FFFE] - High RAM (HRAM)
                 case 0xF80 ... 0xFFE:
                     return hram[address - 0xFF80];
@@ -163,12 +181,12 @@ auto SystemBus::read(const uint16_t address,
                     return interrupt_enable.byte;
 
                 default:
-                    //__debugbreak();
+                    __debugbreak();
                     return 0xFF;
             }
 
         default:
-            //__debugbreak();
+            __debugbreak();
             return 0xFF;
     }
 }
@@ -252,35 +270,114 @@ auto SystemBus::write(const uint16_t address,
                     interrupt_flag.byte = data;
                     return;
 
+                // $FF10 - NR10 - Channel 1 Sweep register (R/W)
+                case 0xF10:
+                    apu.CH1.sweep.byte = data;
+                    return;
+
+                // $FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
+                case 0xF11:
+                    apu.CH1.length_duty.byte = data;
+                    return;
+
                 // $FF12 - NR12 - Channel 1 Volume Envelope (R/W)
                 case 0xF12:
+                    apu.CH1.volume_envelope.byte = data;
+                    return;
+
+                // $FF13 - NR13 - Channel 1 Frequency lo (Write Only)
+                case 0xF13:
+                    apu.CH1.freq_lo = data;
                     return;
 
                 // $FF14 - NR14 - Channel 1 Frequency hi (R/W)
                 case 0xF14:
+                    apu.update_ch1_state(data);
+                    return;
+
+                // $FF16 - NR21 - Channel 2 Sound Length/Wave Pattern Duty (R/W)
+                case 0xF16:
+                    apu.CH2.length_duty.byte = data;
                     return;
 
                 // $FF17 - NR22 - Channel 2 Volume Envelope (R/W)
                 case 0xF17:
+                    apu.CH2.volume_envelope.byte = data;
+                    return;
+
+                // $FF18 - NR23 - Channel 2 Frequency lo data (W)
+                case 0xF18:
+                    apu.CH2.freq_lo = data;
+                    return;
+
+                // $FF19 - NR24 - Channel 2 Frequency hi data (R/W)
+                case 0xF19:
+                    apu.update_ch2_state(data);
+                    return;
+
+                // $FF1A - NR30 - Channel 3 Sound on/off (R/W)
+                case 0xF1A:
+                    apu.CH3.state.byte = data;
+                    return;
+
+                // $FF1B - NR31 - Channel 3 Sound Length
+                case 0xF1B:
+                    apu.CH3.length = data;
+                    return;
+
+                // $FF1C - NR32 - Channel 3 Select output level (R/W)
+                case 0xF1C:
+                    apu.CH3.output_level.level = data;
+                    return;
+
+                // $FF1D - NR33 - Channel 3 Frequency's lower data (W)
+                case 0xF1D:
+                    apu.CH3.freq_lo = data;
+                    return;
+
+                // $FF1E - NR34 - Channel 3 Frequency's higher data (R/W)
+                case 0xF1E:
+                    apu.CH3.freq_hi.byte = data;
+                    return;
+
+                // $FF20 - NR41 - Channel 4 Sound Length (R/W)
+                case 0xF20:
+                    apu.CH4.length.length = data;
                     return;
 
                 // $FF21 - NR42 - Channel 4 Volume Envelope (R/W)
                 case 0xF21:
+                    apu.CH4.volume_envelope.byte = data;
+                    return;
+
+                // $FF22 - NR43 - Channel 4 Polynomial Counter (R/W)
+                case 0xF22:
+                    apu.CH4.poly.byte = data;
+                    return;
+
+                // $FF23 - NR44 - Channel 4 Counter/consecutive; Inital (R/W)
+                case 0xF23:
+                    apu.update_ch4_state(data);
                     return;
 
                 // $FF24 - NR50 - Channel control / ON-OFF / Volume (R/W)
                 case 0xF24:
-                    apu.NR50 = data;
+                    apu.channel_control.byte = data;
                     return;
 
                 // $FF25 - NR51 - Selection of Sound output terminal (R/W)
                 case 0xF25:
-                    apu.NR51 = data;
+                    apu.output_terminal.byte = data;
                     return;
 
                 // $FF26 - NR52 - Sound on/off
                 case 0xF26:
-                    apu.NR52 = data;
+                    apu.sound_control.enabled = data & 0x80;
+                    return;
+
+                // $FF30 - $FF3F - Wave Pattern RAM
+                case 0xF30 ... 0xF3F:
+                    apu.CH3.ram[address - 0xFF30] = data;
                     return;
 
                 // $FF40 - LCDC - LCD Control (R/W)
@@ -356,12 +453,12 @@ auto SystemBus::write(const uint16_t address,
                     return;
 
                 default:
-                    //__debugbreak();
+                    __debugbreak();
                     return;
             }
 
         default:
-            //__debugbreak();
+            __debugbreak();
             return;
     }
 }
