@@ -28,7 +28,7 @@
 
 find_package(fmt CONFIG REQUIRED)
 
-set(SRCS apu.cpp bus.cpp cpu.cpp gb.cpp ppu.cpp timer.cpp)
+set(SRCS apu.cpp bus.cpp cpu.cpp gb.cpp ppu.cpp sched.cpp timer.cpp)
 
 set(HDRS include/apu.h
          include/bus.h
@@ -36,6 +36,7 @@ set(HDRS include/apu.h
          include/cpu.h
          include/gb.h
          include/ppu.h
+         include/sched.h
          include/timer.h)
 
 set(CART_SRCS cart/mbc1.cpp cart/mbc3.cpp cart/rom_only.cpp)

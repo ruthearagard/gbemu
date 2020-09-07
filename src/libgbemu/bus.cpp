@@ -144,6 +144,10 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF0F:
                     return interrupt_flag.byte;
 
+                // $FF10 - NR10 - Channel 1 Sweep register (R/W)
+                case 0xF10:
+                    return apu.CH1.sweep.byte;
+
                 // $FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
                 case 0xF11:
                     return apu.CH1.length_duty.byte;
@@ -151,6 +155,14 @@ auto SystemBus::read(const uint16_t address,
                 // $FF25 - NR51 - Selection of Sound output terminal (R/W)
                 case 0xF25:
                     return apu.output_terminal.byte;
+
+                // $FF26 - NR52 - Sound on/off
+                case 0xF26:
+                    return apu.sound_control.byte;
+
+                /// [$FF30 - $FF3F]: Wave Pattern RAM
+                case 0xF30 ... 0xF3F:
+                    return apu.CH3.ram[address - 0xFF30];
 
                 // $FF40 - LCDC - LCD Control (R/W)
                 case 0xF40:
@@ -337,7 +349,7 @@ auto SystemBus::write(const uint16_t address,
 
                 // $FF1E - NR34 - Channel 3 Frequency's higher data (R/W)
                 case 0xF1E:
-                    apu.CH3.freq_hi.byte = data;
+                    apu.update_ch3_state(data);
                     return;
 
                 // $FF20 - NR41 - Channel 4 Sound Length (R/W)

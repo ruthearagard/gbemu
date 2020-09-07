@@ -25,6 +25,8 @@
 #include "main_window.h"
 #include "opengl.h"
 
+class QAudioOutput;
+
 /// @brief Application main controller
 class GBEmu : public QObject
 {
@@ -43,4 +45,7 @@ private:
 
     /// @brief OpenGL instance
     OpenGL opengl;
+
+    /// @brief Audio output instance
+    QAudioOutput* audio;
 };

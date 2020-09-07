@@ -14,12 +14,24 @@
 
 #include <stdexcept>
 #include <qfile.h>
+#include <QAudioFormat>
+#include <QAudioOutput>
 #include <qmessagebox.h>
 #include "gbemu.h"
 
 /// @brief Initializes the main controller.
 GBEmu::GBEmu() noexcept
 {
+    QAudioFormat fmt;
+
+    fmt.setCodec("audio/pcm");
+    fmt.setSampleSize(44100/60);
+    fmt.setSampleRate(44100);
+    fmt.setSampleType(QAudioFormat::Float);
+    fmt.setByteOrder(QAudioFormat::LittleEndian);
+
+    audio = new QAudioOutput(fmt);
+
     connect(&main_window, &MainWindow::rom_opened,
     [&](const QString& file_name)
     {
@@ -130,6 +142,13 @@ GBEmu::GBEmu() noexcept
                 emulator.release_button(GameBoy::JoypadButton::B);
                 return;
         }
+    });
+
+    connect(&emulator, &Emulator::play_audio, this,
+    [&](const std::vector<float>& samples)
+    {
+        auto device{ audio->start() };
+        device->write(reinterpret_cast<const char*>(samples.data()));
     });
 
     connect(&emulator, &Emulator::render_frame, this,

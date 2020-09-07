@@ -104,6 +104,7 @@ std::shared_ptr<Cartridge>
     {
         // ROM ONLY
         case 0x00:
+        case 0x03:
             cart = std::make_shared<GameBoy::ROMOnlyCartridge>(cart_data);
             break;
 

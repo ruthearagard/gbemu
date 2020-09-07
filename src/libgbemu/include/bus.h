@@ -20,6 +20,7 @@
 #include <vector>
 #include "apu.h"
 #include "ppu.h"
+#include "sched.h"
 #include "timer.h"
 
 namespace GameBoy
@@ -145,6 +146,9 @@ namespace GameBoy
 
         /// @brief PPU (picture processing unit) device instance
         PPU ppu;
+
+        /// @brief Scheduler instance
+        Scheduler sched;
 
         /// @brief Timer device instance
         Timer timer;

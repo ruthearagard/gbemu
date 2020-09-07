@@ -78,6 +78,11 @@ auto Emulator::run() noexcept -> void
             while (cycles < max_cycles)
             {
                 cycles += step();
+
+                if (bus.apu.samples.size() == 44100 / 60)
+                {
+                    emit play_audio(bus.apu.samples);
+                }
             }
 
             cycles -= max_cycles;

@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace GameBoy
 {
@@ -347,6 +348,9 @@ namespace GameBoy
         /// @brief Updates channel 2 state.
         auto update_ch2_state(const uint8_t data) noexcept -> void;
 
+        /// @brief Updates channel 3 state.
+        auto update_ch3_state(const uint8_t data) noexcept -> void;
+
         /// @brief Updates channel 4 state.
         auto update_ch4_state(const uint8_t data) noexcept -> void;
 
@@ -355,5 +359,7 @@ namespace GameBoy
 
         /// @brief Steps the APU by 1 m-cycle.
         auto step() noexcept -> void;
+
+        std::vector<float> samples;
     };
 }

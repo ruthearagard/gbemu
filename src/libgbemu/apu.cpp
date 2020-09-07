@@ -49,13 +49,19 @@ auto APU::update_ch2_state(const uint8_t data) noexcept -> void
         // 2. If length counter is zero, it is set to 63.
         if (CH2.length_duty.length == 0)
         {
-            CH1.length_duty.length = 63;
+            CH2.length_duty.length = 63;
         }
 
         // 3. Frequency timer is reloaded with period.
         // 4. Volume envelope timer is reloaded with period.
         // 5. Channel volume is reloaded from NR22.
     }
+}
+
+/// @brief Updates channel 3 state.
+auto APU::update_ch3_state(const uint8_t data) noexcept -> void
+{
+
 }
 
 /// @brief Updates channel 4 state.

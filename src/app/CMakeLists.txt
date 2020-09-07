@@ -15,6 +15,7 @@
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Multimedia REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -43,7 +44,10 @@ set_target_properties(gbemu_main PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS ON)
 
-target_link_libraries(gbemu_main PRIVATE gbemu Qt5::Core Qt5::Gui Qt5::Widgets)
+target_link_libraries(gbemu_main PRIVATE gbemu Qt5::Core
+                                               Qt5::Gui
+                                               Qt5::Multimedia
+                                               Qt5::Widgets)
 
 target_compile_options(gbemu_main PRIVATE -Wno-c++98-compat
                                           -Wno-c++98-compat-pedantic

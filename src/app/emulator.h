@@ -64,6 +64,9 @@ private:
     std::shared_ptr<GameBoy::Cartridge> m_cart;
 
 signals:
+    /// @brief Emitted when it is time to play audio samples.
+    void play_audio(const std::vector<float>& samples);
+
     /// @brief Emitted when it is time to render a frame.
     void render_frame(const GameBoy::ScreenData& screen_data) noexcept;
 };
