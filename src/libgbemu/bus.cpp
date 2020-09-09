@@ -95,8 +95,7 @@ auto SystemBus::read(const uint16_t address,
 
         case 0x1 ... 0x7: return m_cart->read(address);
         case 0xA ... 0xB: return m_cart->read(address);
-        case 0xC:         return wram[address - 0xC000];
-        case 0xD:         return wram1[address - 0xD000];
+        case 0xC ... 0xD: return wram[address - 0xC000];
 
         case 0xF:
             switch (address & 0x0FFF)
@@ -155,8 +154,7 @@ auto SystemBus::write(const uint16_t address,
         case 0x0 ... 0x7: m_cart->write(address, data);      return;
         case 0x8 ... 0x9: ppu.vram[address - 0x8000] = data; return;
         case 0xA ... 0xB: m_cart->write(address, data);      return;
-        case 0xC:         wram[address - 0xC000] = data;     return;
-        case 0xD:         wram1[address - 0xD000] = data;    return;
+        case 0xC ... 0xD: wram[address - 0xC000] = data;     return;
 
         case 0xF:
             switch (address & 0x0FFF)
@@ -201,7 +199,7 @@ auto SystemBus::write(const uint16_t address,
                 {
                     const auto addr{ data * 0x100 };
 
-                    for (unsigned int index{ 0 }; index < 160; ++index)
+                    for (auto index{ 0 }; index < 160; ++index)
                     {
                         ppu.oam[index] = read(addr + index);
                     }

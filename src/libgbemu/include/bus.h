@@ -101,11 +101,8 @@ namespace GameBoy
         auto write(const uint16_t address,
                    const uint8_t data) noexcept -> void;
 
-        /// @brief [$C000 - $CFFF]: 4KB Work RAM Bank 0 (WRAM)
-        std::array<uint8_t, 4096> wram;
-
-        // @brief [$D000 - $DFFF]: 4KB Work RAM Bank 1 (WRAM)
-        std::array<uint8_t, 4096> wram1;
+        /// @brief [$C000 - $DFFF]: 4KB Work RAM Bank 0-1 (WRAM)
+        std::array<uint8_t, 8192> wram;
 
         union
         {
