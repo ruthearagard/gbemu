@@ -12,13 +12,14 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+#include <fstream>
 #include <stdexcept>
 #include <qapplication.h>
 #include <qthread.h>
 #include "emulator.h"
 
 /// @brief Initializes the Game Boy system execution interface.
-Emulator::Emulator() noexcept
+Emulator::Emulator() noexcept : disasm(bus, cpu)
 { }
 
 /// @brief Starts the run loop. Does nothing if the loop is already running.
@@ -72,17 +73,16 @@ auto Emulator::cartridge(const std::vector<uint8_t>& data) -> void
 /// @brief The starting point for the thread.
 auto Emulator::run() noexcept -> void
 {
+    std::ofstream trace_file{ "trace.txt" };
+
     while (running)
     {
         const auto start{ std::chrono::steady_clock::now() };
             while (cycles < max_cycles)
             {
+                disasm.before();
                 cycles += step();
-
-                if (bus.apu.samples.size() == 44100 / 60)
-                {
-                    emit play_audio(bus.apu.samples);
-                }
+                trace_file << disasm.after() << std::endl;
             }
 
             cycles -= max_cycles;

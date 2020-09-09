@@ -12,6 +12,7 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
+find_package(fmt CONFIG REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
@@ -34,8 +35,8 @@ set(CMAKE_AUTORCC ON)
 # reliably, there is still a cost to perform the check on every rebuild."
 #
 # Source (heh): https://cmake.org/cmake/help/v3.13/command/file.html#filesystem
-set(SRCS emulator.cpp gbemu.cpp main.cpp main_window.cpp opengl.cpp)
-set(HDRS emulator.h gbemu.h main_window.h opengl.h)
+set(SRCS disasm.cpp emulator.cpp gbemu.cpp main.cpp main_window.cpp opengl.cpp)
+set(HDRS disasm.h emulator.h gbemu.h main_window.h opengl.h)
 
 add_executable(gbemu_main ${SRCS} ${HDRS})
 
@@ -44,7 +45,9 @@ set_target_properties(gbemu_main PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS ON)
 
-target_link_libraries(gbemu_main PRIVATE gbemu Qt5::Core
+target_link_libraries(gbemu_main PRIVATE gbemu fmt::fmt
+                                               fmt::fmt-header-only
+                                               Qt5::Core
                                                Qt5::Gui
                                                Qt5::Multimedia
                                                Qt5::Widgets)

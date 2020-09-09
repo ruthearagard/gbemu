@@ -233,6 +233,7 @@ auto PPU::reset() noexcept -> void
     WX = 0x00;
 
     ly_counter = 0;
+    screen_x = 0;
 
     vram        = { };
     screen_data = { };
