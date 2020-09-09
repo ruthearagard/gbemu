@@ -94,6 +94,7 @@ auto SystemBus::read(const uint16_t address,
         }
 
         case 0x1 ... 0x7: return m_cart->read(address);
+        case 0x8 ... 0x9: return ppu.vram[address - 0x8000];
         case 0xA ... 0xB: return m_cart->read(address);
         case 0xC ... 0xD: return wram[address - 0xC000];
 
@@ -103,11 +104,11 @@ auto SystemBus::read(const uint16_t address,
                 // $FF00 - P1/JOYP - Joypad (R/W)
                 case 0xF00:
                 {
-                    if (joypad.dpad)
+                    if (!joypad.dpad)
                     {
                         return joypad_state >> 4;
                     }
-                    else if (joypad.button)
+                    else if (!joypad.button)
                     {
                         return joypad_state & 0x0F;
                     }
@@ -117,26 +118,47 @@ auto SystemBus::read(const uint16_t address,
                 case 0xF04:           return timer.DIV;
                 case 0xF05:           return timer.TIMA;
                 case 0xF0F:           return interrupt_flag.byte;
-                case 0xF10:           return apu.CH1.NR10.byte;
-                case 0xF11:           return apu.CH1.NR11.byte;
+                case 0xF10:           return apu.CH1.NR10.byte | 0x80;
+                case 0xF11:           return apu.CH1.NR11.byte | 0x3F;
+                case 0xF12:           return apu.CH1.NR12.byte;
+                case 0xF13:           return apu.CH1.NR13 | 0xFF;
+                case 0xF14:           return apu.CH1.NR14.byte | 0xBF;
+                case 0xF15:           return apu.unused_regs[0];
+                case 0xF16:           return apu.CH2.NR21.byte | 0x3F;
+                case 0xF17:           return apu.CH2.NR22.byte;
+                case 0xF18:           return apu.CH2.NR23 | 0xFF;
+                case 0xF19:           return apu.CH2.NR24.byte | 0xBF;
+                case 0xF1A:           return apu.CH3.NR30.byte | 0x7F;
+                case 0xF1B:           return apu.CH3.NR31 | 0xFF;
+                case 0xF1C:           return apu.CH3.NR32.byte | 0x9F;
+                case 0xF1D:           return apu.CH3.NR33 | 0xFF;
+                case 0xF1E:           return apu.CH3.NR34.byte | 0xBF;
+                case 0xF20:           return apu.CH4.NR41.byte | 0xFF;
+                case 0xF21:           return apu.CH4.NR42.byte;
+                case 0xF22:           return apu.CH4.NR43.byte;
+                case 0xF23:           return apu.CH4.NR44.byte | 0xBF;
+                case 0xF24:           return apu.NR50.byte;
                 case 0xF25:           return apu.NR51.byte;
-                case 0xF26:           return apu.NR52.byte;
-                case 0xF30 ... 0xF3F: return apu.CH3.ram[address - 0xFF30];
+                case 0xF26:           return apu.NR52.byte | 0x70;
+                case 0xF27 ... 0xF2F: return 0xFF;
+                case 0xF30 ... 0xF3F: return apu.last_wave_ram_value_written;
                 case 0xF40:           return ppu.get_LCDC();
+                case 0xF41:           return ppu.STAT.byte;
                 case 0xF42:           return ppu.SCY;
                 case 0xF44:           return ppu.LY;
                 case 0xF48:           return ppu.OBP0.byte;
                 case 0xF49:           return ppu.OBP1.byte;
+                case 0xF4B:           return ppu.WX;
                 case 0xF80 ... 0xFFE: return hram[address - 0xFF80];
                 case 0xFFF:           return interrupt_enable.byte;
 
                 default:
-                    __debugbreak();
+                    printf("$%04X->?\n", address);
                     return 0xFF;
             }
 
         default:
-            __debugbreak();
+            printf("$%04X->?\n", address);
             return 0xFF;
     }
 }
@@ -172,6 +194,7 @@ auto SystemBus::write(const uint16_t address,
                 case 0xF12:           apu.CH1.NR12.byte = apu.set_register_check(data); return;
                 case 0xF13:           apu.CH1.NR13      = apu.set_register_check(data); return;
                 case 0xF14:           apu.set_NR14(data);                               return;
+                case 0xF15:           apu.unused_regs[0] = data;                        return;
                 case 0xF16:           apu.CH2.NR21.byte = apu.set_register_check(data); return;
                 case 0xF17:           apu.CH2.NR22.byte = apu.set_register_check(data); return;
                 case 0xF18:           apu.CH2.NR23      = apu.set_register_check(data); return;
@@ -188,6 +211,7 @@ auto SystemBus::write(const uint16_t address,
                 case 0xF24:           apu.NR50.byte = apu.set_register_check(data);     return;
                 case 0xF25:           apu.NR51.byte = apu.set_register_check(data);     return;
                 case 0xF26:           apu.set_NR52(data);                               return;
+                case 0xF27 ... 0xF2F:                                                   return;
                 case 0xF30 ... 0xF3F: apu.set_wave_ram(address, data);                  return;
                 case 0xF40:           ppu.set_LCDC(data);                               return;
                 case 0xF41:           ppu.STAT.byte = data;                             return;
@@ -214,9 +238,9 @@ auto SystemBus::write(const uint16_t address,
                 case 0xF50:           boot_rom_disabled = true;      return;
                 case 0xF80 ... 0xFFE: hram[address - 0xFF80] = data; return;
                 case 0xFFF:           interrupt_enable.byte = data;  return;
-                default:              __debugbreak();                return;
+                default:              printf("$%04X<-$%02X\n", address, data); return;
             }
 
-        default: __debugbreak(); return;
+        default: printf("$%04X<-$%02X\n", address, data); return;
     }
 }

@@ -34,10 +34,8 @@ auto APU::set_register_check(const uint8_t data) noexcept -> uint8_t
 auto APU::set_wave_ram(const uint16_t address,
                        const uint8_t data) noexcept -> void
 {
-    if (NR52.enabled)
-    {
-        CH3.ram[address - 0xFF30] = data;
-    }
+    last_wave_ram_value_written = data;
+    CH3.ram[address - 0xFF30] = data;
 }
 
 /// @brief Sets the $FF14 - NR14 - Channel 1 Frequency hi (R/W) register. Does

@@ -88,7 +88,7 @@ GBEmu::GBEmu() noexcept
                 emulator.press_button(GameBoy::JoypadButton::Right);
                 return;
 
-            case Qt::Key::Key_Enter:
+            case Qt::Key::Key_Return:
                 emulator.press_button(GameBoy::JoypadButton::Start);
                 return;
 
@@ -126,7 +126,7 @@ GBEmu::GBEmu() noexcept
                 emulator.release_button(GameBoy::JoypadButton::Right);
                 return;
 
-            case Qt::Key::Key_Enter:
+            case Qt::Key::Key_Return:
                 emulator.release_button(GameBoy::JoypadButton::Start);
                 return;
 

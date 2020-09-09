@@ -383,6 +383,10 @@ namespace GameBoy
         /// @brief Steps the APU by 1 m-cycle.
         auto step() noexcept -> void;
 
+        uint8_t last_wave_ram_value_written;
+
         std::vector<float> samples;
+
+        std::array<uint8_t, 32> unused_regs;
     };
 }
