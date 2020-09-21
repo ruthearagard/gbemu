@@ -20,7 +20,7 @@
 #include <vector>
 #include "apu.h"
 #include "ppu.h"
-#include "sched.h"
+#include "scheduler.h"
 #include "timer.h"
 
 namespace GameBoy

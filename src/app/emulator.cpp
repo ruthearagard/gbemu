@@ -71,7 +71,7 @@ auto Emulator::cartridge(const std::vector<uint8_t>& data) -> void
 }
 
 /// @brief The starting point for the thread.
-auto Emulator::run() noexcept -> void
+auto Emulator::run() -> void
 {
     std::ofstream trace_file{ "trace.txt" };
 

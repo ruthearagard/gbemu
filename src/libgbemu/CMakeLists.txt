@@ -28,7 +28,7 @@
 
 find_package(fmt CONFIG REQUIRED)
 
-set(SRCS apu.cpp bus.cpp cpu.cpp gb.cpp ppu.cpp sched.cpp timer.cpp)
+set(SRCS apu.cpp bus.cpp cpu.cpp gb.cpp ppu.cpp scheduler.cpp timer.cpp)
 
 set(HDRS include/apu.h
          include/bus.h
@@ -36,7 +36,7 @@ set(HDRS include/apu.h
          include/cpu.h
          include/gb.h
          include/ppu.h
-         include/sched.h
+         include/scheduler.h
          include/timer.h)
 
 set(CART_SRCS cart/mbc1.cpp cart/mbc3.cpp cart/rom_only.cpp)
@@ -52,8 +52,4 @@ set_target_properties(gbemu PROPERTIES
 target_link_libraries(gbemu fmt::fmt fmt::fmt-header-only)
 
 target_include_directories(gbemu PRIVATE include)
-target_compile_options(gbemu PRIVATE -Wno-c++98-compat
-                                     -Wno-c++98-compat-pedantic
-                                     -Wno-gnu
-                                     -Wall
-                                     -Wextra)
+target_compile_options(gbemu PRIVATE -Wall -Wextra)

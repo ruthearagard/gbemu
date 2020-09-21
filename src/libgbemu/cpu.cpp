@@ -1199,6 +1199,6 @@ auto CPU::step() noexcept -> void
         case 0xFB: ime = true;                                                    return; // EI
         case 0xFE: sub(read_next_byte(), ALUFlag::DiscardResult);                 return; // CP $imm8
         case 0xFF: rst(0x0038);                                                   return; // RST $0038
-        default: __debugbreak();                                                  return;
+        default:                                                                  return;
     }
 }

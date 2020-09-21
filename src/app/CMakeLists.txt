@@ -52,8 +52,4 @@ target_link_libraries(gbemu_main PRIVATE gbemu fmt::fmt
                                                Qt5::Multimedia
                                                Qt5::Widgets)
 
-target_compile_options(gbemu_main PRIVATE -Wno-c++98-compat
-                                          -Wno-c++98-compat-pedantic
-                                          -Wno-gnu
-                                          -Wall
-                                          -Wextra)
+target_compile_options(gbemu_main PRIVATE -Wall -Wextra)

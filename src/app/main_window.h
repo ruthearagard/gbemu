@@ -54,11 +54,11 @@ private:
 
 signals:
     /// @brief Emitted when the user selects a ROM file to run.
-    void rom_opened(const QString& file_name) noexcept;
+    void rom_opened(const QString& file_name);
 
     /// @brief Emitted when a key has been pressed.
-    void key_pressed(const int key) noexcept;
+    void key_pressed(const int key);
 
     /// @brief Emitted when a key has been released.
-    void key_released(const int key) noexcept;
+    void key_released(const int key);
 };

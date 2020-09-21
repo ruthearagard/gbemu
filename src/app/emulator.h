@@ -72,5 +72,5 @@ signals:
     void play_audio(const std::vector<float>& samples);
 
     /// @brief Emitted when it is time to render a frame.
-    void render_frame(const GameBoy::ScreenData& screen_data) noexcept;
+    void render_frame(const GameBoy::ScreenData& screen_data);
 };
