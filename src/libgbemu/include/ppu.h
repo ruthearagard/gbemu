@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace GameBoy
 {
@@ -153,6 +154,9 @@ namespace GameBoy
 
         // [$FE00 - $FE9F]: Sprite Attribute Table (OAM)
         std::array<uint8_t, 160> oam;
+
+        /// @brief Addresses of OAM entries that we must render
+        std::vector<uint16_t> oam_entries;
 
         /// @brief Screen data to be displayed to the host machine (RGBA32)
         ScreenData screen_data;

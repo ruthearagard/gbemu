@@ -6,8 +6,6 @@ root = true
 
 # Configuration for all files
 [*]
-# Enforce Unix style line endings (\n only)
-end_of_line = lf
 # Always end files with a blank line
 insert_final_newline = true
 # Force space characters for indentation

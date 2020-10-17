@@ -131,38 +131,35 @@ auto PPU::draw_scanline() noexcept -> void
 
     if (LCDC.sprites_enabled)
     {
-        for (unsigned int index{ 0xFE00 }; index < 0xFE9F; index += 4)
+        for (auto oam_address : oam_entries)
         {
-            const uint8_t y = oam_access(index + 0) - 16;
-            const uint8_t x = oam_access(index + 1) - 8;
+            const uint8_t y = oam_access(oam_address + 0) - 16;
+            const uint8_t x = oam_access(oam_address + 1) - 8;
 
-            if ((LY >= y) && (LY < (y + render_state.sprite_size)))
+            if ((screen_x >= x) && (screen_x < (x + 8)))
             {
-                if ((screen_x >= x) && (screen_x < (x + 8)))
+                const unsigned int x_pos = screen_x - x;
+                const unsigned int line = (LY - y) * 2;
+
+                const uint8_t tile  = oam_access(oam_address + 2);
+                const uint8_t flags = oam_access(oam_address + 3);
+
+                const unsigned int address = 0x8000 + (tile * 16) + line;
+
+                const uint8_t lo{ vram_access(address)     };
+                const uint8_t hi{ vram_access(address + 1) };
+
+                Palette p;
+
+                if (flags & (1 << 4))
                 {
-                    const unsigned int x_pos = screen_x - x;
-                    const unsigned int line = (LY - y) * 2;
-
-                    const uint8_t tile  = oam_access(index + 2);
-                    const uint8_t flags = oam_access(index + 3);
-
-                    const unsigned int address = 0x8000 + (tile * 16) + line;
-
-                    const uint8_t lo{ vram_access(address)     };
-                    const uint8_t hi{ vram_access(address + 1) };
-
-                    Palette p;
-
-                    if (flags & (1 << 4))
-                    {
-                        p = OBP1;
-                    }
-                    else
-                    {
-                        p = OBP0;
-                    }
-                    pixel(hi, lo, 7 - (x_pos & 7), p, true);
+                    p = OBP1;
                 }
+                else
+                {
+                    p = OBP0;
+                }
+                pixel(hi, lo, 7 - (x_pos & 7), p, true);
             }
         }
     }
@@ -232,6 +229,8 @@ auto PPU::reset() noexcept -> void
     WY = 0x00;
     WX = 0x00;
 
+    oam_entries.clear();
+
     ly_counter = 0;
     screen_x = 0;
 
@@ -294,6 +293,21 @@ auto PPU::step() noexcept -> void
         case Mode::OAMSearch:
             if (ly_counter == 80)
             {
+                for (auto index{ 0xFE00 },
+                     sprites_found = 0; index < 0xFEA0; index += 4)
+                {
+                    const uint8_t y = oam_access(index + 0) - 16;
+
+                    if ((LY >= y) && (LY < (y + render_state.sprite_size)))
+                    {
+                        oam_entries.push_back(index);
+
+                        if (++sprites_found == 10)
+                        {
+                            break;
+                        }
+                    }
+                }
                 STAT.mode = Mode::Drawing;
                 ly_counter = 0;
             }
@@ -307,6 +321,7 @@ auto PPU::step() noexcept -> void
                     draw_scanline();
                 }
 
+                oam_entries.clear();
                 screen_x = 0;
                 ly_counter = 0;
                 STAT.mode = Mode::HBlank;

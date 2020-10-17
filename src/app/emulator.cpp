@@ -80,9 +80,9 @@ auto Emulator::run() -> void
         const auto start{ std::chrono::steady_clock::now() };
             while (cycles < max_cycles)
             {
-                disasm.before();
+                //disasm.before();
                 cycles += step();
-                trace_file << disasm.after() << std::endl;
+                //trace_file << disasm.after() << std::endl;
             }
 
             cycles -= max_cycles;
